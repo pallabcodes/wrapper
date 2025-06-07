@@ -1,2 +1,91 @@
+# Dependencies
 node_modules/
+.yarn/
+.pnp.*
+bun.lockb
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Production & Build
 dist/
+build/
+.next
+.nuxt
+out/
+.cache/
+.temp/
+.docusaurus
+
+# Framework Analysis
+analysis/react-source/
+analysis/express-source/
+analysis/nest-source/
+analysis/fastify-source/
+analysis/hono-source/
+analysis/temp/
+analysis/notes/
+
+# Framework Development
+framework/dist/
+framework/coverage/
+framework/node_modules/
+
+# Test & Coverage
+coverage/
+.nyc_output/
+.tap/
+*.tap
+out.tap
+profile-*
+*clinic*
+*flamegraph*
+
+# IDE and Editors
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+.vscode-test/
+.history/
+
+# OS Files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs & Debug
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+debug.log
+.debug/
+
+# Cache & temp files
+.cache/
+.npm/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Environment and secrets
+.env
+.env.*
+.env.local
+.env.*.local
+*.pem
+*.cert
+*.key
+
+# Misc
+*.tgz
+.node_repl_history
+.tern-port
+benchmark/results/
+benchmarks/graphs/
