@@ -25,6 +25,12 @@ analysis/fastify-source/
 analysis/hono-source/
 analysis/temp/
 analysis/notes/
+fastify-source/
+react-source/
+express-source/
+nest-source/
+hono-source/
+node-source/
 
 # Framework Development
 framework/dist/
