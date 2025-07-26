@@ -31,6 +31,13 @@ express-source/
 nest-source/
 hono-source/
 node-source/
+# Framework Source Clones (root)
+fastify/
+react/
+express/
+nest/
+hono/
+node/
 
 # Framework Development
 framework/dist/
