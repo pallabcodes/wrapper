@@ -12,23 +12,48 @@
  */
 
 // Standard API
-/** Handles an error using a handler function. */
-const handleError = (err, handler) => handler(err)
 /** Maps an error using a mapping function. */
 const mapError = (err, mapFn) => mapFn(err)
 /** Composes error transformation functions into a pipeline. */
 const createErrorPipeline = fns => input => fns.reduce((acc, fn) => fn(acc), input)
 
 // Advanced FP API (curried, point-free)
-const fp = {
+const fpUtils = {
   handle: handler => err => handler(err),
   mapError: mapFn => err => mapFn(err),
   createErrorPipeline: (...fns) => input => fns.reduce((acc, fn) => fn(acc), input)
 }
 
+/**
+ * errorHandler: Functional error handling utilities for Fastify
+ *
+ * - Extracted and refactored from Fastify core (error-handler.js)
+ * - Pure FP: stateless, composable, higher-order
+ * - Standard and advanced FP APIs
+ * - Instantly readable, debuggable, and DX-friendly
+ *
+ * Example Usage:
+ *   const { handleError, fp } = require('./errorHandler')
+ *   // Standard API:
+ *   handleError(reply, error)
+ *   // FP API:
+ *   fp.handleError(reply)(error)
+ */
+
+// --- Standard API ---
+const handleError = (reply, error) => {
+  if (reply.sent) return
+  reply.isError = true
+  reply.send(error)
+}
+
+// --- Advanced FP API (curried, point-free) ---
+const fp = {
+  handleError: reply => error => handleError(reply, error)
+}
+
 module.exports = {
   handleError,
-  mapError,
-  createErrorPipeline,
-  fp
+  fp,
+  fpUtils
 }

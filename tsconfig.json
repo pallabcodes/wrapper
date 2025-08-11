@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "CommonJS",
     "outDir": "dist",
-    "rootDir": "src",
+  "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "declaration": true,
@@ -21,10 +21,10 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
-    "types": ["node", "fastify"],
+  "types": ["node"],
     "lib": ["ES2022", "DOM"],
     "useUnknownInCatchVariables": false
   },
-  "include": ["src", "fastify"],
+  "include": ["src", "fastify", "fastify/ts-utils"],
   "exclude": ["node_modules", "dist", "tests"]
 }

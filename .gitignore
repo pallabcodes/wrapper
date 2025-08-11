@@ -31,6 +31,15 @@ express-source/
 nest-source/
 hono-source/
 node-source/
+# Custom Fastify extractions (for advanced wrappers, utilities, types, etc.)
+fastify/
+# Framework Source Clones (root)
+fastify/
+react/
+express/
+nest/
+hono/
+node/
 
 # Framework Development
 framework/dist/
