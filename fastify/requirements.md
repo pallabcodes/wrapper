@@ -1,14 +1,21 @@
-Extract everything that could be extracted from the source-code of fastify i.e. at #fastify-source i.e. 
+# About our copmany:
 
-a. either unviersally repurposesalbe eleshwere or I can use native implmenation and customize it to fit my project's usecase e.g. I want to do somthing with autoloader or I might take a native feture tweak or create wrapper or modify as needed for better or simpler etc.
+We are a high-growth engineer-first culture with cracked devs that works uprising sillicon valley produc-based companies and as well top tier product based companies like Atlassian, Stripe, Google, Amazon, Shopfiy etc.
 
-b. advnaced typescript stuff
+# Requirements: 
 
+- We have received one of the projects where we have been told Fastfiy
 
-GOAL: is to use `fastify` than even the creator himslef didn't quite expect or explore so for that I need to know nitty-gritty of it
+- We are not allowed to any OOP whatsoever and so we will only be using function programming which also matches the FASTIFY ecosystem
 
+- This sandbox/folder structure + architechture should be able to handle 100 as well 1M+ concurrent users and MAU could be 1000 or 10M+, DAU could be 1000 and as well 100K-1M
 
-Again, extract everything that should be extracted and I will REPEAT again whatever you are extracting either it should be universally re-purposable or should help me to customize/modify/extend/wrap etc as need
+- We must ensure a proper hybrid or moden monolithic architechture where any of its module could be instantly extracted for serverless and microservices architechture
+
+- Instant readability and debuaggablity and even when comparing to enterprise frameworks this folder strcuture and architechure should not loose
+
+- Should have proper CI/CD (for now only on main branch), PM2 configs, proper docker setup with docker-compose
+
 
 # Requirements
 
@@ -19,7 +26,9 @@ Our company specializes in enterprise e-commerce solutions serving:
 - **Large Scale**: Shopify/Amazon-level platforms (1M+ customers, 50K+ concurrent users)
 - **Mid Scale**: Growing businesses (10K customers, 100-1K concurrent users)
 
-## Core E-commerce Features (Scale-Agnostic)
+- PHASE 1 ends here
+
+## Core E-commerce Features (Scale-Agnostic) : PHASE 2 STARTS HERE
 - Real-time chat system
 - Inventory & warehouse management
 - Email/notification system
@@ -45,6 +54,8 @@ The client seeks engineers who think beyond conventional solutions - similar to 
 - Build custom solutions when existing tools have limitations
 - Optimize beyond documented performance limits
 - Create ingenious workarounds for complex bottlenecks
+- Can write C++ add on if needed to use here and integrate with FASTIFY
+- Use Research Papers, rare and uncommon or customized data strucutures data strucutues and algorithms to solve the problem most efficiently similar to Google/Sillicon valley engineers does in a tricky real world sitation of their project
 
 ### Technical Requirements
 - **Modular Monolith**: Each module extractable to microservices instantly
@@ -167,3 +178,20 @@ src/
 
 ## FINAL WARNING
 **This is not a typical development project. This requires Silicon Valley-level engineering excellence. Generic solutions will result in immediate contract rejection. Every aspect will be evaluated against Google/Shopify engineering standards.**
+
+WE CAN PLACES ALL OF THESE PROPERLY WITHIN #fastify directory
+
+# Objectives: We have given two PHASES here
+
+- Extract everything that could be extracted from the source-code of fastify i.e. at #fastify-source i.e. 
+
+- Either universally repurposable eleshwere or I can use native implmenation or built my c++ add on that will work with Node.js therefore FASTIFY and customize it to fit my project's usecase e.g. I want to do somthing with autoloader or I might take a native feture tweak or create wrapper or modify as needed for better or simpler etc.
+
+- Extract all meaningul advnaced typescript stuff, we can make native type defintion better or easier to use as needed and also if needed use .d.ts and such
+
+
+GOAL: is to use `fastify` than even the creator himslef didn't quite expect or explore so for that I need to know nitty-gritty of it
+
+
+Again, extract everything that should be extracted and I will REPEAT again whatever you are extracting either it should be universally re-purposable or should help me to customize/modify/extend/wrap etc as need
+
