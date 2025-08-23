@@ -1,0 +1,676 @@
+/**
+ * Product Domain - Functional Implementation
+ * 
+ * Pure functional domain model for products using DDD patterns.
+ * Zero OOP, immutable data structures, event sourcing ready.
+ */
+
+import { z } from 'zod'
+import { pipe } from 'fp-ts/lib/function'
+import * as E from 'fp-ts/lib/Either'
+import * as O from 'fp-ts/lib/Option'
+import * as TE from 'fp-ts/lib/TaskEither'
+import { 
+  createAggregateRoot,
+  applyEvent,
+  createValidationError,
+  createBusinessRuleError,
+  validateWith,
+  validateBusinessRule,
+  type DomainError,
+  type DomainEvent,
+  type AggregateRoot,
+  type DomainResult,
+  type AsyncResult
+} from '@/shared/functionalArchitecture.js'
+
+// ============================================================================
+// VALUE OBJECTS
+// ============================================================================
+
+export const ProductIdSchema = z.string().uuid()
+export type ProductId = z.infer<typeof ProductIdSchema>
+
+export const SkuSchema = z.string().min(3).max(50).regex(/^[A-Z0-9-]+$/)
+export type Sku = z.infer<typeof SkuSchema>
+
+export const PriceSchema = z.object({
+  amount: z.number().positive().max(999999.99),
+  currency: z.string().length(3).toUpperCase()
+})
+export type Price = z.infer<typeof PriceSchema>
+
+export const DimensionsSchema = z.object({
+  length: z.number().positive(),
+  width: z.number().positive(),
+  height: z.number().positive(),
+  unit: z.enum(['cm', 'in', 'mm'])
+})
+export type Dimensions = z.infer<typeof DimensionsSchema>
+
+export const WeightSchema = z.object({
+  value: z.number().positive(),
+  unit: z.enum(['kg', 'lb', 'g', 'oz'])
+})
+export type Weight = z.infer<typeof WeightSchema>
+
+export const ProductStatusSchema = z.enum([
+  'draft',
+  'active',
+  'inactive',
+  'discontinued',
+  'out_of_stock'
+])
+export type ProductStatus = z.infer<typeof ProductStatusSchema>
+
+export const CategorySchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(100),
+  slug: z.string().min(1).max(100),
+  parentId: z.string().uuid().optional()
+})
+export type Category = z.infer<typeof CategorySchema>
+
+export const TagSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(50),
+  color: z.string().regex(/^#[0-9A-F]{6}$/i).optional()
+})
+export type Tag = z.infer<typeof TagSchema>
+
+export const InventorySchema = z.object({
+  stockQuantity: z.number().int().min(0),
+  reservedQuantity: z.number().int().min(0).default(0),
+  reorderLevel: z.number().int().min(0).default(10),
+  maxStockLevel: z.number().int().positive().optional(),
+  trackInventory: z.boolean().default(true),
+  allowBackorder: z.boolean().default(false),
+  lastStockUpdate: z.date()
+})
+export type Inventory = z.infer<typeof InventorySchema>
+
+export const ProductImageSchema = z.object({
+  id: z.string().uuid(),
+  url: z.string().url(),
+  altText: z.string().optional(),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+  fileSize: z.number().int().positive().optional(),
+  mimeType: z.string().optional(),
+  isPrimary: z.boolean().default(false),
+  sortOrder: z.number().int().min(0).default(0)
+})
+export type ProductImage = z.infer<typeof ProductImageSchema>
+
+export const ProductVariantSchema = z.object({
+  id: z.string().uuid(),
+  sku: SkuSchema,
+  name: z.string().min(1).max(255),
+  price: PriceSchema,
+  compareAtPrice: PriceSchema.optional(),
+  inventory: InventorySchema,
+  attributes: z.record(z.string()),
+  images: z.array(ProductImageSchema).default([]),
+  isActive: z.boolean().default(true)
+})
+export type ProductVariant = z.infer<typeof ProductVariantSchema>
+
+export const SeoSchema = z.object({
+  title: z.string().max(60).optional(),
+  description: z.string().max(160).optional(),
+  keywords: z.array(z.string()).default([]),
+  canonicalUrl: z.string().url().optional(),
+  noIndex: z.boolean().default(false),
+  noFollow: z.boolean().default(false)
+})
+export type Seo = z.infer<typeof SeoSchema>
+
+// ============================================================================
+// PRODUCT AGGREGATE STATE
+// ============================================================================
+
+export const ProductStateSchema = z.object({
+  id: ProductIdSchema,
+  sku: SkuSchema,
+  name: z.string().min(1).max(255),
+  description: z.string().max(5000).optional(),
+  shortDescription: z.string().max(500).optional(),
+  slug: z.string().min(1).max(255),
+  status: ProductStatusSchema,
+  price: PriceSchema,
+  compareAtPrice: PriceSchema.optional(),
+  cost: PriceSchema.optional(),
+  inventory: InventorySchema,
+  dimensions: DimensionsSchema.optional(),
+  weight: WeightSchema.optional(),
+  categories: z.array(CategorySchema).default([]),
+  tags: z.array(TagSchema).default([]),
+  images: z.array(ProductImageSchema).default([]),
+  variants: z.array(ProductVariantSchema).default([]),
+  attributes: z.record(z.string()).default({}),
+  seo: SeoSchema.optional(),
+  isFeatured: z.boolean().default(false),
+  isDigital: z.boolean().default(false),
+  requiresShipping: z.boolean().default(true),
+  taxable: z.boolean().default(true),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  publishedAt: z.date().optional()
+})
+
+export type ProductState = z.infer<typeof ProductStateSchema>
+
+// ============================================================================
+// DOMAIN EVENTS
+// ============================================================================
+
+export const ProductCreatedEventSchema = z.object({
+  type: z.literal('ProductCreated'),
+  productId: ProductIdSchema,
+  sku: SkuSchema,
+  name: z.string(),
+  price: PriceSchema,
+  createdBy: z.string().uuid()
+})
+
+export const ProductUpdatedEventSchema = z.object({
+  type: z.literal('ProductUpdated'),
+  productId: ProductIdSchema,
+  changes: z.record(z.unknown()),
+  updatedBy: z.string().uuid()
+})
+
+export const ProductStatusChangedEventSchema = z.object({
+  type: z.literal('ProductStatusChanged'),
+  productId: ProductIdSchema,
+  oldStatus: ProductStatusSchema,
+  newStatus: ProductStatusSchema,
+  changedBy: z.string().uuid()
+})
+
+export const ProductInventoryUpdatedEventSchema = z.object({
+  type: z.literal('ProductInventoryUpdated'),
+  productId: ProductIdSchema,
+  oldQuantity: z.number(),
+  newQuantity: z.number(),
+  reason: z.enum(['sale', 'restock', 'adjustment', 'return']),
+  updatedBy: z.string().uuid()
+})
+
+export const ProductPriceChangedEventSchema = z.object({
+  type: z.literal('ProductPriceChanged'),
+  productId: ProductIdSchema,
+  oldPrice: PriceSchema,
+  newPrice: PriceSchema,
+  changedBy: z.string().uuid()
+})
+
+export type ProductEventPayload = 
+  | z.infer<typeof ProductCreatedEventSchema>
+  | z.infer<typeof ProductUpdatedEventSchema>
+  | z.infer<typeof ProductStatusChangedEventSchema>
+  | z.infer<typeof ProductInventoryUpdatedEventSchema>
+  | z.infer<typeof ProductPriceChangedEventSchema>
+
+export type ProductEvent = DomainEvent & {
+  aggregateType: 'Product'
+}
+
+// Event Constructors
+export const createProductCreatedEvent = (
+  aggregateId: string,
+  version: number,
+  payload: z.infer<typeof ProductCreatedEventSchema>
+): ProductEvent => ({
+  id: crypto.randomUUID(),
+  type: payload.type,
+  aggregateId,
+  aggregateType: 'Product',
+  version,
+  occurredAt: new Date(),
+  payload,
+  metadata: {}
+})
+
+export const createProductUpdatedEvent = (
+  aggregateId: string,
+  version: number,
+  payload: z.infer<typeof ProductUpdatedEventSchema>
+): ProductEvent => ({
+  id: crypto.randomUUID(),
+  type: payload.type,
+  aggregateId,
+  aggregateType: 'Product',
+  version,
+  occurredAt: new Date(),
+  payload,
+  metadata: {}
+})
+
+export const createProductStatusChangedEvent = (
+  aggregateId: string,
+  version: number,
+  payload: z.infer<typeof ProductStatusChangedEventSchema>
+): ProductEvent => ({
+  id: crypto.randomUUID(),
+  type: payload.type,
+  aggregateId,
+  aggregateType: 'Product',
+  version,
+  occurredAt: new Date(),
+  payload,
+  metadata: {}
+})
+
+export const createProductInventoryUpdatedEvent = (
+  aggregateId: string,
+  version: number,
+  payload: z.infer<typeof ProductInventoryUpdatedEventSchema>
+): ProductEvent => ({
+  id: crypto.randomUUID(),
+  type: payload.type,
+  aggregateId,
+  aggregateType: 'Product',
+  version,
+  occurredAt: new Date(),
+  payload,
+  metadata: {}
+})
+
+export const createProductPriceChangedEvent = (
+  aggregateId: string,
+  version: number,
+  payload: z.infer<typeof ProductPriceChangedEventSchema>
+): ProductEvent => ({
+  id: crypto.randomUUID(),
+  type: payload.type,
+  aggregateId,
+  aggregateType: 'Product',
+  version,
+  occurredAt: new Date(),
+  payload,
+  metadata: {}
+})
+
+// ============================================================================
+// BUSINESS RULES (Pure Functions)
+// ============================================================================
+
+export const validateProductName = (name: string): DomainResult<string> =>
+  pipe(
+    validateWith(z.string().min(1).max(255))(name),
+    E.chain(validName =>
+      pipe(
+        validateBusinessRule(
+          'unique-product-name',
+          validName.length >= 3,
+          'Product name must be at least 3 characters long'
+        ),
+        E.map(() => validName)
+      )
+    )
+  )
+
+export const validateSku = (sku: string): DomainResult<Sku> =>
+  pipe(
+    validateWith(SkuSchema)(sku),
+    E.chain(validSku =>
+      pipe(
+        validateBusinessRule(
+          'sku-format',
+          /^[A-Z0-9-]+$/.test(validSku),
+          'SKU must contain only uppercase letters, numbers, and hyphens'
+        ),
+        E.map(() => validSku)
+      )
+    )
+  )
+
+export const validatePrice = (price: Price): DomainResult<Price> =>
+  pipe(
+    validateWith(PriceSchema)(price),
+    E.chain(validPrice =>
+      pipe(
+        validateBusinessRule(
+          'positive-price',
+          validPrice.amount > 0,
+          'Price must be positive',
+          { price: validPrice }
+        ),
+        E.map(() => validPrice)
+      )
+    )
+  )
+
+export const validateInventoryLevel = (inventory: Inventory): DomainResult<Inventory> =>
+  pipe(
+    validateWith(InventorySchema)(inventory),
+    E.chain(validInventory =>
+      pipe(
+        validateBusinessRule(
+          'reserved-not-exceed-stock',
+          (validInventory.reservedQuantity ?? 0) <= validInventory.stockQuantity,
+          'Reserved quantity cannot exceed stock quantity',
+          { inventory: validInventory }
+        ),
+        E.map(() => validInventory)
+      )
+    )
+  )
+
+export const canActivateProduct = (product: ProductState): DomainResult<ProductState> =>
+  pipe(
+    validateBusinessRule(
+      'has-name',
+      product.name.length > 0,
+      'Product must have a name to be activated'
+    ),
+    E.chain(() =>
+      validateBusinessRule(
+        'has-price',
+        product.price.amount > 0,
+        'Product must have a positive price to be activated'
+      )
+    ),
+    E.chain(() =>
+      validateBusinessRule(
+        'has-images',
+        product.images.length > 0,
+        'Product must have at least one image to be activated'
+      )
+    ),
+    E.map(() => product)
+  )
+
+export const canDeactivateProduct = (product: ProductState): DomainResult<ProductState> =>
+  pipe(
+    validateBusinessRule(
+      'not-already-inactive',
+      product.status !== 'inactive',
+      'Product is already inactive'
+    ),
+    E.map(() => product)
+  )
+
+export const calculateAvailableStock = (inventory: Inventory): number =>
+  Math.max(0, inventory.stockQuantity - inventory.reservedQuantity)
+
+export const isInStock = (inventory: Inventory): boolean =>
+  calculateAvailableStock(inventory) > 0 || inventory.allowBackorder
+
+export const needsReorder = (inventory: Inventory): boolean =>
+  inventory.trackInventory && 
+  inventory.stockQuantity <= inventory.reorderLevel
+
+// ============================================================================
+// AGGREGATE COMMANDS (Pure Functions)
+// ============================================================================
+
+export interface CreateProductCommand {
+  id: ProductId
+  sku: Sku
+  name: string
+  description?: string
+  price: Price
+  inventory: Inventory
+  createdBy: string
+}
+
+export interface UpdateProductCommand {
+  productId: ProductId
+  changes: Partial<ProductState>
+  updatedBy: string
+}
+
+export interface ChangeProductStatusCommand {
+  productId: ProductId
+  newStatus: ProductStatus
+  changedBy: string
+}
+
+export interface UpdateInventoryCommand {
+  productId: ProductId
+  quantity: number
+  reason: 'sale' | 'restock' | 'adjustment' | 'return'
+  updatedBy: string
+}
+
+export interface ChangePriceCommand {
+  productId: ProductId
+  newPrice: Price
+  changedBy: string
+}
+
+// ============================================================================
+// AGGREGATE FUNCTIONS
+// ============================================================================
+
+export const createProduct = (command: CreateProductCommand): DomainResult<AggregateRoot<ProductState, ProductEvent>> =>
+  pipe(
+    E.Do,
+    E.bind('validatedName', () => validateProductName(command.name)),
+    E.bind('validatedSku', () => validateSku(command.sku)),
+    E.bind('validatedPrice', () => validatePrice(command.price)),
+    E.bind('validatedInventory', () => validateInventoryLevel(command.inventory)),
+    E.map(({ validatedName, validatedSku, validatedPrice, validatedInventory }) => {
+      const now = new Date()
+      const productState: ProductState = {
+        id: command.id,
+        sku: validatedSku,
+        name: validatedName,
+        description: command.description,
+        slug: generateSlug(validatedName),
+        status: 'draft',
+        price: validatedPrice,
+        inventory: validatedInventory,
+        categories: [],
+        tags: [],
+        images: [],
+        variants: [],
+        attributes: {},
+        isFeatured: false,
+        isDigital: false,
+        requiresShipping: true,
+        taxable: true,
+        createdAt: now,
+        updatedAt: now
+      }
+
+      const event: ProductEvent = {
+        type: 'ProductCreated',
+        productId: command.id,
+        sku: validatedSku,
+        name: validatedName,
+        price: validatedPrice,
+        createdBy: command.createdBy
+      }
+
+      return applyEvent(
+        createAggregateRoot(command.id, productState),
+        { ...event, id: generateEventId(), aggregateId: command.id, aggregateType: 'Product', version: 1, occurredAt: now, payload: event, metadata: {} } as DomainEvent,
+        (state, _) => state
+      )
+    })
+  )
+
+export const updateProduct = (product: AggregateRoot<ProductState, ProductEvent>, command: UpdateProductCommand): DomainResult<AggregateRoot<ProductState, ProductEvent>> =>
+  pipe(
+    validateBusinessRule(
+      'product-exists',
+      product.state.id === command.productId,
+      'Product not found'
+    )(product),
+    E.map(p => {
+      const now = new Date()
+      const updatedState: ProductState = {
+        ...p.state,
+        ...command.changes,
+        updatedAt: now
+      }
+
+      const event: ProductEvent = {
+        type: 'ProductUpdated',
+        productId: command.productId,
+        changes: command.changes,
+        updatedBy: command.updatedBy
+      }
+
+      return applyEvent(
+        p,
+        { ...event, id: generateEventId(), aggregateId: command.productId, aggregateType: 'Product', version: p.version + 1, occurredAt: now, payload: event, metadata: {} } as DomainEvent,
+        (state, _) => updatedState
+      )
+    })
+  )
+
+export const changeProductStatus = (product: AggregateRoot<ProductState, ProductEvent>, command: ChangeProductStatusCommand): DomainResult<AggregateRoot<ProductState, ProductEvent>> =>
+  pipe(
+    validateBusinessRule(
+      'different-status',
+      product.state.status !== command.newStatus,
+      'Product already has this status'
+    )(product),
+    E.chain(p => 
+      command.newStatus === 'active' 
+        ? canActivateProduct(p.state)
+        : command.newStatus === 'inactive'
+        ? canDeactivateProduct(p.state)
+        : E.right(p.state)
+    ),
+    E.map(state => {
+      const now = new Date()
+      const updatedState: ProductState = {
+        ...state,
+        status: command.newStatus,
+        updatedAt: now,
+        publishedAt: command.newStatus === 'active' ? now : state.publishedAt
+      }
+
+      const event: ProductEvent = {
+        type: 'ProductStatusChanged',
+        productId: command.productId,
+        oldStatus: product.state.status,
+        newStatus: command.newStatus,
+        changedBy: command.changedBy
+      }
+
+      return applyEvent(
+        product,
+        { ...event, id: generateEventId(), aggregateId: command.productId, aggregateType: 'Product', version: product.version + 1, occurredAt: now, payload: event, metadata: {} } as DomainEvent,
+        (_, __) => updatedState
+      )
+    })
+  )
+
+export const updateInventory = (product: AggregateRoot<ProductState, ProductEvent>, command: UpdateInventoryCommand): DomainResult<AggregateRoot<ProductState, ProductEvent>> =>
+  pipe(
+    validateBusinessRule(
+      'valid-quantity',
+      command.quantity >= 0,
+      'Inventory quantity cannot be negative'
+    )(product),
+    E.map(p => {
+      const now = new Date()
+      const oldQuantity = p.state.inventory.stockQuantity
+      const updatedInventory: Inventory = {
+        ...p.state.inventory,
+        stockQuantity: command.quantity,
+        lastStockUpdate: now
+      }
+
+      const updatedState: ProductState = {
+        ...p.state,
+        inventory: updatedInventory,
+        updatedAt: now
+      }
+
+      const event: ProductEvent = {
+        type: 'ProductInventoryUpdated',
+        productId: command.productId,
+        oldQuantity,
+        newQuantity: command.quantity,
+        reason: command.reason,
+        updatedBy: command.updatedBy
+      }
+
+      return applyEvent(
+        p,
+        { ...event, id: generateEventId(), aggregateId: command.productId, aggregateType: 'Product', version: p.version + 1, occurredAt: now, payload: event, metadata: {} } as DomainEvent,
+        (_, __) => updatedState
+      )
+    })
+  )
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+const generateSlug = (name: string): string =>
+  name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim()
+
+const generateEventId = (): string => {
+  // In a real implementation, use uuid library
+  return Math.random().toString(36).substring(2) + Date.now().toString(36)
+}
+
+// ============================================================================
+// REPOSITORY INTERFACE
+// ============================================================================
+
+export interface ProductRepository {
+  readonly findById: (id: ProductId) => AsyncResult<O.Option<AggregateRoot<ProductState, ProductEvent>>>
+  readonly findBySku: (sku: Sku) => AsyncResult<O.Option<AggregateRoot<ProductState, ProductEvent>>>
+  readonly save: (product: AggregateRoot<ProductState, ProductEvent>) => AsyncResult<void>
+  readonly delete: (id: ProductId) => AsyncResult<void>
+}
+
+export interface ProductReadRepository {
+  readonly findById: (id: ProductId) => AsyncResult<O.Option<ProductState>>
+  readonly findMany: (criteria: ProductSearchCriteria) => AsyncResult<readonly ProductState[]>
+  readonly count: (criteria: ProductSearchCriteria) => AsyncResult<number>
+  readonly findFeatured: (limit?: number) => AsyncResult<readonly ProductState[]>
+  readonly search: (query: string, limit?: number) => AsyncResult<readonly ProductState[]>
+}
+
+export interface ProductSearchCriteria {
+  readonly status?: ProductStatus
+  readonly categories?: readonly string[]
+  readonly tags?: readonly string[]
+  readonly priceRange?: readonly [number, number]
+  readonly inStock?: boolean
+  readonly limit?: number
+  readonly offset?: number
+  readonly sortBy?: 'name' | 'price' | 'createdAt' | 'updatedAt'
+  readonly sortOrder?: 'asc' | 'desc'
+}
+
+export default {
+  // Schemas
+  ProductIdSchema,
+  SkuSchema,
+  PriceSchema,
+  ProductStateSchema,
+  ProductStatusSchema,
+  
+  // Business rules
+  validateProductName,
+  validateSku,
+  validatePrice,
+  validateInventoryLevel,
+  canActivateProduct,
+  canDeactivateProduct,
+  calculateAvailableStock,
+  isInStock,
+  needsReorder,
+  
+  // Aggregate functions
+  createProduct,
+  updateProduct,
+  changeProductStatus,
+  updateInventory
+}
