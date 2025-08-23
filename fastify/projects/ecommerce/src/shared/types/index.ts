@@ -105,6 +105,11 @@ export interface ErrorResponse extends BaseResponse {
   }
 }
 
+// API Response type aliases for backward compatibility
+export type ApiResponse<T = unknown> = SuccessResponse<T> | ErrorResponse
+export type ApiSuccessResponse<T = unknown> = SuccessResponse<T>
+export type ApiErrorResponse = ErrorResponse
+
 export interface PaginationMeta {
   readonly page: number
   readonly limit: number

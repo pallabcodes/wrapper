@@ -7,9 +7,6 @@
 
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { z } from 'zod'
-import * as TE from 'fp-ts/TaskEither'
-import * as E from 'fp-ts/Either'
-import { pipe } from 'fp-ts/function'
 import { ResponseBuilder, BaseController } from '../../shared/response/index.js'
 import type { 
   ProductId, 
@@ -154,116 +151,116 @@ const mockProducts: Product[] = [
 
 const ProductService = {
   // Create product
-  create: (productData: z.infer<typeof CreateProductSchema>, userId: UserId): TE.TaskEither<Error, Product> =>
-    TE.tryCatch(
-      async () => {
-        const newProduct: Product = {
-          id: `prod_${Date.now()}` as ProductId,
-          name: productData.name,
-          description: productData.description,
-          price: productData.price,
-          currency: productData.currency,
-          category: productData.category,
-          brand: productData.brand,
-          sku: productData.sku,
-          inventory: productData.inventory,
-          specifications: productData.specifications,
-          images: productData.images,
-          tags: productData.tags,
-          status: productData.status,
-          seo: productData.seo,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          createdBy: userId
-        }
-        
-        mockProducts.push(newProduct)
-        return newProduct
-      },
-      (error) => new Error(`Failed to create product: ${error}`)
-    ),
+  create: async (productData: z.infer<typeof CreateProductSchema>, userId: UserId): Promise<Product> => {
+    try {
+      const newProduct: Product = {
+        id: `prod_${Date.now()}` as ProductId,
+        name: productData.name,
+        description: productData.description,
+        price: productData.price,
+        currency: productData.currency,
+        category: productData.category,
+        brand: productData.brand,
+        sku: productData.sku,
+        inventory: productData.inventory,
+        specifications: productData.specifications,
+        images: productData.images,
+        tags: productData.tags,
+        status: productData.status,
+        seo: productData.seo,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdBy: userId
+      }
+      
+      mockProducts.push(newProduct)
+      return newProduct
+    } catch (error) {
+      throw new Error(`Failed to create product: ${error}`)
+    }
+  },
 
   // Get product by ID
-  findById: (id: ProductId): TE.TaskEither<Error, Product> =>
-    TE.tryCatch(
-      async () => {
-        const product = mockProducts.find(p => p.id === id)
-        if (!product) {
-          throw new Error('Product not found')
-        }
-        return product
-      },
-      (error) => new Error(`Failed to find product: ${error}`)
-    ),
+  findById: async (id: ProductId): Promise<Product> => {
+    try {
+      const product = mockProducts.find(p => p.id === id)
+      if (!product) {
+        throw new Error('Product not found')
+      }
+      return product
+    } catch (error) {
+      throw new Error(`Failed to find product: ${error}`)
+    }
+  },
 
   // Get products with filters
-  findMany: (filters: ProductFilters): TE.TaskEither<Error, PaginatedResponse<Product>> =>
-    TE.tryCatch(
-      async () => {
-        let filteredProducts = [...mockProducts]
+  findMany: async (filters: ProductFilters): Promise<PaginatedResponse<Product>> => {
+    try {
+      let filteredProducts = [...mockProducts]
 
-        // Apply filters
-        if (filters.category) {
-          filteredProducts = filteredProducts.filter(p => 
-            p.category.toLowerCase().includes(filters.category!.toLowerCase())
-          )
+      // Apply filters
+      if (filters.category) {
+        filteredProducts = filteredProducts.filter(p => 
+          p.category.toLowerCase().includes(filters.category!.toLowerCase())
+        )
+      }
+
+      if (filters.brand) {
+        filteredProducts = filteredProducts.filter(p => 
+          p.brand?.toLowerCase().includes(filters.brand!.toLowerCase())
+        )
+      }
+
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase()
+        filteredProducts = filteredProducts.filter(p => 
+          p.name.toLowerCase().includes(searchTerm) ||
+          p.description.toLowerCase().includes(searchTerm) ||
+          p.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+        )
+      }
+
+      if (filters.minPrice) {
+        filteredProducts = filteredProducts.filter(p => p.price >= filters.minPrice!)
+      }
+
+      if (filters.maxPrice) {
+        filteredProducts = filteredProducts.filter(p => p.price <= filters.maxPrice!)
+      }
+
+      if (filters.status) {
+        filteredProducts = filteredProducts.filter(p => p.status === filters.status)
+      }
+
+      // Simple sort by createdAt for now
+      filteredProducts.sort((a, b) => {
+        if (filters.sortOrder === 'asc') {
+          return a.createdAt > b.createdAt ? 1 : -1
+        } else {
+          return a.createdAt < b.createdAt ? 1 : -1
         }
+      })
 
-        if (filters.brand) {
-          filteredProducts = filteredProducts.filter(p => 
-            p.brand?.toLowerCase().includes(filters.brand!.toLowerCase())
-          )
+      // Pagination
+      const total = filteredProducts.length
+      const offset = (filters.page - 1) * filters.limit
+      const paginatedProducts = filteredProducts.slice(offset, offset + filters.limit)
+
+      return {
+        data: paginatedProducts,
+        pagination: {
+          page: filters.page,
+          limit: filters.limit,
+          total,
+          totalPages: Math.ceil(total / filters.limit),
+          hasNext: filters.page * filters.limit < total,
+          hasPrev: filters.page > 1
         }
-
-        if (filters.search) {
-          const searchTerm = filters.search.toLowerCase()
-          filteredProducts = filteredProducts.filter(p => 
-            p.name.toLowerCase().includes(searchTerm) ||
-            p.description.toLowerCase().includes(searchTerm) ||
-            p.tags.some(tag => tag.toLowerCase().includes(searchTerm))
-          )
-        }
-
-        if (filters.minPrice) {
-          filteredProducts = filteredProducts.filter(p => p.price >= filters.minPrice!)
-        }
-
-        if (filters.maxPrice) {
-          filteredProducts = filteredProducts.filter(p => p.price <= filters.maxPrice!)
-        }
-
-        if (filters.status) {
-          filteredProducts = filteredProducts.filter(p => p.status === filters.status)
-        }
-
-        // Simple sort by createdAt for now
-        filteredProducts.sort((a, b) => {
-          if (filters.sortOrder === 'asc') {
-            return a.createdAt > b.createdAt ? 1 : -1
-          } else {
-            return a.createdAt < b.createdAt ? 1 : -1
-          }
-        })
-
-        // Pagination
-        const total = filteredProducts.length
-        const offset = (filters.page - 1) * filters.limit
-        const paginatedProducts = filteredProducts.slice(offset, offset + filters.limit)
-
-        return {
-          data: paginatedProducts,
-          pagination: {
-            page: filters.page,
-            limit: filters.limit,
-            total,
-            totalPages: Math.ceil(total / filters.limit),
-            hasNext: filters.page * filters.limit < total,
-            hasPrev: filters.page > 1
-          }
-        }
-      },
-      (error) => new Error(`Failed to fetch products: ${error}`)
-    )
+      }
+    } catch (error) {
+      throw new Error(`Failed to fetch products: ${error}`)
+    }
+  }
 }
 
 // ============================================================================
@@ -277,28 +274,28 @@ export class ProductController extends BaseController {
     try {
       const productData = CreateProductSchema.parse(request.body)
       
-      const result = await ProductService.create(productData, 'user_001' as UserId)()
-      
-      if (E.isLeft(result)) {
-        return reply.status(500).send(
-          ResponseBuilder
-            .create()
-            .error('PRODUCT_CREATE_ERROR', result.left.message)
-            .build()
-        )
-      }
+      const result = await ProductService.create(productData, 'user_001' as UserId)
       
       return reply.status(201).send(
         ResponseBuilder
           .create()
-          .created(result.right)
+          .created(result)
           .build()
       )
     } catch (error) {
-      return reply.status(400).send(
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send(
+          ResponseBuilder
+            .create()
+            .error('VALIDATION_ERROR', 'Invalid product data')
+            .build()
+        )
+      }
+      
+      return reply.status(500).send(
         ResponseBuilder
           .create()
-          .error('VALIDATION_ERROR', 'Invalid product data')
+          .error('PRODUCT_CREATE_ERROR', error instanceof Error ? error.message : 'Unknown error')
           .build()
       )
     }
@@ -309,28 +306,34 @@ export class ProductController extends BaseController {
     try {
       const filters = ProductQuerySchema.parse(request.query)
       
-      const result = await ProductService.findMany(filters)()
-      
-      if (E.isLeft(result)) {
-        return reply.status(500).send(
-          ResponseBuilder
-            .create()
-            .error('PRODUCTS_FETCH_ERROR', result.left.message)
-            .build()
-        )
-      }
+      const result = await ProductService.findMany(filters)
       
       return reply.status(200).send(
         ResponseBuilder
           .create()
-          .success(result.right.data)
+          .success(result.data)
+          .withPagination({
+            page: result.pagination.page,
+            limit: result.pagination.limit,
+            offset: (result.pagination.page - 1) * result.pagination.limit,
+            total: result.pagination.total
+          })
           .build()
       )
     } catch (error) {
-      return reply.status(400).send(
+      if (error instanceof z.ZodError) {
+        return reply.status(400).send(
+          ResponseBuilder
+            .create()
+            .error('VALIDATION_ERROR', 'Invalid query parameters')
+            .build()
+        )
+      }
+      
+      return reply.status(500).send(
         ResponseBuilder
           .create()
-          .error('VALIDATION_ERROR', 'Invalid query parameters')
+          .error('PRODUCTS_FETCH_ERROR', error instanceof Error ? error.message : 'Unknown error')
           .build()
       )
     }
@@ -339,36 +342,28 @@ export class ProductController extends BaseController {
   // Get product by ID
   public async getProduct(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     try {
-      const result = await ProductService.findById(request.params.id as ProductId)()
-      
-      if (E.isLeft(result)) {
-        if (result.left.message.includes('not found')) {
-          return reply.status(404).send(
-            ResponseBuilder
-              .create()
-              .error('PRODUCT_NOT_FOUND', 'Product not found')
-              .build()
-          )
-        }
-        return reply.status(500).send(
-          ResponseBuilder
-            .create()
-            .error('PRODUCT_FETCH_ERROR', result.left.message)
-            .build()
-        )
-      }
+      const result = await ProductService.findById(request.params.id as ProductId)
       
       return reply.status(200).send(
         ResponseBuilder
           .create()
-          .success(result.right)
+          .success(result)
           .build()
       )
     } catch (error) {
+      if (error instanceof Error && error.message.includes('not found')) {
+        return reply.status(404).send(
+          ResponseBuilder
+            .create()
+            .error('PRODUCT_NOT_FOUND', 'Product not found')
+            .build()
+        )
+      }
+      
       return reply.status(500).send(
         ResponseBuilder
           .create()
-          .error('INTERNAL_ERROR', 'An unexpected error occurred')
+          .error('PRODUCT_FETCH_ERROR', error instanceof Error ? error.message : 'Unknown error')
           .build()
       )
     }

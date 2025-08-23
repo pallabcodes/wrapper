@@ -1,491 +1,317 @@
 /**
- * Core Functional Architecture Foundation
+ * Functional Architecture - Pure Functional Programming Approach
  * 
- * Google-grade functional programming patterns for enterprise ecommerce platform.
- * Zero OOP, pure functional approach with advanced type safety and composability.
- * 
- * Design Principles:
- * - Pure functions only
- * - Immutable data structures
- * - Railway-oriented programming
- * - Dependency injection through composition
- * - Zero side effects in core logic
- * - Type-driven development
+ * Enterprise-grade functional architecture without OOP patterns
+ * Designed for Fastify ecosystem with instant microservice extraction
  */
-
-import { pipe } from 'fp-ts/lib/function'
-import * as E from 'fp-ts/lib/Either'
-import * as O from 'fp-ts/lib/Option'
-import * as TE from 'fp-ts/lib/TaskEither'
-import * as T from 'fp-ts/lib/Task'
-import * as A from 'fp-ts/lib/Array'
-import * as R from 'fp-ts/lib/Record'
-import { z } from 'zod'
 
 // ============================================================================
-// CORE TYPE SYSTEM
+// CORE TYPES
 // ============================================================================
 
-/**
- * Domain Error Types - Railway Oriented Programming
- */
-export const DomainErrorSchema = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('ValidationError'),
-    field: z.string(),
-    message: z.string(),
-    value: z.unknown()
-  }),
-  z.object({
-    type: z.literal('BusinessRuleError'),
-    rule: z.string(),
-    message: z.string(),
-    context: z.record(z.unknown())
-  }),
-  z.object({
-    type: z.literal('NotFoundError'),
-    resource: z.string(),
-    identifier: z.string().or(z.number())
-  }),
-  z.object({
-    type: z.literal('ConflictError'),
-    resource: z.string(),
-    message: z.string()
-  }),
-  z.object({
-    type: z.literal('AuthorizationError'),
-    action: z.string(),
-    resource: z.string(),
-    userId: z.string()
-  }),
-  z.object({
-    type: z.literal('InfrastructureError'),
-    service: z.string(),
-    message: z.string(),
-    originalError: z.unknown()
-  }),
-  z.object({
-    type: z.literal('UnknownError'),
-    message: z.string(),
-    originalError: z.unknown()
-  })
-])
+export type Result<T> = 
+  | { type: 'success'; value: T }
+  | { type: 'error'; error: string }
 
-export type DomainError = z.infer<typeof DomainErrorSchema>
+export type AsyncResult<T> = Promise<Result<T>>
 
-/**
- * Result Type - Either with enhanced error handling
- */
-export type Result<E, A> = E.Either<E, A>
-export type DomainResult<A> = Result<DomainError, A>
-export type AsyncResult<A> = TE.TaskEither<DomainError, A>
+export type DomainResult<T> = Result<T>
 
-/**
- * Event System Types
- */
-export const DomainEventSchema = z.object({
-  id: z.string().uuid(),
-  type: z.string(),
-  aggregateId: z.string(),
-  aggregateType: z.string(),
-  version: z.number().int().positive(),
-  occurredAt: z.date(),
-  payload: z.record(z.unknown()),
-  metadata: z.record(z.unknown()).optional()
-})
-
-export type DomainEvent = z.infer<typeof DomainEventSchema>
-
-/**
- * Command Types for CQRS
- */
-export interface Command<T = unknown> {
-  readonly type: string
-  readonly payload: T
-  readonly metadata?: Record<string, unknown>
-  readonly timestamp: Date
-  readonly correlationId: string
+export type ValidationError = {
+  field: string
+  message: string
+  code: string
 }
 
-/**
- * Query Types for CQRS
- */
-export interface Query<T = unknown> {
-  readonly type: string
-  readonly params: T
-  readonly metadata?: Record<string, unknown>
-  readonly timestamp: Date
-  readonly correlationId: string
+export type AuthorizationError = {
+  code: string
+  message: string
+  details?: Record<string, unknown>
+}
+
+export type AggregateRoot<State, Event> = {
+  id: string
+  version: number
+  state: State
+  events: Event[]
+}
+
+export type Event = {
+  id: string
+  type: string
+  aggregateId: string
+  aggregateType: string
+  version: number
+  occurredAt: Date
+  payload: unknown
+  metadata: Record<string, unknown>
 }
 
 // ============================================================================
-// ERROR CONSTRUCTORS - Pure Functions
+// RESULT UTILITIES
 // ============================================================================
+
+export const Result = {
+  success: <T>(value: T): Result<T> => ({ type: 'success', value }),
+  error: (message: string): Result<never> => ({ type: 'error', error: message }),
+  
+  map: <T, U>(fn: (value: T) => U, result: Result<T>): Result<U> =>
+    result.type === 'success' ? Result.success(fn(result.value)) : result,
+  
+  chain: <T, U>(fn: (value: T) => Result<U>, result: Result<T>): Result<U> =>
+    result.type === 'success' ? fn(result.value) : result,
+  
+  fold: <T, U>(
+    onSuccess: (value: T) => U,
+    onError: (error: string) => U,
+    result: Result<T>
+  ): U => result.type === 'success' ? onSuccess(result.value) : onError(result.error)
+}
+
+export const AsyncResult = {
+  from: <T>(promise: Promise<T>): AsyncResult<T> =>
+    promise.then(Result.success).catch(error => Result.error(error instanceof Error ? error.message : String(error))),
+  
+  map: <T, U>(fn: (value: T) => U, result: AsyncResult<T>): AsyncResult<U> =>
+    result.then(r => Result.map(fn, r)),
+  
+  chain: <T, U>(fn: (value: T) => AsyncResult<U>, result: AsyncResult<T>): AsyncResult<U> =>
+    result.then(r => r.type === 'success' ? fn(r.value) : Promise.resolve(r))
+}
+
+// ============================================================================
+// VALIDATION UTILITIES
+// ============================================================================
+
+export const Validation = {
+  required: (field: string) => (value: unknown): Result<string> =>
+    value != null && value !== '' 
+      ? Result.success(value as string)
+      : Result.error(`${field} is required`),
+  
+  email: (value: string): Result<string> => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(value)
+      ? Result.success(value)
+      : Result.error('Invalid email format')
+  },
+  
+  minLength: (min: number, field: string) => (value: string): Result<string> =>
+    value.length >= min
+      ? Result.success(value)
+      : Result.error(`${field} must be at least ${min} characters`),
+  
+  compose: <T>(...validators: Array<(value: T) => Result<T>>) => 
+    (value: T): Result<T> => {
+      for (const validator of validators) {
+        const result = validator(value)
+        if (result.type === 'error') return result
+      }
+      return Result.success(value)
+    }
+}
+
+// ============================================================================
+// VALIDATION HELPERS
+// ============================================================================
+
+export const validateWith = <T>(schema: any) => (value: unknown): Result<T> => {
+  try {
+    const result = schema.parse(value) as T
+    return Result.success(result)
+  } catch (error: any) {
+    return Result.error(error.message || 'Validation failed')
+  }
+}
+
+// Type-safe validation helper
+export const validateString = (schema: any) => (value: unknown): Result<string> => {
+  return validateWith<string>(schema)(value)
+}
+
+export const validateNumber = (schema: any) => (value: unknown): Result<number> => {
+  return validateWith<number>(schema)(value)
+}
+
+export const validateObject = <T extends Record<string, any>>(schema: any) => (value: unknown): Result<T> => {
+  return validateWith<T>(schema)(value)
+}
+
+export const validateBusinessRule = <T>(
+  code: string,
+  condition: boolean,
+  message: string,
+  value?: T
+): Result<T> =>
+  condition 
+    ? Result.success(value as T)
+    : Result.error(message)
 
 export const createValidationError = (
   field: string,
   message: string,
-  value: unknown
-): DomainError => ({
-  type: 'ValidationError',
+  code?: string
+): ValidationError => ({
   field,
   message,
-  value
-})
-
-export const createBusinessRuleError = (
-  rule: string,
-  message: string,
-  context: Record<string, unknown> = {}
-): DomainError => ({
-  type: 'BusinessRuleError',
-  rule,
-  message,
-  context
-})
-
-export const createNotFoundError = (
-  resource: string,
-  identifier: string | number
-): DomainError => ({
-  type: 'NotFoundError',
-  resource,
-  identifier
-})
-
-export const createConflictError = (
-  resource: string,
-  message: string
-): DomainError => ({
-  type: 'ConflictError',
-  resource,
-  message
+  code: code || 'VALIDATION_ERROR'
 })
 
 export const createAuthorizationError = (
-  action: string,
-  resource: string,
-  userId: string
-): DomainError => ({
-  type: 'AuthorizationError',
-  action,
-  resource,
-  userId
+  code: string,
+  message: string,
+  details?: Record<string, unknown>
+): AuthorizationError => ({
+  code,
+  message,
+  ...(details && { details })
 })
 
-export const createInfrastructureError = (
-  service: string,
-  message: string,
-  originalError: unknown
-): DomainError => ({
-  type: 'InfrastructureError',
-  service,
-  message,
-  originalError
+export const tryCatchAsync = <T>(
+  fn: () => Promise<T>
+): AsyncResult<T> =>
+  AsyncResult.from(fn())
+
+// ============================================================================
+// AGGREGATE UTILITIES
+// ============================================================================
+
+export const createAggregateRoot = <State, Event>(
+  id: string,
+  initialState: State
+): AggregateRoot<State, Event> => ({
+  id,
+  version: 0,
+  state: initialState,
+  events: []
+})
+
+export const applyEvent = <State, Event>(
+  aggregate: AggregateRoot<State, Event>,
+  event: Event,
+  reducer: (state: State, event: Event) => State
+): AggregateRoot<State, Event> => ({
+  ...aggregate,
+  version: aggregate.version + 1,
+  state: reducer(aggregate.state, event),
+  events: [...aggregate.events, event]
 })
 
 // ============================================================================
 // FUNCTIONAL COMPOSITION UTILITIES
 // ============================================================================
 
-/**
- * Safe execution wrapper - converts throwing functions to Results
- */
-export const tryCatch = <A>(
-  fn: () => A,
-  onError: (error: unknown) => DomainError = (error) => 
-    createInfrastructureError('unknown', String(error), error)
-): DomainResult<A> => E.tryCatch(fn, onError)
+export const pipe = <T>(value: T, ...fns: Array<(value: T) => T>): T =>
+  fns.reduce((acc, fn) => fn(acc), value)
 
-/**
- * Async safe execution wrapper
- */
-export const tryCatchAsync = <A>(
-  fn: () => Promise<A>,
-  onError: (error: unknown) => DomainError = (error) => 
-    createInfrastructureError('unknown', String(error), error)
-): AsyncResult<A> => TE.tryCatch(fn, onError)
+export const compose = <T>(...fns: Array<(value: T) => T>): (value: T) => T =>
+  (value: T) => fns.reduceRight((acc, fn) => fn(acc), value)
 
-/**
- * Validation with Zod integration
- */
-export const validateWith = <T>(schema: z.ZodSchema<T>) => 
-  (data: unknown): DomainResult<T> => {
-    const result = schema.safeParse(data)
-    return result.success
-      ? E.right(result.data)
-      : E.left(createValidationError(
-          'schema',
-          result.error.issues.map(i => i.message).join(', '),
-          data
-        ))
-  }
-
-/**
- * Business rule validation
- */
-export const validateBusinessRule = (
-  ruleName: string,
-  predicate: boolean,
-  message: string,
-  context: Record<string, unknown> = {}
-): DomainResult<void> =>
-  predicate
-    ? E.right(undefined)
-    : E.left(createBusinessRuleError(ruleName, message, context))
-
-// ============================================================================
-// DOMAIN AGGREGATE PATTERN (Functional)
-// ============================================================================
-
-/**
- * Aggregate Root Interface - Functional approach
- */
-export interface AggregateRoot<TState, TEvent extends DomainEvent> {
-  readonly id: string
-  readonly version: number
-  readonly state: TState
-  readonly uncommittedEvents: readonly TEvent[]
-}
-
-/**
- * Create aggregate root
- */
-export const createAggregateRoot = <TState, TEvent extends DomainEvent>(
-  id: string,
-  initialState: TState,
-  version: number = 0
-): AggregateRoot<TState, TEvent> => ({
-  id,
-  version,
-  state: initialState,
-  uncommittedEvents: []
-})
-
-/**
- * Apply event to aggregate
- */
-export const applyEvent = <TState, TEvent extends DomainEvent>(
-  aggregate: AggregateRoot<TState, TEvent>,
-  event: TEvent,
-  evolve: (state: TState, event: TEvent) => TState
-): AggregateRoot<TState, TEvent> => ({
-  ...aggregate,
-  version: aggregate.version + 1,
-  state: evolve(aggregate.state, event),
-  uncommittedEvents: [...aggregate.uncommittedEvents, event]
-})
-
-/**
- * Mark events as committed
- */
-export const markEventsAsCommitted = <TState, TEvent extends DomainEvent>(
-  aggregate: AggregateRoot<TState, TEvent>
-): AggregateRoot<TState, TEvent> => ({
-  ...aggregate,
-  uncommittedEvents: []
-})
-
-// ============================================================================
-// REPOSITORY PATTERN (Functional)
-// ============================================================================
-
-export interface Repository<TAggregate, TId> {
-  readonly findById: (id: TId) => AsyncResult<O.Option<TAggregate>>
-  readonly save: (aggregate: TAggregate) => AsyncResult<void>
-  readonly delete: (id: TId) => AsyncResult<void>
-}
-
-export interface ReadOnlyRepository<TEntity, TId> {
-  readonly findById: (id: TId) => AsyncResult<O.Option<TEntity>>
-  readonly findMany: (criteria: Record<string, unknown>) => AsyncResult<readonly TEntity[]>
-  readonly count: (criteria: Record<string, unknown>) => AsyncResult<number>
+export const curry = <T extends unknown[], R>(
+  fn: (...args: T) => R
+): ((...args: T) => R) => {
+  return (...args: T) => fn(...args)
 }
 
 // ============================================================================
-// USE CASE PATTERN (Functional CQRS)
+// EVENT BUS (FUNCTIONAL APPROACH)
 // ============================================================================
 
-export interface CommandHandler<TCommand extends Command, TResult = void> {
-  readonly handle: (command: TCommand) => AsyncResult<TResult>
-}
+export type EventHandler<T = unknown> = (event: T) => void | Promise<void>
 
-export interface QueryHandler<TQuery extends Query, TResult> {
-  readonly handle: (query: TQuery) => AsyncResult<TResult>
-}
+export const createEventBus = () => {
+  const handlers = new Map<string, EventHandler[]>()
 
-/**
- * Create command handler with dependencies
- */
-export const createCommandHandler = <TCommand extends Command, TResult, TDeps>(
-  dependencies: TDeps,
-  handler: (deps: TDeps) => (command: TCommand) => AsyncResult<TResult>
-): CommandHandler<TCommand, TResult> => ({
-  handle: handler(dependencies)
-})
-
-/**
- * Create query handler with dependencies
- */
-export const createQueryHandler = <TQuery extends Query, TResult, TDeps>(
-  dependencies: TDeps,
-  handler: (deps: TDeps) => (query: TQuery) => AsyncResult<TResult>
-): QueryHandler<TQuery, TResult> => ({
-  handle: handler(dependencies)
-})
-
-// ============================================================================
-// EVENT STORE PATTERN (Functional)
-// ============================================================================
-
-export interface EventStore {
-  readonly append: (
-    aggregateId: string,
-    events: readonly DomainEvent[],
-    expectedVersion: number
-  ) => AsyncResult<void>
-  
-  readonly getEvents: (
-    aggregateId: string,
-    fromVersion?: number
-  ) => AsyncResult<readonly DomainEvent[]>
-  
-  readonly getAllEvents: (
-    fromTimestamp?: Date
-  ) => AsyncResult<readonly DomainEvent[]>
-}
-
-// ============================================================================
-// MICROSERVICE EXTRACTION UTILITIES
-// ============================================================================
-
-/**
- * Service boundary definition for microservice extraction
- */
-export interface ServiceBoundary {
-  readonly name: string
-  readonly aggregates: readonly string[]
-  readonly commands: readonly string[]
-  readonly queries: readonly string[]
-  readonly events: readonly string[]
-  readonly dependencies: readonly string[]
-}
-
-/**
- * Extract microservice configuration
- */
-export const createServiceBoundary = (
-  name: string,
-  config: Omit<ServiceBoundary, 'name'>
-): ServiceBoundary => ({
-  name,
-  ...config
-})
-
-// ============================================================================
-// FUNCTIONAL COMPOSITION HELPERS
-// ============================================================================
-
-/**
- * Compose multiple validation functions
- */
-export const composeValidations = <T>(
-  ...validations: readonly ((value: T) => DomainResult<T>)[]
-) => (value: T): DomainResult<T> =>
-  validations.reduce(
-    (acc, validation) => pipe(acc, E.chain(validation)),
-    E.right(value) as DomainResult<T>
-  )
-
-/**
- * Parallel execution of async operations
- */
-export const executeInParallel = <T>(
-  operations: readonly AsyncResult<T>[]
-): AsyncResult<readonly T[]> =>
-  A.sequence(TE.ApplicativePar)([...operations])
-
-/**
- * Sequential execution with error accumulation
- */
-export const executeSequentially = <T>(
-  operations: readonly AsyncResult<T>[]
-): AsyncResult<readonly T[]> =>
-  A.sequence(TE.ApplicativeSeq)([...operations])
-
-// ============================================================================
-// METRICS AND OBSERVABILITY (Functional)
-// ============================================================================
-
-export interface Metrics {
-  readonly increment: (metric: string, tags?: Record<string, string>) => void
-  readonly timing: (metric: string, duration: number, tags?: Record<string, string>) => void
-  readonly gauge: (metric: string, value: number, tags?: Record<string, string>) => void
-}
-
-export const createMetricsWrapper = <T extends (...args: any[]) => AsyncResult<any>>(
-  fn: T,
-  metrics: Metrics,
-  metricName: string
-) => ((...args: Parameters<T>) => {
-  const start = Date.now()
-  return pipe(
-    fn(...args),
-    TE.map((result) => {
-      metrics.timing(`${metricName}.duration`, Date.now() - start)
-      metrics.increment(`${metricName}.success`)
-      return result
-    }),
-    TE.mapLeft((error) => {
-      metrics.timing(`${metricName}.duration`, Date.now() - start)
-      metrics.increment(`${metricName}.error`, { type: error.type })
-      return error
+  return {
+    subscribe: <T>(eventType: string, handler: EventHandler<T>) => {
+      if (!handlers.has(eventType)) {
+        handlers.set(eventType, [])
+      }
+      handlers.get(eventType)!.push(handler as EventHandler)
+      
+      return () => {
+        const eventHandlers = handlers.get(eventType)
+        if (eventHandlers) {
+          const index = eventHandlers.indexOf(handler as EventHandler)
+          if (index > -1) {
+            eventHandlers.splice(index, 1)
+          }
+        }
+      }
+    },
+    
+    publish: async <T>(eventType: string, event: T) => {
+      const eventHandlers = handlers.get(eventType) || []
+      await Promise.all(eventHandlers.map(handler => handler(event)))
+    },
+    
+    getMetrics: () => ({
+      totalEventTypes: handlers.size,
+      totalHandlers: Array.from(handlers.values()).reduce((sum, h) => sum + h.length, 0)
     })
-  )
-}) as T
+  }
+}
 
 // ============================================================================
-// EXPORT ALL UTILITIES
+// MODULE FACTORY (FUNCTIONAL APPROACH)
 // ============================================================================
 
-export const FunctionalArchitecture = {
-  // Core types
-  DomainErrorSchema,
-  DomainEventSchema,
-  
-  // Error constructors
-  createValidationError,
-  createBusinessRuleError,
-  createNotFoundError,
-  createConflictError,
-  createAuthorizationError,
-  createInfrastructureError,
-  
-  // Utilities
-  tryCatch,
-  tryCatchAsync,
-  validateWith,
-  validateBusinessRule,
-  
-  // Aggregate pattern
-  createAggregateRoot,
-  applyEvent,
-  markEventsAsCommitted,
-  
-  // Use case patterns
-  createCommandHandler,
-  createQueryHandler,
-  
-  // Service boundaries
-  createServiceBoundary,
-  
-  // Composition
-  composeValidations,
-  executeInParallel,
-  executeSequentially,
-  
-  // Metrics
-  createMetricsWrapper
-} as const
+export type ModuleConfig = {
+  name: string
+  version: string
+  dependencies?: string[]
+  initialState?: Record<string, unknown>
+}
 
-export default FunctionalArchitecture
+export type Module = {
+  name: string
+  version: string
+  eventBus: ReturnType<typeof createEventBus>
+  healthCheck: () => { status: string; uptime: number }
+  extractMicroservice: () => { routes: unknown[]; handlers: Record<string, unknown> }
+}
+
+export const createModule = (config: ModuleConfig): Module => {
+  const eventBus = createEventBus()
+  const startTime = Date.now()
+
+  return {
+    name: config.name,
+    version: config.version,
+    eventBus,
+    
+    healthCheck: () => ({
+      status: 'healthy',
+      uptime: Date.now() - startTime
+    }),
+    
+    extractMicroservice: () => ({
+      routes: [],
+      handlers: {}
+    })
+  }
+}
+
+// ============================================================================
+// MODULE REGISTRY (FUNCTIONAL APPROACH)
+// ============================================================================
+
+export const createModuleRegistry = () => {
+  const modules = new Map<string, Module>()
+
+  return {
+    register: (name: string, module: Module) => {
+      modules.set(name, module)
+      return () => modules.delete(name)
+    },
+    
+    get: (name: string): Module | undefined => modules.get(name),
+    
+    getAll: (): Module[] => Array.from(modules.values()),
+
+    getMetrics: () => ({
+      totalModules: modules.size,
+      moduleNames: Array.from(modules.keys())
+    })
+  }
+}

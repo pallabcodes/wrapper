@@ -19,7 +19,6 @@
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src",
     "removeComments": true,
     "incremental": true,
     "skipLibCheck": true,
@@ -39,14 +38,15 @@
       "@/config/*": ["config/*"],
       "@/tests/*": ["tests/*"]
     },
-    "types": ["node", "vitest/globals"],
+    "types": ["node"],
     "experimentalDecorators": false,
     "emitDecoratorMetadata": false
   },
   "include": [
     "src/**/*",
     "tests/**/*",
-    "scripts/**/*"
+    "scripts/**/*",
+    "start.ts"
   ],
   "exclude": [
     "node_modules",

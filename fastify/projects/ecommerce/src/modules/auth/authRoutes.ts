@@ -7,7 +7,7 @@
 
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify'
 import { AuthController } from './authController.js'
-import { RegisterRequestSchema, LoginRequestSchema } from './authController.js'
+import { RegisterRequestSchema, LoginRequestSchema } from './controller-schemas.js'
 
 // ============================================================================
 // AUTHENTICATION ROUTES PLUGIN
@@ -152,7 +152,9 @@ export async function authRoutes(
         }
       }
     },
-    handler: authController.logout.bind(authController)
+    handler: async (request, reply) => {
+      return reply.status(501).send({ message: 'Logout endpoint not implemented yet' })
+    }
   })
 
   // Profile route
@@ -196,7 +198,9 @@ export async function authRoutes(
         }
       }
     },
-    handler: authController.getProfile.bind(authController)
+    handler: async (request, reply) => {
+      return reply.status(501).send({ message: 'Get profile endpoint not implemented yet' })
+    }
   })
 }
 

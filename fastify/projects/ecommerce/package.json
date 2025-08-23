@@ -13,6 +13,9 @@
     "build": "tsc && tsc-alias",
     "start": "node dist/index.js",
     "start:pm2": "pm2 start ecosystem.config.js",
+    "start:pm2:prod": "pm2 start ecosystem.config.js --env production",
+    "stop:pm2": "pm2 stop ecosystem.config.js",
+    "restart:pm2": "pm2 restart ecosystem.config.js",
     "test": "vitest",
     "test:unit": "vitest run src/**/*.test.ts",
     "test:integration": "vitest run tests/integration/**/*.test.ts",
@@ -28,7 +31,9 @@
     "migration:run": "tsx scripts/migration/run.ts",
     "seed": "tsx scripts/seed/index.ts",
     "clean": "rm -rf dist node_modules/.cache",
-    "precommit": "lint-staged"
+    "precommit": "lint-staged",
+    "commit": "git-cz",
+    "release": "standard-version"
   },
   "dependencies": {
     "@fastify/autoload": "^5.8.0",
@@ -48,8 +53,8 @@
     "effect": "^2.0.0",
     "fastify": "^4.24.3",
     "fastify-plugin": "^4.5.1",
-    "fp-ts": "^2.16.1",
     "io-ts": "^2.2.21",
+    "jsonwebtoken": "^9.0.2",
     "nodemailer": "^6.9.7",
     "paypal-rest-sdk": "^1.8.1",
     "pino": "^8.16.2",
@@ -63,6 +68,8 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
     "@playwright/test": "^1.40.0",
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.10",
@@ -74,12 +81,15 @@
     "@typescript-eslint/eslint-plugin": "^6.10.0",
     "@typescript-eslint/parser": "^6.10.0",
     "@vitest/coverage-c8": "^0.33.0",
+    "commitizen": "^4.3.0",
+    "cz-conventional-changelog": "^3.3.0",
     "eslint": "^8.53.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-functional": "^6.0.0",
     "husky": "^8.0.3",
     "lint-staged": "^15.0.2",
     "prettier": "^3.0.3",
+    "standard-version": "^9.5.0",
     "supertest": "^6.3.3",
     "tsc-alias": "^1.8.8",
     "tsx": "^4.1.1",
@@ -96,7 +106,13 @@
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged",
-      "pre-push": "npm run type-check && npm run test:unit"
+      "pre-push": "npm run type-check && npm run test:unit",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
     }
   },
   "keywords": [

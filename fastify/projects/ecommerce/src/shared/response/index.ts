@@ -11,7 +11,11 @@ import type {
   BaseResponse,
   SuccessResponse,
   ErrorResponse,
-  PaginationMeta
+  PaginationMeta,
+  PaginationParams,
+  ApiResponse,
+  ApiSuccessResponse,
+  ApiErrorResponse
 } from '../types/index.js'
 
 // ============================================================================
@@ -147,19 +151,19 @@ export class ResponseBuilder<T = unknown> {
   }
 
   build(requestId?: string, version = '1.0.0'): ApiResponse<T> {
-    const response: ApiResponse<T> = {
+    const response = {
       success: !this._error,
       ...(this._data !== undefined && { data: this._data }),
       ...(this._error && { error: this._error }),
       meta: {
         ...this._meta,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         requestId: requestId || this._meta.requestId as string || 'unknown',
         version
       }
     }
 
-    return response
+    return response as ApiResponse<T>
   }
 
   send(reply: FastifyReply, requestId?: string, version = '1.0.0'): FastifyReply {

@@ -1,0 +1,41 @@
+# <type>(<scope>): <subject>
+#
+# <body>
+#
+# <footer>
+
+# Types:
+#   feat     (new feature for the user, not a new feature for build script)
+#   fix      (bug fix for the user, not a fix to a build script)
+#   docs     (changes to the documentation)
+#   style    (formatting, missing semi colons, etc; no production code change)
+#   refactor (refactoring production code, eg. renaming a variable)
+#   test     (adding missing tests, refactoring tests; no production code change)
+#   chore    (updating grunt tasks etc; no production code change)
+#   perf     (performance improvements)
+#   ci       (CI/CD related changes)
+#   build    (build system or external dependencies)
+#   revert   (revert a previous commit)
+
+# Scopes:
+#   auth     (authentication related)
+#   products (product management)
+#   orders   (order processing)
+#   payments (payment processing)
+#   users    (user management)
+#   api      (API related)
+#   config   (configuration)
+#   deps     (dependencies)
+#   docs     (documentation)
+#   test     (testing)
+#   ci       (CI/CD)
+
+# Examples:
+# feat(auth): add user registration with functional validation
+# fix(products): resolve type safety issues in product creation
+# docs(api): update swagger documentation for auth endpoints
+# refactor(domain): break down large aggregate files
+# test(auth): add unit tests for business rules
+# perf(api): optimize database queries for product listing
+# ci: update GitHub Actions workflow
+# build: update TypeScript configuration
