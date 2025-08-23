@@ -17,64 +17,114 @@ import { RegisterRequestSchema, LoginRequestSchema } from './controller-schemas.
 // ============================================================================
 
 const RegisterSchema = {
-  body: RegisterRequestSchema,
+  body: {
+    type: 'object',
+    required: ['email', 'password', 'confirmPassword', 'acceptTerms'],
+    properties: {
+      email: { type: 'string', format: 'email', maxLength: 255 },
+      password: { type: 'string', minLength: 8, maxLength: 128 },
+      confirmPassword: { type: 'string' },
+      firstName: { type: 'string', minLength: 1, maxLength: 50 },
+      lastName: { type: 'string', minLength: 1, maxLength: 50 },
+      acceptTerms: { type: 'boolean' },
+      marketingConsent: { type: 'boolean', default: false }
+    }
+  },
   response: {
-    201: z.object({
-      success: z.boolean(),
-      data: z.object({
-        user: z.object({
-          id: z.string(),
-          email: z.string(),
-          roles: z.array(z.string()),
-          status: z.string(),
-          emailVerified: z.boolean()
-        }),
-        tokens: z.object({
-          accessToken: z.string(),
-          refreshToken: z.string(),
-          expiresIn: z.number(),
-          tokenType: z.string()
-        })
-      }),
-      timestamp: z.string(),
-      message: z.string()
-    }),
-    400: z.object({
-      success: z.boolean(),
-      error: z.string(),
-      timestamp: z.string()
-    })
+    201: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        data: {
+          type: 'object',
+          properties: {
+            user: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                email: { type: 'string' },
+                roles: { type: 'array', items: { type: 'string' } },
+                status: { type: 'string' },
+                emailVerified: { type: 'boolean' }
+              }
+            },
+            tokens: {
+              type: 'object',
+              properties: {
+                accessToken: { type: 'string' },
+                refreshToken: { type: 'string' },
+                expiresIn: { type: 'number' },
+                tokenType: { type: 'string' }
+              }
+            }
+          }
+        },
+        timestamp: { type: 'string' },
+        message: { type: 'string' }
+      }
+    },
+    400: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        error: { type: 'string' },
+        timestamp: { type: 'string' }
+      }
+    }
   }
 }
 
 const LoginSchema = {
-  body: LoginRequestSchema,
+  body: {
+    type: 'object',
+    required: ['email', 'password'],
+    properties: {
+      email: { type: 'string', format: 'email' },
+      password: { type: 'string', minLength: 1 },
+      rememberMe: { type: 'boolean', default: false }
+    }
+  },
   response: {
-    200: z.object({
-      success: z.boolean(),
-      data: z.object({
-        user: z.object({
-          id: z.string(),
-          email: z.string(),
-          roles: z.array(z.string()),
-          status: z.string(),
-          emailVerified: z.boolean()
-        }),
-        tokens: z.object({
-          accessToken: z.string(),
-          refreshToken: z.string(),
-          expiresIn: z.number(),
-          tokenType: z.string()
-        })
-      }),
-      timestamp: z.string(),
-      message: z.string()
-    }),
-    401: z.object({
-      success: z.boolean(),
-      error: z.string(),
-      timestamp: z.string()
-    })
+    200: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        data: {
+          type: 'object',
+          properties: {
+            user: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                email: { type: 'string' },
+                roles: { type: 'array', items: { type: 'string' } },
+                status: { type: 'string' },
+                emailVerified: { type: 'boolean' }
+              }
+            },
+            tokens: {
+              type: 'object',
+              properties: {
+                accessToken: { type: 'string' },
+                refreshToken: { type: 'string' },
+                expiresIn: { type: 'number' },
+                tokenType: { type: 'string' }
+              }
+            }
+          }
+        },
+        timestamp: { type: 'string' },
+        message: { type: 'string' }
+      }
+    },
+    401: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        error: { type: 'string' },
+        timestamp: { type: 'string' }
+      }
+    }
   }
 }
 

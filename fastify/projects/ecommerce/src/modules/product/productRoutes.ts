@@ -105,7 +105,14 @@ export async function productRoutes(
             }
           }
         },
-        400: { $ref: '#/components/schemas/Error' }
+        400: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', enum: [false] },
+            error: { type: 'string' },
+            timestamp: { type: 'string', format: 'date-time' }
+          }
+        }
       },
       security: [{ bearerAuth: [] }]
     },
@@ -230,7 +237,14 @@ export async function productRoutes(
             }
           }
         },
-        404: { $ref: '#/components/schemas/Error' }
+        404: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', enum: [false] },
+            error: { type: 'string' },
+            timestamp: { type: 'string', format: 'date-time' }
+          }
+        }
       }
     },
     handler: productController.getProduct.bind(productController)
