@@ -27,7 +27,10 @@ const setupApplication = async (): Promise<void> => {
     // Setup middleware
     await setupMiddleware(fastify)
     
-    // Setup routes
+    // Setup Swagger documentation (before routes for proper schema generation)
+    await setupSwagger(fastify)
+    
+    // Setup routes (after Swagger to ensure they're captured)
     await setupRoutes(fastify)
     
     // Setup error handling
@@ -36,11 +39,8 @@ const setupApplication = async (): Promise<void> => {
     // Setup graceful shutdown
     setupGracefulShutdown(fastify)
     
-    // TODO: Re-enable Swagger after fixing plugin registration
-    // await setupSwagger(fastify)
-    
   } catch (error) {
-    fastify.log.error('Failed to setup application:', error)
+    fastify.log.error({ err: error }, 'Failed to setup application')
     throw error
   }
 }
@@ -69,7 +69,7 @@ const start = async (): Promise<void> => {
     console.log(`🔐 Auth Endpoints: ${address}/api/v1/auth/*`)
     
   } catch (error) {
-    fastify.log.error(error)
+    fastify.log.error({ err: error }, 'Failed to start server')
     console.error('❌ Failed to start server:', error)
     process.exit(1)
   }
