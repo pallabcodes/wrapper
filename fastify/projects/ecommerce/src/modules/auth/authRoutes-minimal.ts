@@ -17,64 +17,114 @@ import { RegisterRequestSchema, LoginRequestSchema } from './controller-schemas.
 // ============================================================================
 
 const RegisterSchema = {
-  body: RegisterRequestSchema,
+  body: {
+    type: 'object',
+    required: ['email', 'password', 'confirmPassword', 'acceptTerms'],
+    properties: {
+      email: { type: 'string', format: 'email', maxLength: 255 },
+      password: { type: 'string', minLength: 8, maxLength: 128 },
+      confirmPassword: { type: 'string' },
+      firstName: { type: 'string', minLength: 1, maxLength: 50 },
+      lastName: { type: 'string', minLength: 1, maxLength: 50 },
+      acceptTerms: { type: 'boolean' },
+      marketingConsent: { type: 'boolean', default: false }
+    }
+  },
   response: {
-    201: z.object({
-      success: z.boolean(),
-      data: z.object({
-        user: z.object({
-          id: z.string(),
-          email: z.string(),
-          roles: z.array(z.string()),
-          status: z.string(),
-          emailVerified: z.boolean()
-        }),
-        tokens: z.object({
-          accessToken: z.string(),
-          refreshToken: z.string(),
-          expiresIn: z.number(),
-          tokenType: z.string()
-        })
-      }),
-      timestamp: z.string(),
-      message: z.string()
-    }),
-    400: z.object({
-      success: z.boolean(),
-      error: z.string(),
-      timestamp: z.string()
-    })
+    201: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        data: {
+          type: 'object',
+          properties: {
+            user: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                email: { type: 'string' },
+                roles: { type: 'array', items: { type: 'string' } },
+                status: { type: 'string' },
+                emailVerified: { type: 'boolean' }
+              }
+            },
+            tokens: {
+              type: 'object',
+              properties: {
+                accessToken: { type: 'string' },
+                refreshToken: { type: 'string' },
+                expiresIn: { type: 'number' },
+                tokenType: { type: 'string' }
+              }
+            }
+          }
+        },
+        timestamp: { type: 'string' },
+        message: { type: 'string' }
+      }
+    },
+    400: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        error: { type: 'string' },
+        timestamp: { type: 'string' }
+      }
+    }
   }
 }
 
 const LoginSchema = {
-  body: LoginRequestSchema,
+  body: {
+    type: 'object',
+    required: ['email', 'password'],
+    properties: {
+      email: { type: 'string', format: 'email' },
+      password: { type: 'string', minLength: 1 },
+      rememberMe: { type: 'boolean', default: false }
+    }
+  },
   response: {
-    200: z.object({
-      success: z.boolean(),
-      data: z.object({
-        user: z.object({
-          id: z.string(),
-          email: z.string(),
-          roles: z.array(z.string()),
-          status: z.string(),
-          emailVerified: z.boolean()
-        }),
-        tokens: z.object({
-          accessToken: z.string(),
-          refreshToken: z.string(),
-          expiresIn: z.number(),
-          tokenType: z.string()
-        })
-      }),
-      timestamp: z.string(),
-      message: z.string()
-    }),
-    401: z.object({
-      success: z.boolean(),
-      error: z.string(),
-      timestamp: z.string()
-    })
+    200: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        data: {
+          type: 'object',
+          properties: {
+            user: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                email: { type: 'string' },
+                roles: { type: 'array', items: { type: 'string' } },
+                status: { type: 'string' },
+                emailVerified: { type: 'boolean' }
+              }
+            },
+            tokens: {
+              type: 'object',
+              properties: {
+                accessToken: { type: 'string' },
+                refreshToken: { type: 'string' },
+                expiresIn: { type: 'number' },
+                tokenType: { type: 'string' }
+              }
+            }
+          }
+        },
+        timestamp: { type: 'string' },
+        message: { type: 'string' }
+      }
+    },
+    401: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        error: { type: 'string' },
+        timestamp: { type: 'string' }
+      }
+    }
   }
 }
 
@@ -155,37 +205,76 @@ export const registerAuthRoutes = (fastify: FastifyInstance): void => {
   // Register services
   fastify.di.register('authService', new AuthService())
 
-  // Register routes using the enhanced route builder
-  fastify.routeBuilder
-    .post('/api/v1/auth/register')
-    .schema(RegisterSchema)
-    .handler(registerHandler)
-    .register()
+  // Register routes using native Fastify for Swagger compatibility
+  fastify.post('/api/v1/auth/register', {
+    schema: {
+      ...RegisterSchema,
+      tags: ['Authentication'],
+      summary: 'Register a new user',
+      description: 'Create a new user account with email and password'
+    },
+    handler: registerHandler
+  })
 
-  fastify.routeBuilder
-    .post('/api/v1/auth/login')
-    .schema(LoginSchema)
-    .handler(loginHandler)
-    .register()
+  fastify.post('/api/v1/auth/login', {
+    schema: {
+      ...LoginSchema,
+      tags: ['Authentication'],
+      summary: 'User login',
+      description: 'Authenticate user with email and password'
+    },
+    handler: loginHandler
+  })
 
-  fastify.routeBuilder
-    .post('/api/v1/auth/logout')
-    .handler(logoutHandler)
-    .register()
+  fastify.post('/api/v1/auth/logout', {
+    schema: {
+      tags: ['Authentication'],
+      summary: 'User logout',
+      description: 'Logout the current user',
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            timestamp: { type: 'string' }
+          }
+        }
+      }
+    },
+    handler: logoutHandler
+  })
 
-  fastify.routeBuilder
-    .get('/api/v1/auth/profile')
-    .handler(getProfileHandler)
-    .register()
-
-  // Alternative: Use native Fastify if route builder fails
-  try {
-    // This would be the fallback if route builder doesn't work
-    fastify.post('/api/v1/auth/register-fallback', {
-      schema: RegisterSchema,
-      handler: registerHandler
-    })
-  } catch (error) {
-    console.warn('Native route registration failed:', error)
-  }
+  fastify.get('/api/v1/auth/profile', {
+    schema: {
+      tags: ['Authentication'],
+      summary: 'Get user profile',
+      description: 'Retrieve the current user profile',
+      security: [{ bearerAuth: [] }],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                user: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    email: { type: 'string' },
+                    roles: { type: 'array', items: { type: 'string' } },
+                    status: { type: 'string' }
+                  }
+                }
+              }
+            },
+            timestamp: { type: 'string' }
+          }
+        }
+      }
+    },
+    handler: getProfileHandler
+  })
 }

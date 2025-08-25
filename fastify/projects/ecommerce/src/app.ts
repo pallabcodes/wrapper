@@ -73,7 +73,7 @@ const start = async (): Promise<void> => {
     console.log(`🔐 Auth Endpoints: ${displayUrl}/api/v1/auth/*`)
     
   } catch (error) {
-    fastify.log.error(error)
+    fastify.log.error({ err: error }, 'Failed to start server')
     console.error('❌ Failed to start server:', error)
     process.exit(1)
   }
