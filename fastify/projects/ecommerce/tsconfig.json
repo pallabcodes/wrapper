@@ -38,7 +38,7 @@
       "@/config/*": ["config/*"],
       "@/tests/*": ["tests/*"]
     },
-    "types": ["node"],
+    "types": ["node", "vitest/globals"],
     "experimentalDecorators": false,
     "emitDecoratorMetadata": false
   },

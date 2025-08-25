@@ -1,0 +1,415 @@
+{
+  "numTotalTestSuites": 15,
+  "numPassedTestSuites": 13,
+  "numFailedTestSuites": 2,
+  "numPendingTestSuites": 0,
+  "numTotalTests": 33,
+  "numPassedTests": 33,
+  "numFailedTests": 0,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "startTime": 1756125046879,
+  "success": false,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "",
+            "Authentication Controller",
+            "POST /auth/register"
+          ],
+          "fullName": " Authentication Controller POST /auth/register should register a new user successfully",
+          "status": "pending",
+          "title": "should register a new user successfully",
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "Authentication Controller",
+            "POST /auth/register"
+          ],
+          "fullName": " Authentication Controller POST /auth/register should reject registration with invalid email",
+          "status": "pending",
+          "title": "should reject registration with invalid email",
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "Authentication Controller",
+            "POST /auth/register"
+          ],
+          "fullName": " Authentication Controller POST /auth/register should reject registration with weak password",
+          "status": "pending",
+          "title": "should reject registration with weak password",
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "Authentication Controller",
+            "POST /auth/register"
+          ],
+          "fullName": " Authentication Controller POST /auth/register should reject registration when passwords do not match",
+          "status": "pending",
+          "title": "should reject registration when passwords do not match",
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "Authentication Controller",
+            "POST /auth/login"
+          ],
+          "fullName": " Authentication Controller POST /auth/login should login with valid credentials",
+          "status": "pending",
+          "title": "should login with valid credentials",
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "Authentication Controller",
+            "POST /auth/login"
+          ],
+          "fullName": " Authentication Controller POST /auth/login should reject login with invalid credentials",
+          "status": "pending",
+          "title": "should reject login with invalid credentials",
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "Authentication Controller",
+            "POST /auth/login"
+          ],
+          "fullName": " Authentication Controller POST /auth/login should reject login with missing fields",
+          "status": "pending",
+          "title": "should reject login with missing fields",
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "Authentication Controller",
+            "POST /auth/logout"
+          ],
+          "fullName": " Authentication Controller POST /auth/logout should logout successfully with valid token",
+          "status": "pending",
+          "title": "should logout successfully with valid token",
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "Authentication Controller",
+            "POST /auth/logout"
+          ],
+          "fullName": " Authentication Controller POST /auth/logout should reject logout without authorization header",
+          "status": "pending",
+          "title": "should reject logout without authorization header",
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "Authentication Controller",
+            "POST /auth/logout"
+          ],
+          "fullName": " Authentication Controller POST /auth/logout should reject logout with invalid token",
+          "status": "pending",
+          "title": "should reject logout with invalid token",
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "Authentication Controller",
+            "GET /auth/profile"
+          ],
+          "fullName": " Authentication Controller GET /auth/profile should get user profile with valid token",
+          "status": "pending",
+          "title": "should get user profile with valid token",
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "Authentication Controller",
+            "GET /auth/profile"
+          ],
+          "fullName": " Authentication Controller GET /auth/profile should reject profile access without authorization",
+          "status": "pending",
+          "title": "should reject profile access without authorization",
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "Authentication Flow Integration"
+          ],
+          "fullName": " Authentication Flow Integration should complete full authentication flow",
+          "status": "pending",
+          "title": "should complete full authentication flow",
+          "failureMessages": []
+        }
+      ],
+      "startTime": 1756125046879,
+      "endTime": 1756125046879,
+      "status": "passed",
+      "message": "",
+      "name": "/home/pallab/Pallab/wrapper/fastify/projects/ecommerce/tests/unit/auth/authController.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "creation"
+          ],
+          "fullName": " MockProductAggregate creation should create a new product with valid data",
+          "status": "passed",
+          "title": "should create a new product with valid data",
+          "duration": 3,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "creation"
+          ],
+          "fullName": " MockProductAggregate creation should throw error for invalid price",
+          "status": "passed",
+          "title": "should throw error for invalid price",
+          "duration": 2,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "creation"
+          ],
+          "fullName": " MockProductAggregate creation should throw error for invalid SKU",
+          "status": "passed",
+          "title": "should throw error for invalid SKU",
+          "duration": 0,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "creation"
+          ],
+          "fullName": " MockProductAggregate creation should throw error for empty name",
+          "status": "passed",
+          "title": "should throw error for empty name",
+          "duration": 0,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "updating"
+          ],
+          "fullName": " MockProductAggregate updating should update product name",
+          "status": "passed",
+          "title": "should update product name",
+          "duration": 0,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "updating"
+          ],
+          "fullName": " MockProductAggregate updating should not allow empty name update",
+          "status": "passed",
+          "title": "should not allow empty name update",
+          "duration": 1,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "updating"
+          ],
+          "fullName": " MockProductAggregate updating should update product price",
+          "status": "passed",
+          "title": "should update product price",
+          "duration": 0,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "updating"
+          ],
+          "fullName": " MockProductAggregate updating should not allow updating to negative price",
+          "status": "passed",
+          "title": "should not allow updating to negative price",
+          "duration": 0,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "inventory management"
+          ],
+          "fullName": " MockProductAggregate inventory management should increase inventory",
+          "status": "passed",
+          "title": "should increase inventory",
+          "duration": 1,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "inventory management"
+          ],
+          "fullName": " MockProductAggregate inventory management should not allow negative inventory increase",
+          "status": "passed",
+          "title": "should not allow negative inventory increase",
+          "duration": 0,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "inventory management"
+          ],
+          "fullName": " MockProductAggregate inventory management should decrease inventory",
+          "status": "passed",
+          "title": "should decrease inventory",
+          "duration": 0,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "inventory management"
+          ],
+          "fullName": " MockProductAggregate inventory management should not allow decreasing more than available",
+          "status": "passed",
+          "title": "should not allow decreasing more than available",
+          "duration": 0,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "status management"
+          ],
+          "fullName": " MockProductAggregate status management should deactivate product",
+          "status": "passed",
+          "title": "should deactivate product",
+          "duration": 1,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "status management"
+          ],
+          "fullName": " MockProductAggregate status management should activate product",
+          "status": "passed",
+          "title": "should activate product",
+          "duration": 0,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "status management"
+          ],
+          "fullName": " MockProductAggregate status management should mark product as discontinued",
+          "status": "passed",
+          "title": "should mark product as discontinued",
+          "duration": 0,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "business rules validation"
+          ],
+          "fullName": " MockProductAggregate business rules validation should validate SKU length",
+          "status": "passed",
+          "title": "should validate SKU length",
+          "duration": 0,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "business rules validation"
+          ],
+          "fullName": " MockProductAggregate business rules validation should validate required fields",
+          "status": "passed",
+          "title": "should validate required fields",
+          "duration": 1,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "business rules validation"
+          ],
+          "fullName": " MockProductAggregate business rules validation should validate positive price",
+          "status": "passed",
+          "title": "should validate positive price",
+          "duration": 0,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "complex business scenarios"
+          ],
+          "fullName": " MockProductAggregate complex business scenarios should handle inventory operations correctly",
+          "status": "passed",
+          "title": "should handle inventory operations correctly",
+          "duration": 0,
+          "failureMessages": []
+        },
+        {
+          "ancestorTitles": [
+            "",
+            "MockProductAggregate",
+            "complex business scenarios"
+          ],
+          "fullName": " MockProductAggregate complex business scenarios should maintain data consistency",
+          "status": "passed",
+          "title": "should maintain data consistency",
+          "duration": 0,
+          "failureMessages": []
+        }
+      ],
+      "startTime": 1756125047483,
+      "endTime": 1756125047493,
+      "status": "passed",
+      "message": "",
+      "name": "/home/pallab/Pallab/wrapper/fastify/projects/ecommerce/tests/unit/domain/product/ProductAggregate.test.ts"
+    }
+  ]
+}

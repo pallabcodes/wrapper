@@ -5,7 +5,7 @@
  * Demonstrates testing patterns for enterprise applications
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals'
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { authRoutes } from '../../../src/modules/auth/authRoutes.js'
