@@ -173,7 +173,7 @@ export async function productRoutes(
         }
       }
     },
-    handler: productController.getProducts.bind(productController)
+    handler: productController.searchProducts.bind(productController)
   })
 
   // Get product by ID

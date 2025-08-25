@@ -24,48 +24,7 @@ export async function authRoutes(
     schema: {
       description: 'Register a new user',
       tags: ['Authentication'],
-      body: RegisterRequestSchema,
-      response: {
-        201: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                id: { type: 'string' },
-                email: { type: 'string', format: 'email' },
-                roles: { type: 'array', items: { type: 'string' } },
-                status: { type: 'string' },
-                emailVerified: { type: 'boolean' }
-              }
-            },
-            meta: {
-              type: 'object',
-              properties: {
-                timestamp: { type: 'string', format: 'date-time' },
-                requestId: { type: 'string' },
-                version: { type: 'string' },
-                emailVerificationRequired: { type: 'boolean' }
-              }
-            }
-          }
-        },
-        400: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', enum: [false] },
-            error: {
-              type: 'object',
-              properties: {
-                code: { type: 'string' },
-                message: { type: 'string' },
-                details: { type: 'object' }
-              }
-            }
-          }
-        }
-      }
+      body: RegisterRequestSchema
     },
     handler: authController.register.bind(authController)
   })
@@ -75,52 +34,7 @@ export async function authRoutes(
     schema: {
       description: 'Authenticate user login',
       tags: ['Authentication'],
-      body: LoginRequestSchema,
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                user: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'string' },
-                    email: { type: 'string', format: 'email' },
-                    roles: { type: 'array', items: { type: 'string' } },
-                    status: { type: 'string' },
-                    emailVerified: { type: 'boolean' }
-                  }
-                },
-                tokens: {
-                  type: 'object',
-                  properties: {
-                    accessToken: { type: 'string' },
-                    refreshToken: { type: 'string' },
-                    expiresIn: { type: 'number' },
-                    tokenType: { type: 'string' }
-                  }
-                }
-              }
-            }
-          }
-        },
-        401: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', enum: [false] },
-            error: {
-              type: 'object',
-              properties: {
-                code: { type: 'string' },
-                message: { type: 'string' }
-              }
-            }
-          }
-        }
-      }
+      body: LoginRequestSchema
     },
     handler: authController.login.bind(authController)
   })
@@ -136,25 +50,9 @@ export async function authRoutes(
           authorization: { type: 'string', pattern: '^Bearer .+' }
         },
         required: ['authorization']
-      },
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                message: { type: 'string' }
-              }
-            }
-          }
-        }
       }
     },
-    handler: async (request, reply) => {
-      return reply.status(501).send({ message: 'Logout endpoint not implemented yet' })
-    }
+    handler: authController.logout.bind(authController)
   })
 
   // Profile route
@@ -168,39 +66,9 @@ export async function authRoutes(
           authorization: { type: 'string', pattern: '^Bearer .+' }
         },
         required: ['authorization']
-      },
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                id: { type: 'string' },
-                email: { type: 'string', format: 'email' },
-                roles: { type: 'array', items: { type: 'string' } },
-                status: { type: 'string' },
-                emailVerified: { type: 'boolean' },
-                profile: {
-                  type: 'object',
-                  properties: {
-                    firstName: { type: 'string' },
-                    lastName: { type: 'string' },
-                    displayName: { type: 'string' }
-                  }
-                },
-                lastLoginAt: { type: 'string', format: 'date-time' },
-                createdAt: { type: 'string', format: 'date-time' }
-              }
-            }
-          }
-        }
       }
     },
-    handler: async (request, reply) => {
-      return reply.status(501).send({ message: 'Get profile endpoint not implemented yet' })
-    }
+    handler: authController.getProfile.bind(authController)
   })
 }
 

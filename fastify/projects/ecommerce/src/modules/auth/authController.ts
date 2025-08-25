@@ -9,7 +9,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify'
 import { z } from 'zod'
 import { BaseController } from '../../shared/response/index.js'
 import { AuthService } from './authService.js'
-import { RegisterRequestSchema, LoginRequestSchema, type AuthResponse } from './controller-schemas.js'
+import { RegisterRequestZodSchema, LoginRequestZodSchema, type AuthResponse } from './controller-schemas.js'
 
 // ============================================================================
 // AUTHENTICATION CONTROLLER
@@ -23,14 +23,15 @@ export class AuthController extends BaseController {
    * POST /api/auth/register
    */
   async register(
-    request: FastifyRequest<{ Body: z.infer<typeof RegisterRequestSchema> }>,
+    request: FastifyRequest,
     reply: FastifyReply
   ): Promise<void> {
     const requestId = this.extractRequestId(request)
 
     try {
       // Validate request body
-      const validationResult = RegisterRequestSchema.safeParse(request.body)
+      // Validate input using Zod
+      const validationResult = RegisterRequestZodSchema.safeParse(request.body)
       if (!validationResult.success) {
         return this.response
           .badRequest('Invalid registration data', {
@@ -68,14 +69,15 @@ export class AuthController extends BaseController {
    * POST /api/auth/login
    */
   async login(
-    request: FastifyRequest<{ Body: z.infer<typeof LoginRequestSchema> }>,
+    request: FastifyRequest,
     reply: FastifyReply
   ): Promise<void> {
     const requestId = this.extractRequestId(request)
 
     try {
       // Validate request body
-      const validationResult = LoginRequestSchema.safeParse(request.body)
+      // Validate input
+      const validationResult = LoginRequestZodSchema.safeParse(request.body)
       if (!validationResult.success) {
         return this.response
           .badRequest('Invalid login data', {

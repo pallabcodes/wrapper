@@ -27,6 +27,9 @@ const setupApplication = async (): Promise<void> => {
     // Setup middleware
     await setupMiddleware(fastify)
     
+    // Setup Swagger documentation (MUST be before routes)
+    await setupSwagger(fastify)
+    
     // Setup routes
     await setupRoutes(fastify)
     
@@ -36,11 +39,8 @@ const setupApplication = async (): Promise<void> => {
     // Setup graceful shutdown
     setupGracefulShutdown(fastify)
     
-    // TODO: Re-enable Swagger after fixing plugin registration
-    // await setupSwagger(fastify)
-    
   } catch (error) {
-    fastify.log.error('Failed to setup application:', error)
+    fastify.log.error(error)
     throw error
   }
 }
@@ -63,10 +63,14 @@ const start = async (): Promise<void> => {
       backlog: 511 // Increase backlog for high-traffic scenarios
     })
     
-    console.log(`🚀 Server listening at ${address}`)
-    console.log(`📚 API Documentation: ${address}/documentation`)
-    console.log(`❤️  Health Check: ${address}/health`)
-    console.log(`🔐 Auth Endpoints: ${address}/api/v1/auth/*`)
+    // Display user-friendly URLs (localhost instead of 0.0.0.0)
+    const displayHost = host === '0.0.0.0' ? 'localhost' : host
+    const displayUrl = `http://${displayHost}:${port}`
+    
+    console.log(`🚀 Server listening at ${displayUrl}`)
+    console.log(`📚 API Documentation: ${displayUrl}/documentation`)
+    console.log(`❤️  Health Check: ${displayUrl}/health`)
+    console.log(`🔐 Auth Endpoints: ${displayUrl}/api/v1/auth/*`)
     
   } catch (error) {
     fastify.log.error(error)
