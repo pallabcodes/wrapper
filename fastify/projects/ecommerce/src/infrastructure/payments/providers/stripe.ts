@@ -180,7 +180,7 @@ export class StripePaymentProvider implements IPaymentProvider {
     return methodMap[method] || 'card'
   }
 
-  private mapStripeStatus(status: Stripe.PaymentIntent.Status): any {
+  private mapStripeStatus(status: Stripe.PaymentIntent.Status): import('../../../../shared/types/custom-types').StripeStatusMapping {
     const statusMap: Record<Stripe.PaymentIntent.Status, string> = {
       'requires_payment_method': 'pending',
       'requires_confirmation': 'pending',

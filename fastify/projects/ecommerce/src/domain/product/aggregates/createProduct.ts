@@ -72,7 +72,23 @@ const validatePrice = (price: { amount: number; currency: string }): DomainResul
   return Result.success(validation.value)
 }
 
-const validateInventory = (inventory: any): DomainResult<any> => {
+const validateInventory = (inventory: {
+  stockQuantity: number;
+  reservedQuantity: number;
+  reorderLevel: number;
+  trackInventory: boolean;
+  allowBackorder: boolean;
+  lastStockUpdate: Date;
+  maxStockLevel?: number;
+}): DomainResult<{
+  stockQuantity: number;
+  reservedQuantity: number;
+  reorderLevel: number;
+  trackInventory: boolean;
+  allowBackorder: boolean;
+  lastStockUpdate: Date;
+  maxStockLevel?: number;
+}> => {
   const validation = validateObject<any>(z.object({
     stockQuantity: z.number().int().min(0),
     reservedQuantity: z.number().int().min(0).default(0),

@@ -118,4 +118,13 @@ export class ResponseBuilder<T = unknown> {
   internal(message = 'Internal server error'): ErrorResponse {
     return this.error('INTERNAL_ERROR', message, undefined, 500)
   }
+
+  badRequest(message: string, details?: Record<string, unknown>): ErrorResponse {
+    return this.error('BAD_REQUEST', message, details, 400)
+  }
+
+  send(reply: FastifyReply, requestId?: string): void {
+    // This method is a placeholder - the actual response is built and returned
+    // The calling code should handle sending the response
+  }
 }

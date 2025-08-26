@@ -45,15 +45,18 @@ import { createResponseBuilder } from './utils.js'
 
 // Convenience exports for common patterns
 export const response = {
-  builder: (reply: any) => createResponseBuilder(reply),
-  success: <T>(data: T, reply: any) => createResponseBuilder(reply).success(data),
-  error: (code: string, message: string, reply: any) => 
+    builder: (reply: import('fastify').FastifyReply) => createResponseBuilder(reply),
+  success: <T>(data: T, reply: import('fastify').FastifyReply) => createResponseBuilder(reply).success(data),
+  error: (code: string, message: string, reply: import('fastify').FastifyReply) =>
     createResponseBuilder(reply).error(code, message),
-  notFound: (reply: any) => createResponseBuilder(reply).notFound(),
-  unauthorized: (reply: any) => createResponseBuilder(reply).unauthorized(),
-  validation: (details: Record<string, unknown>, reply: any) =>
+  notFound: (reply: import('fastify').FastifyReply) => createResponseBuilder(reply).notFound(),
+  unauthorized: (reply: import('fastify').FastifyReply) => createResponseBuilder(reply).unauthorized(),
+  validation: (details: Record<string, unknown>, reply: import('fastify').FastifyReply) =>
     createResponseBuilder(reply).validation(details)
 }
 
+// Base controller
+export { BaseController } from './base-controller.js'
+
 // Re-export for backward compatibility
-export { ResponseBuilder as BaseController } from './builder.js'
+export { ResponseBuilder as LegacyResponseBuilder } from './builder.js'

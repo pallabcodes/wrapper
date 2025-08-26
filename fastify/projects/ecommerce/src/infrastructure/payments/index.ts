@@ -135,7 +135,7 @@ const createPayPalPayment = async (
   request: CreatePaymentIntentRequest
 ): Promise<AsyncResult<PaymentIntent>> => {
   try {
-    const transaction: any = {
+          const transaction: import('../../shared/types/custom-types').PaymentTransaction = {
       amount: {
         total: request.amount.toFixed(2),
         currency: request.currency
@@ -155,7 +155,7 @@ const createPayPalPayment = async (
     }
 
     return new Promise((resolve) => {
-      paypal.payment.create(payment, (error: any, payment: any) => {
+      paypal.payment.create(payment, (error: Error | null, payment: import('../../shared/types/custom-types').PaymentTransaction) => {
         if (error) {
           resolve(Result.error(`PayPal payment creation failed: ${error.message}`))
           return
@@ -223,7 +223,7 @@ const confirmPayPalPayment = async (
 ): Promise<AsyncResult<PaymentResult>> => {
   try {
     return new Promise((resolve) => {
-      paypal.payment.execute(paymentId, { payer_id: 'PAYER_ID' }, (error: any, payment: any) => {
+      paypal.payment.execute(paymentId, { payer_id: 'PAYER_ID' }, (error: Error | null, payment: import('../../shared/types/custom-types').PaymentTransaction) => {
         if (error) {
           resolve(Result.error(`PayPal payment confirmation failed: ${error.message}`))
           return

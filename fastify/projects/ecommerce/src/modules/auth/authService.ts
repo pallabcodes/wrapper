@@ -19,23 +19,26 @@ import type { AuthResponse } from './controller-schemas.js'
 
 export class AuthService {
   
-  private handleDomainError(error: any): string {
-    switch (error.type) {
-      case 'ValidationError':
-        return error.message || 'Validation error'
-      case 'BusinessRuleError':
-        return error.message || 'Business rule violation'
-      case 'NotFoundError':
-        return 'Resource not found'
-      case 'ConflictError':
-        return error.message || 'Conflict occurred'
-      case 'AuthorizationError':
-        return 'Unauthorized access'
-      case 'InfrastructureError':
-        return 'Infrastructure error'
-      default:
-        return error.message || 'Unknown error'
+  private handleDomainError(error: Error | { type: string; message?: string }): string {
+    if ('type' in error) {
+      switch (error.type) {
+        case 'ValidationError':
+          return error.message || 'Validation error'
+        case 'BusinessRuleError':
+          return error.message || 'Business rule violation'
+        case 'NotFoundError':
+          return 'Resource not found'
+        case 'ConflictError':
+          return error.message || 'Conflict occurred'
+        case 'AuthorizationError':
+          return 'Unauthorized access'
+        case 'InfrastructureError':
+          return 'Infrastructure error'
+        default:
+          return error.message || 'Unknown error'
+      }
     }
+    return error.message || 'Unknown error'
   }
   
   /**
@@ -64,7 +67,7 @@ export class AuthService {
     const result = await registerUser(command)
 
     if (result.type === 'error') {
-      throw new Error(this.handleDomainError(result.error))
+      throw new Error(result.error)
     }
 
     const aggregate = result.value
@@ -135,7 +138,7 @@ export class AuthService {
     const result = await loginUser({ id: mockUserState.id, state: mockUserState, version: 1, events: [] }, command)
 
     if (result.type === 'error') {
-      throw new Error(this.handleDomainError(result.error))
+      throw new Error(result.error)
     }
 
     const { user, tokens } = result.value
@@ -159,6 +162,48 @@ export class AuthService {
    */
   private generateUserId(): string {
     return uuidv4()
+  }
+
+  /**
+   * Logout user
+   */
+  async logoutUser(token: string): Promise<void> {
+    // In a real implementation, this would:
+    // 1. Validate the token
+    // 2. Invalidate the session
+    // 3. Add to blacklist if needed
+    // 4. Emit logout event
+    
+    console.log(`Logging out user with token: ${token.substring(0, 10)}...`)
+    
+    // For now, just simulate successful logout
+    return Promise.resolve()
+  }
+
+  /**
+   * Get user profile
+   */
+  async getUserProfile(token: string): Promise<any> {
+    // In a real implementation, this would:
+    // 1. Validate the token
+    // 2. Extract user ID from token
+    // 3. Fetch user profile from repository
+    // 4. Return profile data
+    
+    console.log(`Getting profile for token: ${token.substring(0, 10)}...`)
+    
+    // For now, return mock profile
+    return {
+      id: this.generateUserId(),
+      email: 'user@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      roles: ['customer'],
+      status: 'active',
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
   }
 
   /**

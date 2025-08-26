@@ -55,6 +55,27 @@ export const Result = {
   success: <T>(value: T): Result<T> => ({ type: 'success', value }),
   error: (message: string): Result<never> => ({ type: 'error', error: message }),
   
+  // Utility methods for checking result type
+  isSuccess: <T>(result: Result<T>): result is { type: 'success'; value: T } => 
+    result.type === 'success',
+  
+  isError: <T>(result: Result<T>): result is { type: 'error'; error: string } => 
+    result.type === 'error',
+  
+  getValue: <T>(result: Result<T>): T => {
+    if (result.type === 'success') {
+      return result.value
+    }
+    throw new Error(`Cannot get value from error result: ${result.error}`)
+  },
+  
+  getError: <T>(result: Result<T>): string => {
+    if (result.type === 'error') {
+      return result.error
+    }
+    throw new Error('Cannot get error from success result')
+  },
+  
   map: <T, U>(fn: (value: T) => U, result: Result<T>): Result<U> =>
     result.type === 'success' ? Result.success(fn(result.value)) : result,
   
@@ -115,25 +136,25 @@ export const Validation = {
 // VALIDATION HELPERS
 // ============================================================================
 
-export const validateWith = <T>(schema: any) => (value: unknown): Result<T> => {
+export const validateWith = <T>(schema: import('../../shared/types/custom-types').ValidationSchema) => (value: unknown): Result<T> => {
   try {
     const result = schema.parse(value) as T
     return Result.success(result)
-  } catch (error: any) {
+  } catch (error: unknown) {
     return Result.error(error.message || 'Validation failed')
   }
 }
 
 // Type-safe validation helper
-export const validateString = (schema: any) => (value: unknown): Result<string> => {
+export const validateString = (schema: import('../../shared/types/custom-types').ValidationSchema) => (value: unknown): Result<string> => {
   return validateWith<string>(schema)(value)
 }
 
-export const validateNumber = (schema: any) => (value: unknown): Result<number> => {
+export const validateNumber = (schema: import('../../shared/types/custom-types').ValidationSchema) => (value: unknown): Result<number> => {
   return validateWith<number>(schema)(value)
 }
 
-export const validateObject = <T extends Record<string, any>>(schema: any) => (value: unknown): Result<T> => {
+export const validateObject = <T extends Record<string, unknown>>(schema: import('../../shared/types/custom-types').ValidationSchema) => (value: unknown): Result<T> => {
   return validateWith<T>(schema)(value)
 }
 

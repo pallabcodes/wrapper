@@ -5,7 +5,7 @@
  */
 
 import type { FastifyRequest, FastifyReply } from 'fastify'
-import { ResponseBuilder } from '../../shared/response/index.js'
+import { ChainableResponseBuilder } from '../../shared/response/chainable-builder.js'
 import { ProductService } from './productService.js'
 import { 
   CreateProductSchema, 
@@ -40,8 +40,8 @@ export class ProductController {
       
       if (!validationResult.success) {
         return reply.status(400).send(
-          ResponseBuilder
-            .create()
+          new ChainableResponseBuilder(reply)
+            
             .error('VALIDATION_ERROR', 'Invalid product data')
             .build()
         )
@@ -54,16 +54,16 @@ export class ProductController {
       const result = await this.productService.createProduct(validationResult.data, userId)
 
       return reply.status(201).send(
-        ResponseBuilder
-          .create()
+        new ChainableResponseBuilder(reply)
+          
           .created(result)
           .build()
       )
 
     } catch (error) {
       return reply.status(500).send(
-        ResponseBuilder
-          .create()
+        new ChainableResponseBuilder(reply)
+          
           .error('INTERNAL_ERROR', 'Failed to create product')
           .build()
       )
@@ -83,16 +83,16 @@ export class ProductController {
       const result = await this.productService.getProduct(id)
 
       return reply.status(200).send(
-        ResponseBuilder
-          .create()
+        new ChainableResponseBuilder(reply)
+          
           .success(result)
           .build()
       )
 
     } catch (error) {
       return reply.status(500).send(
-        ResponseBuilder
-          .create()
+        new ChainableResponseBuilder(reply)
+          
           .error('INTERNAL_ERROR', 'Failed to get product')
           .build()
       )
@@ -113,8 +113,8 @@ export class ProductController {
       
       if (!validationResult.success) {
         return reply.status(400).send(
-          ResponseBuilder
-            .create()
+          new ChainableResponseBuilder(reply)
+            
             .error('VALIDATION_ERROR', 'Invalid product data')
             .build()
         )
@@ -126,16 +126,16 @@ export class ProductController {
       const result = await this.productService.updateProduct(id, validationResult.data, userId)
 
       return reply.status(200).send(
-        ResponseBuilder
-          .create()
+        new ChainableResponseBuilder(reply)
+          
           .success(result)
           .build()
       )
 
     } catch (error) {
       return reply.status(500).send(
-        ResponseBuilder
-          .create()
+        new ChainableResponseBuilder(reply)
+          
           .error('INTERNAL_ERROR', 'Failed to update product')
           .build()
       )
@@ -157,16 +157,16 @@ export class ProductController {
       const result = await this.productService.deleteProduct(id, userId)
 
       return reply.status(200).send(
-        ResponseBuilder
-          .create()
+        new ChainableResponseBuilder(reply)
+          
           .success(result)
           .build()
       )
 
     } catch (error) {
       return reply.status(500).send(
-        ResponseBuilder
-          .create()
+        new ChainableResponseBuilder(reply)
+          
           .error('INTERNAL_ERROR', 'Failed to delete product')
           .build()
       )
@@ -187,8 +187,8 @@ export class ProductController {
       
       if (!validationResult.success) {
         return reply.status(400).send(
-          ResponseBuilder
-            .create()
+          new ChainableResponseBuilder(reply)
+            
             .error('VALIDATION_ERROR', 'Invalid query parameters')
             .build()
         )
@@ -197,16 +197,16 @@ export class ProductController {
       const result = await this.productService.searchProducts(validationResult.data)
 
       return reply.status(200).send(
-        ResponseBuilder
-          .create()
+        new ChainableResponseBuilder(reply)
+          
           .success(result)
           .build()
       )
 
     } catch (error) {
       return reply.status(500).send(
-        ResponseBuilder
-          .create()
+        new ChainableResponseBuilder(reply)
+          
           .error('INTERNAL_ERROR', 'Failed to search products')
           .build()
       )
@@ -227,8 +227,8 @@ export class ProductController {
       
       if (!validationResult.success) {
         return reply.status(400).send(
-          ResponseBuilder
-            .create()
+          new ChainableResponseBuilder(reply)
+            
             .error('VALIDATION_ERROR', 'Invalid inventory data')
             .build()
         )
@@ -240,16 +240,16 @@ export class ProductController {
       const result = await this.productService.updateInventory(id, validationResult.data, userId)
 
       return reply.status(200).send(
-        ResponseBuilder
-          .create()
+        new ChainableResponseBuilder(reply)
+          
           .success(result)
           .build()
       )
 
     } catch (error) {
       return reply.status(500).send(
-        ResponseBuilder
-          .create()
+        new ChainableResponseBuilder(reply)
+          
           .error('INTERNAL_ERROR', 'Failed to update inventory')
           .build()
       )

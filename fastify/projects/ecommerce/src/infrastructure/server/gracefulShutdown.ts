@@ -7,7 +7,7 @@
 
 import type { FastifyInstance } from 'fastify'
 
-export const gracefulShutdown = (app: any) => {
+export const gracefulShutdown = (app: import('fastify').FastifyInstance) => {
   const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM']
   
   signals.forEach((signal) => {

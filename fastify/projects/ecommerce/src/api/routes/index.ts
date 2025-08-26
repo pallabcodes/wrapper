@@ -5,7 +5,7 @@
  * Includes authentication, products, orders, and health check routes.
  */
 
-export const setupRoutes = async (app: any): Promise<void> => {
+export const setupRoutes = async (app: import('fastify').FastifyInstance): Promise<void> => {
   // Health check endpoint
   app.get('/health', async () => {
     return { 
@@ -17,7 +17,7 @@ export const setupRoutes = async (app: any): Promise<void> => {
   })
 
   // API v1 prefix
-  await app.register(async function (api: any) {
+  await app.register(async function (api: import('fastify').FastifyInstance) {
     // Product routes placeholder
     api.get('/products', async () => {
       return { message: 'Products endpoint - coming soon' }

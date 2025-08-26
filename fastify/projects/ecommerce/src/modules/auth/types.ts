@@ -132,7 +132,7 @@ export interface UserState {
   lastLoginAttempt?: Date | undefined
   lockedUntil?: Date | undefined
   lockReason?: string | undefined
-  sessions: any[]
+  sessions: import('../../shared/types/custom-types').UserSession[]
   addresses: Address[]
   securitySettings: SecuritySettings
   createdAt: Date
@@ -148,9 +148,9 @@ export interface TokenPair {
 }
 
 export type UserEvent = 
-  | { type: 'UserRegistered'; payload: any }
-  | { type: 'UserLoggedIn'; payload: any }
-  | { type: 'UserLoggedOut'; payload: any }
-  | { type: 'UserLocked'; payload: any }
-  | { type: 'UserPasswordChanged'; payload: any }
-  | { type: 'UserRoleChanged'; payload: any }
+  | { type: 'UserRegistered'; payload: import('../../shared/types/custom-types').EventPayload }
+| { type: 'UserLoggedIn'; payload: import('../../shared/types/custom-types').EventPayload }
+| { type: 'UserLoggedOut'; payload: import('../../shared/types/custom-types').EventPayload }
+| { type: 'UserLocked'; payload: import('../../shared/types/custom-types').EventPayload }
+| { type: 'UserPasswordChanged'; payload: import('../../shared/types/custom-types').EventPayload }
+| { type: 'UserRoleChanged'; payload: import('../../shared/types/custom-types').EventPayload }

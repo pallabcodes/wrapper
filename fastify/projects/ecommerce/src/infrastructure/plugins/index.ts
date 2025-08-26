@@ -5,7 +5,7 @@
  * Includes cors, helmet, rate limiting, compression, and custom plugins.
  */
 
-export const setupPlugins = async (app: any): Promise<void> => {
+export const setupPlugins = async (app: import('fastify').FastifyInstance): Promise<void> => {
   // Security headers
   await app.register(import('@fastify/helmet'), {
     contentSecurityPolicy: {
@@ -20,7 +20,7 @@ export const setupPlugins = async (app: any): Promise<void> => {
 
   // CORS configuration
   await app.register(import('@fastify/cors'), {
-    origin: (origin: any, cb: any) => {
+            origin: (origin: string | undefined, cb: (err: Error | null, allow: boolean) => void) => {
       const hostname = new URL(origin || 'http://localhost').hostname
       if (hostname === 'localhost' || hostname === '127.0.0.1' || !origin) {
         cb(null, true)

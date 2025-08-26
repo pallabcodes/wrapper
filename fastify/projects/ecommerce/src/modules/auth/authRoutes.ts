@@ -17,7 +17,8 @@ export async function authRoutes(
   fastify: FastifyInstance,
   options: FastifyPluginOptions
 ): Promise<void> {
-  const authController = new AuthController()
+  // Create controller instances for each request
+  const createAuthController = (reply: import('fastify').FastifyReply) => new AuthController(reply)
 
   // Register route
   fastify.post('/register', {
@@ -26,7 +27,7 @@ export async function authRoutes(
       tags: ['Authentication'],
       body: RegisterRequestSchema
     },
-    handler: authController.register.bind(authController)
+    handler: (request, reply) => createAuthController(reply).register(request, reply)
   })
 
   // Login route
@@ -36,7 +37,7 @@ export async function authRoutes(
       tags: ['Authentication'],
       body: LoginRequestSchema
     },
-    handler: authController.login.bind(authController)
+    handler: (request, reply) => createAuthController(reply).login(request, reply)
   })
 
   // Logout route
@@ -52,7 +53,7 @@ export async function authRoutes(
         required: ['authorization']
       }
     },
-    handler: authController.logout.bind(authController)
+    handler: (request, reply) => createAuthController(reply).logout(request, reply)
   })
 
   // Profile route
@@ -68,7 +69,7 @@ export async function authRoutes(
         required: ['authorization']
       }
     },
-    handler: authController.getProfile.bind(authController)
+    handler: (request, reply) => createAuthController(reply).getProfile(request, reply)
   })
 }
 

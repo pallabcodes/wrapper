@@ -56,7 +56,7 @@ export interface ValidationRule {
   field: string;
   schema: z.ZodSchema;
   required: boolean;
-  transform?: (value: any) => any;
+  transform?: (value: import('../../shared/types/custom-types').DataValue) => import('../../shared/types/custom-types').DataValue;
 }
 
 export interface CleaningRule {
@@ -66,7 +66,7 @@ export interface CleaningRule {
 
 export interface CleaningOperation {
   type: 'trim' | 'lowercase' | 'uppercase' | 'normalize' | 'sanitize' | 'format' | 'replace';
-  params?: any;
+  params?: Record<string, unknown>;
 }
 
 export interface DatabaseInsertStrategy {
@@ -170,7 +170,7 @@ export class CSVDataValidator {
   /**
    * Apply cleaning operations to a value
    */
-  private applyCleaningOperations(value: any, operations: CleaningOperation[]): any {
+  private applyCleaningOperations(value: import('../../shared/types/custom-types').DataValue, operations: CleaningOperation[]): import('../../shared/types/custom-types').DataValue {
     let result = value;
 
     for (const operation of operations) {
@@ -202,23 +202,25 @@ export class CSVDataValidator {
         case 'sanitize':
           if (typeof result === 'string') {
             // Remove potentially dangerous characters
-            result = result.replace(/[<>"\';\\&]/g, '');
+            result = result.replace(/[<>"\';\\&]/g, '') as import('../../shared/types/custom-types').DataValue;
           }
           break;
           
         case 'format':
           if (operation.params?.type === 'phone') {
-            result = this.formatPhoneNumber(result);
+            result = this.formatPhoneNumber(result as string);
           } else if (operation.params?.type === 'email') {
-            result = this.formatEmail(result);
+            result = this.formatEmail(result as string);
           }
           break;
           
         case 'replace':
           if (typeof result === 'string' && operation.params) {
             const { pattern, replacement, flags } = operation.params;
-            const regex = new RegExp(pattern, flags || 'g');
-            result = result.replace(regex, replacement || '');
+            if (typeof pattern === 'string') {
+              const regex = new RegExp(pattern, (flags as string) || 'g');
+              result = result.replace(regex, (replacement as string) || '');
+            }
           }
           break;
       }
@@ -301,6 +303,13 @@ export class EnterpriseCSVProcessor extends EventEmitter {
   }
 
   /**
+   * Get validator instance for configuration
+   */
+  getValidator(): CSVDataValidator {
+    return this.validator;
+  }
+
+  /**
    * Process CSV file with full pipeline
    */
   async processFile(
@@ -362,7 +371,7 @@ export class EnterpriseCSVProcessor extends EventEmitter {
       delimiter: this.options.delimiter,
       columns: this.options.headers,
       skip_empty_lines: this.options.skipEmptyLines,
-      skip_lines_with_empty_values: false,
+      skip_records_with_empty_values: false,
       trim: true,
       max_record_size: 1024 * 1024 // 1MB per record max
     });
@@ -371,7 +380,7 @@ export class EnterpriseCSVProcessor extends EventEmitter {
     const delimiter = this.options.delimiter;
     const stringifier = new Transform({
       objectMode: true,
-      transform(chunk: any, encoding: BufferEncoding, callback: Function) {
+      transform(chunk: import('../../shared/types/custom-types').StreamChunk, encoding: BufferEncoding, callback: import('stream').TransformCallback) {
         const csvLine = Object.values(chunk).join(delimiter) + '\n';
         callback(null, csvLine);
       }
@@ -392,14 +401,14 @@ export class EnterpriseCSVProcessor extends EventEmitter {
    * Create data processing transform stream
    */
   private createProcessorTransform(insertStrategy?: DatabaseInsertStrategy): Transform {
-    const batch: any[] = [];
+            const batch: import('../../shared/types/custom-types').DataValue[] = [];
     let rowIndex = 0;
 
     return new Transform({
       objectMode: true,
       highWaterMark: this.options.batchSize,
       
-      transform: (chunk: any, encoding: BufferEncoding, callback: Function) => {
+              transform: (chunk: import('../../shared/types/custom-types').StreamChunk, encoding: BufferEncoding, callback: import('stream').TransformCallback) => {
         try {
           rowIndex++;
           this.metrics.totalRows++;
@@ -434,7 +443,7 @@ export class EnterpriseCSVProcessor extends EventEmitter {
           }
 
           this.metrics.processedRows++;
-          batch.push(result.cleanedData);
+          batch.push(result.cleanedData as import('../../shared/types/custom-types').DataValue);
 
           // Process batch when it reaches the configured size
           if (batch.length >= this.options.batchSize) {
@@ -467,7 +476,7 @@ export class EnterpriseCSVProcessor extends EventEmitter {
             this.metrics.skippedRows++;
             callback();
           } else {
-            callback(error);
+            callback(error instanceof Error ? error : new Error(String(error)));
           }
         }
       },
@@ -618,7 +627,7 @@ export class EnterpriseCSVProcessor extends EventEmitter {
       field: 'price',
       schema: z.number().positive(),
       required: true,
-      transform: (value) => parseFloat(value)
+      transform: (value) => parseFloat(value as string)
     });
 
     validator.addValidation('email', {
@@ -706,7 +715,7 @@ export async function processProductCatalog(
     field: 'inventory',
     schema: z.number().int().min(0),
     required: true,
-    transform: (value) => parseInt(value, 10)
+    transform: (value) => parseInt(value as string, 10)
   });
 
   // Database insertion strategy
@@ -770,7 +779,7 @@ export async function processCustomerData(
     field: 'dateOfBirth',
     schema: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     required: false,
-    transform: (value) => value ? new Date(value).toISOString().split('T')[0] : null
+    transform: (value) => value ? new Date(value as string).toISOString().split('T')[0] : null
   });
 
   // Customer data cleaning
@@ -794,5 +803,18 @@ export async function processCustomerData(
 
   return await processor.processFile(inputPath, outputPath);
 }
+
+// Export singleton instance
+export const csvProcessor = new EnterpriseCSVProcessor({
+  batchSize: 1000,
+  maxErrors: 100,
+  skipEmptyLines: true,
+  skipLinesWithError: false,
+  delimiter: ',',
+  headers: true,
+  encoding: 'utf8',
+  highWaterMark: 64 * 1024,
+  maxConcurrency: 4
+});
 
 export default EnterpriseCSVProcessor;

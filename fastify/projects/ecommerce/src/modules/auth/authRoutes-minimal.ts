@@ -9,7 +9,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { z } from 'zod'
 import { extendFastify } from '../../shared/fastify-simple.js'
 import { AuthService } from './authService.js'
-import { ResponseBuilder } from '../../shared/response/index.js'
+import { ChainableResponseBuilder } from '../../shared/response/chainable-builder.js'
 import { RegisterRequestSchema, LoginRequestSchema } from './controller-schemas.js'
 
 // ============================================================================
@@ -148,11 +148,11 @@ const registerHandler = async (request: FastifyRequest, reply: FastifyReply) => 
     )
 
     return reply.status(201).send(
-      new ResponseBuilder().success(result).build()
+      new ChainableResponseBuilder(reply).success(result).build()
     )
   } catch (error) {
     return reply.status(400).send(
-      new ResponseBuilder().error('REGISTRATION_FAILED', error instanceof Error ? error.message : 'Registration failed').build()
+      new ChainableResponseBuilder(reply).error('REGISTRATION_FAILED', error instanceof Error ? error.message : 'Registration failed').build()
     )
   }
 }
@@ -173,24 +173,24 @@ const loginHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     )
 
     return reply.status(200).send(
-      new ResponseBuilder().success(result).build()
+      new ChainableResponseBuilder(reply).success(result).build()
     )
   } catch (error) {
     return reply.status(401).send(
-      new ResponseBuilder().error('INVALID_CREDENTIALS', error instanceof Error ? error.message : 'Invalid credentials').build()
+      new ChainableResponseBuilder(reply).error('INVALID_CREDENTIALS', error instanceof Error ? error.message : 'Invalid credentials').build()
     )
   }
 }
 
 const logoutHandler = async (request: FastifyRequest, reply: FastifyReply) => {
   return reply.status(501).send(
-    new ResponseBuilder().error('NOT_IMPLEMENTED', 'Logout endpoint not implemented yet').build()
+    new ChainableResponseBuilder(reply).error('NOT_IMPLEMENTED', 'Logout endpoint not implemented yet').build()
   )
 }
 
 const getProfileHandler = async (request: FastifyRequest, reply: FastifyReply) => {
   return reply.status(501).send(
-    new ResponseBuilder().error('NOT_IMPLEMENTED', 'Get profile endpoint not implemented yet').build()
+    new ChainableResponseBuilder(reply).error('NOT_IMPLEMENTED', 'Get profile endpoint not implemented yet').build()
   )
 }
 

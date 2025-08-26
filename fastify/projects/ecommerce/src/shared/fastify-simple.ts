@@ -61,12 +61,12 @@ export class SimpleRouteBuilder {
     return this
   }
 
-  preHandler(...handlers: any[]): this {
+  preHandler(...handlers: import('fastify').preHandlerHookHandler[]): this {
     this.currentRoute.preHandler = handlers
     return this
   }
 
-  preValidation(...handlers: any[]): this {
+  preValidation(...handlers: import('fastify').preValidationHookHandler[]): this {
     this.currentRoute.preValidation = handlers
     return this
   }
