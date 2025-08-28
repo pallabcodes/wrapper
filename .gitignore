@@ -4,6 +4,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
 
 # Build outputs
 dist/
@@ -173,3 +174,104 @@ config/local.js
 # IDE
 .vscode/settings.json
 .idea/workspace.xml
+
+# ===== MONOREPO SPECIFIC PATTERNS =====
+
+# Turbo cache (for monorepo builds)
+.turbo/
+**/.turbo/
+
+# Monorepo package manager files
+# Keep root lock files, ignore subdirectory ones
+**/package-lock.json
+**/yarn.lock
+**/pnpm-lock.yaml
+!package-lock.json
+!yarn.lock
+!pnpm-lock.yaml
+
+# Monorepo build artifacts
+**/dist/
+**/build/
+**/coverage/
+
+# Analysis and extraction artifacts
+analysis/temp/
+analysis/notes/
+analysis/**/dist/
+analysis/**/build/
+
+# Source repository clones (if they exist)
+analysis/react-source/
+analysis/express-source/
+analysis/nest-source/
+analysis/hono-source/
+
+# Fastify project specific
+fastify/**/dist/
+fastify/**/build/
+fastify/**/coverage/
+fastify/**/test-results/
+
+# NestJS source specific
+nest-source/**/dist/
+nest-source/**/build/
+nest-source/**/coverage/
+nest-source/**/node_modules/
+nest-source/**/*.d.ts
+nest-source/**/*.js
+!nest-source/**/*.d.ts
+!nest-source/**/*.js
+
+# Express source specific
+express-source/**/dist/
+express-source/**/build/
+express-source/**/coverage/
+
+# ===== DEVELOPMENT TOOLS =====
+
+# Husky
+.husky/_
+
+# Commitizen
+.czrc
+
+# Lint staged
+.lintstagedrc
+
+# ===== CACHE AND TEMP FILES =====
+
+# Various cache directories
+**/.cache/
+**/cache/
+**/tmp/
+**/temp/
+
+# Editor temporary files
+**/*~
+**/.#*
+**/#*#
+
+# ===== SECURITY =====
+
+# Secrets and sensitive files
+**/.env*
+**/secrets/
+**/private/
+**/*.key
+**/*.pem
+**/*.crt
+
+# ===== BACKUP AND ARCHIVE =====
+
+# Backup files
+**/*.bak
+**/*.backup
+**/*.old
+**/*.orig
+
+# Archive files
+**/*.tar
+**/*.tar.gz
+**/*.zip
+**/*.rar

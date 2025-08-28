@@ -4,7 +4,6 @@
     "module": "commonjs",
     "lib": ["ES2022"],
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -23,16 +22,11 @@
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true,
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["*"],
-      "@/core/*": ["core/*"],
-      "@/features/*": ["features/*"],
-      "@/shared/*": ["shared/*"],
-      "@/infrastructure/*": ["infrastructure/*"],
-      "@/middleware/*": ["middleware/*"],
-      "@/types/*": ["types/*"],
-      "@/utils/*": ["utils/*"]
+      "@ecommerce-enterprise/core": ["packages/core/src"],
+      "@ecommerce-enterprise/shared": ["packages/shared/src"],
+      "@ecommerce-enterprise/types": ["packages/types/src"]
     },
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
@@ -42,8 +36,9 @@
     "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": [
-    "src/**/*",
-    "tests/**/*"
+    "packages/**/*",
+    "apps/**/*",
+    "scripts/**/*"
   ],
   "exclude": [
     "node_modules",
