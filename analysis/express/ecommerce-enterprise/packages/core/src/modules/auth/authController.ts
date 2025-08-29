@@ -1,12 +1,11 @@
 /**
  * Auth Controller - Functional Programming Approach
  * 
- * Handles authentication and authorization logic using functional programming patterns,
- * composition over inheritance, and enterprise-grade error handling.
+ * Clean controller focused on business logic only.
+ * No schemas or validation logic - pure controller responsibilities.
  */
 
 import { Request, Response } from 'express'
-import { z } from 'zod'
 import { validateSchema } from '../../middleware/validation'
 import { authService } from './authService'
 import {
@@ -17,56 +16,23 @@ import {
   createUnauthorizedResponse,
   createSuccessResponse
 } from './authResponseHandler'
+import {
+  registerSchema,
+  loginSchema,
+  logoutSchema,
+  refreshTokenSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
+  changePasswordSchema,
+  updateProfileSchema
+} from './authSchemas'
 
-// Validation schemas using functional composition
-const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  phone: z.string().optional()
-})
+// ============================================================================
+// CONTROLLER METHODS
+// ============================================================================
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string()
-})
-
-const logoutSchema = z.object({
-  refreshToken: z.string()
-})
-
-const refreshTokenSchema = z.object({
-  refreshToken: z.string()
-})
-
-const forgotPasswordSchema = z.object({
-  email: z.string().email()
-})
-
-const resetPasswordSchema = z.object({
-  token: z.string(),
-  password: z.string().min(8)
-})
-
-const verifyEmailSchema = z.object({
-  token: z.string()
-})
-
-const changePasswordSchema = z.object({
-  currentPassword: z.string(),
-  newPassword: z.string().min(8)
-})
-
-const updateProfileSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
-  phone: z.string().optional()
-})
-
-// Functional controller methods using composition
 export const authController = {
-  // Register a new user
   async register(req: Request, res: Response) {
     try {
       const validatedData = validateSchema(registerSchema, req.body)
@@ -77,7 +43,6 @@ export const authController = {
     }
   },
 
-  // Login user
   async login(req: Request, res: Response) {
     try {
       const validatedData = validateSchema(loginSchema, req.body)
@@ -88,7 +53,6 @@ export const authController = {
     }
   },
 
-  // Logout user
   async logout(req: Request, res: Response) {
     try {
       const { refreshToken } = validateSchema(logoutSchema, req.body)
@@ -99,7 +63,6 @@ export const authController = {
     }
   },
 
-  // Refresh access token
   async refreshToken(req: Request, res: Response) {
     try {
       const { refreshToken } = validateSchema(refreshTokenSchema, req.body)
@@ -110,7 +73,6 @@ export const authController = {
     }
   },
 
-  // Get current user
   async getCurrentUser(req: Request, res: Response) {
     try {
       const userId = (req as any).user?.userId
@@ -118,14 +80,16 @@ export const authController = {
         return createUnauthorizedResponse(res)
       }
       
-      const user = await authService.getCurrentUser(userId)
+      const user = await authService.getUserById(userId)
+      if (!user) {
+        return createErrorResponse(res, new Error('User not found'))
+      }
       return createUserResponse(res, user, 'User retrieved successfully')
     } catch (error) {
       return createErrorResponse(res, error)
     }
   },
 
-  // Forgot password
   async forgotPassword(req: Request, res: Response) {
     try {
       const { email } = validateSchema(forgotPasswordSchema, req.body)
@@ -136,7 +100,6 @@ export const authController = {
     }
   },
 
-  // Reset password
   async resetPassword(req: Request, res: Response) {
     try {
       const validatedData = validateSchema(resetPasswordSchema, req.body)
@@ -147,18 +110,16 @@ export const authController = {
     }
   },
 
-  // Verify email
   async verifyEmail(req: Request, res: Response) {
     try {
       const { token } = validateSchema(verifyEmailSchema, req.body)
-      await authService.verifyEmail({ token })
+      await authService.verifyEmail(token)
       return createSimpleResponse(res, 'Email verified successfully')
     } catch (error) {
       return createErrorResponse(res, error)
     }
   },
 
-  // Change password
   async changePassword(req: Request, res: Response) {
     try {
       const userId = (req as any).user?.userId
@@ -174,7 +135,6 @@ export const authController = {
     }
   },
 
-  // Update profile
   async updateProfile(req: Request, res: Response) {
     try {
       const userId = (req as any).user?.userId
@@ -190,7 +150,6 @@ export const authController = {
     }
   },
 
-  // Delete account
   async deleteAccount(req: Request, res: Response) {
     try {
       const userId = (req as any).user?.userId
@@ -198,7 +157,8 @@ export const authController = {
         return createUnauthorizedResponse(res)
       }
       
-      await authService.deleteAccount(userId)
+      // TODO: Implement deleteAccount in authService
+      throw new Error('Delete account not implemented')
       return createSimpleResponse(res, 'Account deleted successfully')
     } catch (error) {
       return createErrorResponse(res, error)

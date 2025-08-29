@@ -5,7 +5,8 @@
  * Each version maintains backward compatibility while introducing new features.
  */
 
-import { authRoutes } from '@ecommerce-enterprise/core'
+import { Request, Response, Application } from 'express'
+import { authRoutes as authRouter } from '@ecommerce-enterprise/core'
 import { 
   createVersionedRoute, 
   composeVersionedRoutes, 
@@ -15,17 +16,8 @@ import {
 // V1 Routes - Original implementation
 const v1Routes = [
   // Auth routes (original implementation)
-  createVersionedRoute('v1', '/auth/register', 'post', authRoutes),
-  createVersionedRoute('v1', '/auth/login', 'post', authRoutes),
-  createVersionedRoute('v1', '/auth/logout', 'post', authRoutes),
-  createVersionedRoute('v1', '/auth/refresh-token', 'post', authRoutes),
-  createVersionedRoute('v1', '/auth/me', 'get', authRoutes),
-  createVersionedRoute('v1', '/auth/verify-email', 'post', authRoutes),
-  createVersionedRoute('v1', '/auth/forgot-password', 'post', authRoutes),
-  createVersionedRoute('v1', '/auth/reset-password', 'post', authRoutes),
-  createVersionedRoute('v1', '/auth/change-password', 'post', authRoutes),
-  createVersionedRoute('v1', '/auth/profile', 'put', authRoutes),
-  createVersionedRoute('v1', '/auth/delete-account', 'delete', authRoutes),
+  // Use the auth router for all auth routes
+  createVersionedRoute('v1', '/auth', 'use', authRouter),
   
   // Version info endpoint
   createVersionedRoute('v1', '/version', 'get', createVersionInfoHandler())
@@ -33,21 +25,11 @@ const v1Routes = [
 
 // V2 Routes - Enhanced with new features
 const v2Routes = [
-  // Enhanced auth routes with additional features
-  createVersionedRoute('v2', '/auth/register', 'post', authRoutes),
-  createVersionedRoute('v2', '/auth/login', 'post', authRoutes),
-  createVersionedRoute('v2', '/auth/logout', 'post', authRoutes),
-  createVersionedRoute('v2', '/auth/refresh-token', 'post', authRoutes),
-  createVersionedRoute('v2', '/auth/me', 'get', authRoutes),
-  createVersionedRoute('v2', '/auth/verify-email', 'post', authRoutes),
-  createVersionedRoute('v2', '/auth/forgot-password', 'post', authRoutes),
-  createVersionedRoute('v2', '/auth/reset-password', 'post', authRoutes),
-  createVersionedRoute('v2', '/auth/change-password', 'post', authRoutes),
-  createVersionedRoute('v2', '/auth/profile', 'put', authRoutes),
-  createVersionedRoute('v2', '/auth/delete-account', 'delete', authRoutes),
+  // Use the auth router for all auth routes
+  createVersionedRoute('v2', '/auth', 'use', authRouter),
   
   // New V2 features
-  createVersionedRoute('v2', '/auth/bulk-operations', 'post', (_req: any, res: any) => {
+  createVersionedRoute('v2', '/auth/bulk-operations', 'post', (_req: Request, res: Response) => {
     res.json({
       success: true,
       message: 'Bulk operations endpoint - V2 feature',
@@ -55,7 +37,7 @@ const v2Routes = [
     })
   }),
   
-  createVersionedRoute('v2', '/auth/webhooks', 'post', (_req: any, res: any) => {
+  createVersionedRoute('v2', '/auth/webhooks', 'post', (_req: Request, res: Response) => {
     res.json({
       success: true,
       message: 'Webhooks endpoint - V2 feature',
@@ -69,21 +51,11 @@ const v2Routes = [
 
 // V3 Routes - Latest with GraphQL and real-time features
 const v3Routes = [
-  // Enhanced auth routes with latest features
-  createVersionedRoute('v3', '/auth/register', 'post', authRoutes),
-  createVersionedRoute('v3', '/auth/login', 'post', authRoutes),
-  createVersionedRoute('v3', '/auth/logout', 'post', authRoutes),
-  createVersionedRoute('v3', '/auth/refresh-token', 'post', authRoutes),
-  createVersionedRoute('v3', '/auth/me', 'get', authRoutes),
-  createVersionedRoute('v3', '/auth/verify-email', 'post', authRoutes),
-  createVersionedRoute('v3', '/auth/forgot-password', 'post', authRoutes),
-  createVersionedRoute('v3', '/auth/reset-password', 'post', authRoutes),
-  createVersionedRoute('v3', '/auth/change-password', 'post', authRoutes),
-  createVersionedRoute('v3', '/auth/profile', 'put', authRoutes),
-  createVersionedRoute('v3', '/auth/delete-account', 'delete', authRoutes),
+  // Use the auth router for all auth routes
+  createVersionedRoute('v3', '/auth', 'use', authRouter),
   
   // V2 features maintained
-  createVersionedRoute('v3', '/auth/bulk-operations', 'post', (_req: any, res: any) => {
+  createVersionedRoute('v3', '/auth/bulk-operations', 'post', (_req: Request, res: Response) => {
     res.json({
       success: true,
       message: 'Bulk operations endpoint - V3 enhanced',
@@ -91,7 +63,7 @@ const v3Routes = [
     })
   }),
   
-  createVersionedRoute('v3', '/auth/webhooks', 'post', (_req: any, res: any) => {
+  createVersionedRoute('v3', '/auth/webhooks', 'post', (_req: Request, res: Response) => {
     res.json({
       success: true,
       message: 'Webhooks endpoint - V3 enhanced',
@@ -100,7 +72,7 @@ const v3Routes = [
   }),
   
   // New V3 features
-  createVersionedRoute('v3', '/auth/real-time', 'get', (_req: any, res: any) => {
+  createVersionedRoute('v3', '/auth/real-time', 'get', (_req: Request, res: Response) => {
     res.json({
       success: true,
       message: 'Real-time events endpoint - V3 feature',
@@ -108,7 +80,7 @@ const v3Routes = [
     })
   }),
   
-  createVersionedRoute('v3', '/auth/analytics', 'get', (_req: any, res: any) => {
+  createVersionedRoute('v3', '/auth/analytics', 'get', (_req: Request, res: Response) => {
     res.json({
       success: true,
       message: 'Advanced analytics endpoint - V3 feature',
@@ -117,11 +89,11 @@ const v3Routes = [
   }),
   
   // GraphQL endpoint
-  createVersionedRoute('v3', '/graphql', 'post', (_req: any, res: any) => {
+  createVersionedRoute('v3', '/graphql', 'post', (req: Request, res: Response) => {
     res.json({
       success: true,
       message: 'GraphQL endpoint - V3 feature',
-      data: { query: _req.body.query, variables: _req.body.variables }
+      data: { query: req.body.query, variables: req.body.variables }
     })
   }),
   
@@ -137,7 +109,7 @@ export const versionedRouters = composeVersionedRoutes([
 ])
 
 // Functional route registration
-export const registerVersionedRoutes = (app: any) => {
+export const registerVersionedRoutes = (app: Application) => {
   // Register each version under its own prefix
   Object.entries(versionedRouters).forEach(([version, router]) => {
     app.use(`/api/${version}`, router)

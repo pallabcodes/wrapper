@@ -1,244 +1,22 @@
 /**
- * Versioned Swagger Generator - Enterprise Grade
+ * Versioned Swagger Generator - Functional Approach
  * 
- * This is a functional approach to generate versioned OpenAPI specifications
- * that supports multiple API versions with proper documentation.
+ * Critical business logic for generating versioned OpenAPI specifications.
+ * Uses focused functional modules for maintainability.
  */
 
-import { z } from 'zod'
 import { generateOpenAPISpec } from './schemaRegistry'
-import { authRoutes } from './authRoutes'
-import { fileUploadRoutes } from './fileUploadRoutes'
 import { VERSION_CONFIG, APIVersion } from '../versioning/versionManager'
+import {
+  createVersionedAuthRoutes,
+  createVersionedFileUploadRoutes,
+  createVersionInfoRoute
+} from './versionRouteCreators'
 
-// Response schemas for version-specific endpoints
-const successResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  data: z.any()
-})
+// ============================================================================
+// MAIN GENERATOR FUNCTION
+// ============================================================================
 
-const bulkOperationsResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  data: z.object({
-    operations: z.array(z.any()),
-    analytics: z.any().optional()
-  })
-})
-
-const webhookResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  data: z.object({
-    webhookId: z.string(),
-    realtime: z.boolean().optional()
-  })
-})
-
-const realtimeResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  data: z.object({
-    events: z.array(z.any()),
-    subscription: z.string()
-  })
-})
-
-const analyticsResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  data: z.object({
-    metrics: z.any(),
-    insights: z.array(z.any())
-  })
-})
-
-const graphqlResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  data: z.object({
-    query: z.string(),
-    variables: z.any()
-  })
-})
-
-// Functional version-specific route definitions
-const createVersionedAuthRoutes = (version: APIVersion) => {
-  const baseRoutes = authRoutes.map(route => ({
-    ...route,
-    path: route.path.replace('/api/v1', `/api/${version}`),
-    tags: [`Authentication (${version.toUpperCase()})`]
-  }))
-  
-  // Add version-specific features
-  if (version === 'v2') {
-    baseRoutes.push(
-      {
-        path: `/api/${version}/auth/bulk-operations`,
-        method: 'post' as const,
-        summary: 'Bulk operations (V2)',
-        description: 'Perform bulk operations on multiple users',
-        tags: [`Authentication (${version.toUpperCase()})`],
-        requestSchema: undefined,
-        responseSchema: bulkOperationsResponseSchema,
-        requiresAuth: true,
-        statusCodes: [200]
-      },
-      {
-        path: `/api/${version}/auth/webhooks`,
-        method: 'post' as const,
-        summary: 'Webhooks (V2)',
-        description: 'Manage webhook subscriptions',
-        tags: [`Authentication (${version.toUpperCase()})`],
-        requestSchema: undefined,
-        responseSchema: webhookResponseSchema,
-        requiresAuth: true,
-        statusCodes: [200]
-      }
-    )
-  }
-  
-  if (version === 'v3') {
-    baseRoutes.push(
-      {
-        path: `/api/${version}/auth/bulk-operations`,
-        method: 'post' as const,
-        summary: 'Bulk operations (V3)',
-        description: 'Enhanced bulk operations with analytics',
-        tags: [`Authentication (${version.toUpperCase()})`],
-        requestSchema: undefined,
-        responseSchema: bulkOperationsResponseSchema,
-        requiresAuth: true,
-        statusCodes: [200]
-      },
-      {
-        path: `/api/${version}/auth/webhooks`,
-        method: 'post' as const,
-        summary: 'Webhooks (V3)',
-        description: 'Enhanced webhooks with real-time support',
-        tags: [`Authentication (${version.toUpperCase()})`],
-        requestSchema: undefined,
-        responseSchema: webhookResponseSchema,
-        requiresAuth: true,
-        statusCodes: [200]
-      },
-      {
-        path: `/api/${version}/auth/real-time`,
-        method: 'get' as const,
-        summary: 'Real-time events (V3)',
-        description: 'Subscribe to real-time authentication events',
-        tags: [`Authentication (${version.toUpperCase()})`],
-        requestSchema: undefined,
-        responseSchema: realtimeResponseSchema,
-        requiresAuth: true,
-        statusCodes: [200]
-      },
-      {
-        path: `/api/${version}/auth/analytics`,
-        method: 'get' as const,
-        summary: 'Advanced analytics (V3)',
-        description: 'Get advanced authentication analytics',
-        tags: [`Authentication (${version.toUpperCase()})`],
-        requestSchema: undefined,
-        responseSchema: analyticsResponseSchema,
-        requiresAuth: true,
-        statusCodes: [200]
-      },
-      {
-        path: `/api/${version}/graphql`,
-        method: 'post' as const,
-        summary: 'GraphQL API (V3)',
-        description: 'GraphQL endpoint for advanced queries',
-        tags: [`GraphQL (${version.toUpperCase()})`],
-        requestSchema: undefined,
-        responseSchema: graphqlResponseSchema,
-        requiresAuth: false,
-        statusCodes: [200]
-      }
-    )
-  }
-  
-  return baseRoutes
-}
-
-// Functional version-specific file upload route definitions
-const createVersionedFileUploadRoutes = (version: APIVersion) => {
-  const baseRoutes = fileUploadRoutes.map(route => ({
-    ...route,
-    path: route.path.replace('/api/v1', `/api/${version}`),
-    tags: route.tags.map(tag => 
-      tag === 'File Upload' ? `File Upload (${version.toUpperCase()})` : tag
-    )
-  }))
-  
-  // Add version-specific file upload features
-  if (version === 'v2') {
-    baseRoutes.push(
-      {
-        path: `/api/${version}/upload/batch-process`,
-        method: 'post' as const,
-        summary: 'Batch file processing (V2)',
-        description: 'Upload and process multiple files in batch with progress tracking',
-        tags: [`File Upload (${version.toUpperCase()})`],
-        requestSchema: undefined,
-        responseSchema: successResponseSchema,
-        requiresAuth: true,
-        statusCodes: [200],
-        fileUpload: {
-          fieldName: 'batchFiles',
-          isMultiple: true,
-          allowedMimeTypes: ['image/jpeg', 'image/png', 'application/pdf', 'text/csv'],
-          maxSize: 200 * 1024 * 1024, // 200MB
-          description: 'Batch upload multiple files for processing'
-        }
-      }
-    )
-  }
-  
-  if (version === 'v3') {
-    baseRoutes.push(
-      {
-        path: `/api/${version}/upload/ai-analysis`,
-        method: 'post' as const,
-        summary: 'AI-powered file analysis (V3)',
-        description: 'Upload files for AI-powered analysis and insights',
-        tags: [`File Upload (${version.toUpperCase()})`],
-        requestSchema: z.object({
-          analysisType: z.enum(['ocr', 'image-recognition', 'document-classification']),
-          priority: z.enum(['low', 'normal', 'high']).default('normal')
-        }),
-        responseSchema: successResponseSchema,
-        requiresAuth: true,
-        statusCodes: [200],
-        fileUpload: {
-          fieldName: 'files',
-          isMultiple: true,
-          allowedMimeTypes: ['image/jpeg', 'image/png', 'application/pdf', 'text/plain'],
-          maxSize: 500 * 1024 * 1024, // 500MB
-          description: 'Upload files for AI analysis'
-        }
-      }
-    )
-  }
-  
-  return baseRoutes
-}
-
-// Functional version info route
-const createVersionInfoRoute = (version: APIVersion) => ({
-  path: `/api/${version}/version`,
-  method: 'get' as const,
-  summary: `API Version Information (${version.toUpperCase()})`,
-  description: `Get information about API version ${version}`,
-  tags: [`System (${version.toUpperCase()})`],
-  requestSchema: undefined,
-  responseSchema: successResponseSchema,
-  requiresAuth: false,
-  statusCodes: [200]
-})
-
-// Functional versioned OpenAPI spec generator
 export const generateVersionedOpenAPISpec = (version: APIVersion) => {
   const versionMeta = VERSION_CONFIG[version]
   const routes = [
@@ -320,7 +98,10 @@ export const generateVersionedOpenAPISpec = (version: APIVersion) => {
   }
 }
 
-// Functional multi-version OpenAPI spec generator
+// ============================================================================
+// MULTI-VERSION GENERATOR
+// ============================================================================
+
 export const generateMultiVersionOpenAPISpec = () => {
   const versions: APIVersion[] = ['v1', 'v2', 'v3']
   const specs = versions.map(version => generateVersionedOpenAPISpec(version))

@@ -82,6 +82,6 @@ export interface StoredUser extends User {
 
 // Token storage entry
 export interface TokenEntry {
-  email: string
+  userId: string
   expiresAt: Date
 }

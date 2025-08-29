@@ -1,13 +1,16 @@
 /**
  * Response Mapper - Functional Programming Approach
  * 
- * Provides a consistent response structure with functional composition
- * for customizing, wrapping, and modifying responses.
+ * Base response mapper that controllers can use, customize, wrap, or modify.
+ * Kept under 200 lines for maintainability.
  */
 
 import { z } from 'zod'
 
-// Base response schema
+// ============================================================================
+// BASE SCHEMAS AND TYPES
+// ============================================================================
+
 export const baseResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
@@ -22,7 +25,6 @@ export const baseResponseSchema = z.object({
 
 export type BaseResponse = z.infer<typeof baseResponseSchema>
 
-// Response metadata
 export type ResponseMeta = {
   version?: string
   environment?: string
@@ -43,7 +45,10 @@ export type ResponseMeta = {
   }
 }
 
-// Functional response builder
+// ============================================================================
+// CORE RESPONSE BUILDER
+// ============================================================================
+
 export const createResponse = <T = any>(
   success: boolean,
   message: string,
@@ -63,7 +68,10 @@ export const createResponse = <T = any>(
   }
 })
 
-// Success response composers
+// ============================================================================
+// SUCCESS RESPONSES
+// ============================================================================
+
 export const successResponse = <T = any>(
   data: T,
   message = 'Operation completed successfully',
@@ -91,7 +99,10 @@ export const deletedResponse = (
   requestId?: string
 ) => createResponse(true, message, undefined, meta, requestId)
 
-// Error response composers
+// ============================================================================
+// ERROR RESPONSES
+// ============================================================================
+
 export const errorResponse = (
   message: string,
   errorCode?: string,
@@ -106,177 +117,82 @@ export const validationErrorResponse = (
 ) => createResponse(false, message, { errors }, undefined, requestId)
 
 export const notFoundResponse = (
-  resource = 'Resource',
+  message = 'Resource not found',
   requestId?: string
-) => createResponse(false, `${resource} not found`, undefined, undefined, requestId)
+) => createResponse(false, message, undefined, undefined, requestId)
 
 export const unauthorizedResponse = (
-  message = 'Unauthorized access',
+  message = 'Unauthorized',
   requestId?: string
 ) => createResponse(false, message, undefined, undefined, requestId)
 
 export const forbiddenResponse = (
-  message = 'Access forbidden',
+  message = 'Forbidden',
   requestId?: string
 ) => createResponse(false, message, undefined, undefined, requestId)
 
-// Pagination response composer
+// ============================================================================
+// ADVANCED RESPONSES
+// ============================================================================
+
 export const paginatedResponse = <T = any>(
   data: T[],
-  page: number,
-  limit: number,
-  total: number,
+  pagination: ResponseMeta['pagination'],
   message = 'Data retrieved successfully',
   requestId?: string
-) => {
-  const totalPages = Math.ceil(total / limit)
-  const meta: ResponseMeta = {
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages
-    }
-  }
-  
-  return createResponse(true, message, data, meta, requestId)
-}
+) => createResponse(true, message, data, { ...(pagination && { pagination }) }, requestId)
 
-// Cached response composer
-export const cachedResponse = <T = any>(
-  data: T,
-  ttl: number,
-  message = 'Data retrieved from cache',
-  requestId?: string
-) => {
-  const meta: ResponseMeta = {
-    cache: {
-      cached: true,
-      ttl
-    }
-  }
-  
-  return createResponse(true, message, data, meta, requestId)
-}
+// ============================================================================
+// EXPRESS INTEGRATION
+// ============================================================================
 
-// Response transformers (functional composition)
-export const withPagination = <T>(
-  response: BaseResponse & { data?: T },
-  page: number,
-  limit: number,
-  total: number
-) => ({
-  ...response,
-  meta: {
-    ...response.meta,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit)
-    }
-  }
-})
+import { Response } from 'express'
 
-export const withFilters = <T>(
-  response: BaseResponse & { data?: T },
-  filters: Record<string, any>
-) => ({
-  ...response,
-  meta: {
-    ...response.meta,
-    filters
-  }
-})
-
-export const withSorting = <T>(
-  response: BaseResponse & { data?: T },
-  field: string,
-  direction: 'asc' | 'desc'
-) => ({
-  ...response,
-  meta: {
-    ...response.meta,
-    sorting: { field, direction }
-  }
-})
-
-export const withCache = <T>(
-  response: BaseResponse & { data?: T },
-  ttl?: number
-) => ({
-  ...response,
-  meta: {
-    ...response.meta,
-    cache: {
-      cached: true,
-      ttl
-    }
-  }
-})
-
-// Response wrapper for Express
 export const responseWrapper = {
-  success: <T = any>(res: any, data: T, message?: string, meta?: ResponseMeta) => {
-    const requestId = res.getHeader('x-request-id')
-    return res.json(successResponse(data, message, meta, requestId))
+  success: <T = any>(res: Response, data: T, message?: string, status = 200) => {
+    const response = successResponse(data, message)
+    return res.status(status).json(response)
   },
 
-  created: <T = any>(res: any, data: T, message?: string, meta?: ResponseMeta) => {
-    const requestId = res.getHeader('x-request-id')
-    return res.status(201).json(createdResponse(data, message, meta, requestId))
+  created: <T = any>(res: Response, data: T, message?: string) => {
+    const response = createdResponse(data, message)
+    return res.status(201).json(response)
   },
 
-  updated: <T = any>(res: any, data: T, message?: string, meta?: ResponseMeta) => {
-    const requestId = res.getHeader('x-request-id')
-    return res.json(updatedResponse(data, message, meta, requestId))
+  updated: <T = any>(res: Response, data: T, message?: string) => {
+    const response = updatedResponse(data, message)
+    return res.status(200).json(response)
   },
 
-  deleted: (res: any, message?: string, meta?: ResponseMeta) => {
-    const requestId = res.getHeader('x-request-id')
-    return res.json(deletedResponse(message, meta, requestId))
+  deleted: (res: Response, message?: string) => {
+    const response = deletedResponse(message)
+    return res.status(200).json(response)
   },
 
-  error: (res: any, message: string, statusCode = 400, errorCode?: string, meta?: ResponseMeta) => {
-    const requestId = res.getHeader('x-request-id')
-    return res.status(statusCode).json(errorResponse(message, errorCode, meta, requestId))
+  error: (res: Response, message: string, status = 500, errorCode?: string) => {
+    const response = errorResponse(message, errorCode)
+    return res.status(status).json(response)
   },
 
-  validationError: (res: any, errors: Record<string, string[]>, message?: string) => {
-    const requestId = res.getHeader('x-request-id')
-    return res.status(400).json(validationErrorResponse(errors, message, requestId))
+  validationError: (res: Response, errors: Record<string, string[]>, message?: string) => {
+    const response = validationErrorResponse(errors, message)
+    return res.status(400).json(response)
   },
 
-  notFound: (res: any, resource?: string) => {
-    const requestId = res.getHeader('x-request-id')
-    return res.status(404).json(notFoundResponse(resource, requestId))
+  notFound: (res: Response, message?: string) => {
+    const response = notFoundResponse(message)
+    return res.status(404).json(response)
   },
 
-  unauthorized: (res: any, message?: string) => {
-    const requestId = res.getHeader('x-request-id')
-    return res.status(401).json(unauthorizedResponse(message, requestId))
+  unauthorized: (res: Response, message?: string) => {
+    const response = unauthorizedResponse(message)
+    return res.status(401).json(response)
   },
 
-  forbidden: (res: any, message?: string) => {
-    const requestId = res.getHeader('x-request-id')
-    return res.status(403).json(forbiddenResponse(message, requestId))
+  forbidden: (res: Response, message?: string) => {
+    const response = forbiddenResponse(message)
+    return res.status(403).json(response)
   },
 
-  paginated: <T = any>(
-    res: any, 
-    data: T[], 
-    page: number, 
-    limit: number, 
-    total: number, 
-    message?: string
-  ) => {
-    const requestId = res.getHeader('x-request-id')
-    return res.json(paginatedResponse(data, page, limit, total, message, requestId))
-  }
+
 }
-
-// Higher-order function for response transformation
-export const transformResponse = <T>(
-  baseResponse: BaseResponse & { data?: T },
-  ...transformers: Array<(response: BaseResponse & { data?: T }) => BaseResponse & { data?: T }>
-) => transformers.reduce((response, transformer) => transformer(response), baseResponse)

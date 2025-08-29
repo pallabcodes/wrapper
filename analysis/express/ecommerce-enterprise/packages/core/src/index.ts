@@ -51,8 +51,9 @@ export { authRoutes } from './modules/auth/authRoutes'
 // Auth types and utilities
 export * from './modules/auth/authUtils'
 export * from './modules/auth/authResponseHandler'
-export * from './modules/auth/authRoutes.types'
 export * from './modules/auth/authSchemas'
+
+
 
 // ============================================================================
 // VALIDATION
@@ -72,7 +73,7 @@ export { rateLimiter } from './middleware/rateLimiter'
 
 export { SwaggerManager, createOpenAPISpec, addPath, addSchema, zodToOpenAPI } from './swagger/SwaggerBuilder'
 export { createSwaggerMiddleware, createRouteDefinitions } from './swagger/SwaggerMiddleware'
-export { createSwaggerManager, registerSwaggerRoutes } from './swagger/SwaggerSetup'
+
 
 // Swagger types and utilities
 export type * from './swagger/types'
@@ -105,11 +106,13 @@ export {
   unauthorizedResponse,
   forbiddenResponse,
   paginatedResponse,
-  cachedResponse,
+  responseWrapper
+} from './utils/responseMapper'
+
+export {
   withPagination,
   withFilters,
   withSorting,
   withCache,
-  responseWrapper,
   transformResponse
-} from './utils/responseMapper'
+} from './utils/responseTransformers'

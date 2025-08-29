@@ -10,7 +10,19 @@
  * Inspired by Stripe, PayPal, and Google's API versioning strategies.
  */
 
-import { Router } from 'express'
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express'
+import { RouteDefinition } from '../swagger/schemaRegistry'
+import { composeMiddlewareFromHelpers } from '../swagger/middlewareHelpers'
+
+// Extend Express Request interface for version metadata
+declare global {
+  namespace Express {
+    interface Request {
+      apiVersion?: string
+      versionMetadata?: VersionMetadata
+    }
+  }
+}
 
 // Functional type definitions for versioning
 export type APIVersion = 'v1' | 'v2' | 'v3'
@@ -58,9 +70,9 @@ export const validateAPIVersion = (version: string): version is APIVersion => {
 }
 
 // Functional version middleware factory
-export const createVersionMiddleware = (supportedVersions: APIVersion[]) => {
-  return (req: any, res: any, next: any) => {
-    const requestedVersion = req.params.version || req.headers['x-api-version'] || 'v1'
+export const createVersionMiddleware = (supportedVersions: APIVersion[]): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const requestedVersion = req.params['version'] || (Array.isArray(req.headers['x-api-version']) ? req.headers['x-api-version'][0] : req.headers['x-api-version']) || 'v1'
     
     if (!validateAPIVersion(requestedVersion)) {
       return res.status(400).json({
@@ -82,7 +94,7 @@ export const createVersionMiddleware = (supportedVersions: APIVersion[]) => {
         `API version ${requestedVersion} is deprecated. Please upgrade to a newer version.`)
     }
     
-    next()
+    return next()
   }
 }
 
@@ -90,9 +102,9 @@ export const createVersionMiddleware = (supportedVersions: APIVersion[]) => {
 export const createVersionedRoute = (
   version: APIVersion,
   path: string,
-  method: 'get' | 'post' | 'put' | 'delete' | 'patch',
-  handler: any,
-  middleware: any[] = []
+  method: 'get' | 'post' | 'put' | 'delete' | 'patch' | 'use',
+  handler: RequestHandler | Router,
+  middleware: RequestHandler[] = []
 ) => {
   return {
     version,
@@ -108,7 +120,7 @@ export const createVersionRouter = (version: APIVersion) => {
   const router = Router()
   
   // Add version-specific middleware
-  router.use((req: any, _res: any, next: any) => {
+  router.use((req: Request, _res: Response, next: NextFunction) => {
     req.apiVersion = version
     req.versionMetadata = VERSION_CONFIG[version]
     next()
@@ -121,9 +133,9 @@ export const createVersionRouter = (version: APIVersion) => {
 export const composeVersionedRoutes = (routes: Array<{
   version: APIVersion
   path: string
-  method: 'get' | 'post' | 'put' | 'delete' | 'patch'
-  handler: any
-  middleware?: any[]
+  method: 'get' | 'post' | 'put' | 'delete' | 'patch' | 'use'
+  handler: RequestHandler | Router
+  middleware?: RequestHandler[]
 }>) => {
   const versionRouters: Record<APIVersion, Router> = {
     v1: createVersionRouter('v1'),
@@ -133,16 +145,61 @@ export const composeVersionedRoutes = (routes: Array<{
   
   routes.forEach(route => {
     const router = versionRouters[route.version]
-    const handlers = [...(route.middleware || []), route.handler]
-    router[route.method](route.path, ...handlers)
+    if (route.method === 'use') {
+      router.use(route.path, route.handler)
+    } else {
+      const handlers = [...(route.middleware || []), route.handler]
+      router[route.method](route.path, ...handlers)
+    }
   })
   
   return versionRouters
 }
 
+// Functional route definition composition (for individual routes with middleware)
+export const composeRouteDefinitions = (routeDefinitions: RouteDefinition[], version: APIVersion) => {
+  const router = createVersionRouter(version)
+  
+  routeDefinitions.forEach(routeDef => {
+    const { path, method, middleware, middlewareHelpers } = routeDef
+    
+    // Compose middleware from both direct and helper sources
+    const allMiddleware: RequestHandler[] = []
+    
+    // Add middleware from helpers if provided
+    if (middlewareHelpers) {
+      allMiddleware.push(...composeMiddlewareFromHelpers(middlewareHelpers))
+    }
+    
+    // Add direct middleware if provided
+    if (middleware) {
+      allMiddleware.push(...middleware)
+    }
+    
+    // Create a simple handler for now (in production, this would be the actual controller)
+    const handler: RequestHandler = (_req, res) => {
+      res.json({
+        success: true,
+        message: `${method.toUpperCase()} ${path}`,
+        data: { route: path, method, version }
+      })
+    }
+    
+    // Register the route with all middleware
+    const handlers = [...allMiddleware, handler]
+    if (method === 'get') router.get(path, ...handlers)
+    else if (method === 'post') router.post(path, ...handlers)
+    else if (method === 'put') router.put(path, ...handlers)
+    else if (method === 'delete') router.delete(path, ...handlers)
+    else if (method === 'patch') router.patch(path, ...handlers)
+  })
+  
+  return router
+}
+
 // Functional version info endpoint
 export const createVersionInfoHandler = () => {
-  return (req: any, res: any) => {
+  return (req: Request, res: Response) => {
     const versions = Object.values(VERSION_CONFIG).map(meta => ({
       version: meta.version,
       status: meta.status,

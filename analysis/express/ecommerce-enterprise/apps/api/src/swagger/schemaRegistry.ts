@@ -8,6 +8,7 @@
  */
 
 import { z } from 'zod'
+import { RequestHandler } from 'express'
 
 // File upload configuration
 export type FileUploadConfig = {
@@ -16,6 +17,27 @@ export type FileUploadConfig = {
   allowedMimeTypes?: string[]
   maxSize?: number // in bytes
   description?: string
+}
+
+// Middleware helper configuration (for pre-configured patterns)
+export type MiddlewareHelpers = {
+  rateLimit?: {
+    windowMs?: number
+    max?: number
+    message?: string
+  }
+  adminCheck?: {
+    roles?: string[]
+    strict?: boolean
+  }
+  auditLog?: {
+    action?: string
+    level?: 'info' | 'warn' | 'error'
+  }
+  cors?: {
+    origin?: string | string[]
+    credentials?: boolean
+  }
 }
 
 // Functional type for route definition
@@ -30,6 +52,8 @@ export type RouteDefinition = {
   requiresAuth: boolean
   statusCodes: number[]
   fileUpload?: FileUploadConfig | undefined
+  middleware?: RequestHandler[] | undefined // Direct middleware array (Approach 1)
+  middlewareHelpers?: MiddlewareHelpers | undefined // Optional helpers (Approach 4)
 }
 
 // Functional utility to convert Zod to OpenAPI
@@ -100,7 +124,9 @@ export const createRoute = (
   requestSchema?: z.ZodTypeAny,
   requiresAuth = false,
   statusCodes = [200],
-  fileUpload?: FileUploadConfig
+  fileUpload?: FileUploadConfig,
+  middleware?: RequestHandler[],
+  middlewareHelpers?: MiddlewareHelpers
 ): RouteDefinition => ({
   path,
   method,
@@ -111,7 +137,9 @@ export const createRoute = (
   responseSchema,
   requiresAuth,
   statusCodes,
-  fileUpload
+  fileUpload,
+  middleware,
+  middlewareHelpers
 })
 
 // Functional OpenAPI path generator

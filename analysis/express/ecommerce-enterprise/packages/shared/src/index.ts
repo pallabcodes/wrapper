@@ -32,8 +32,6 @@ export {
   zodToOpenAPI,
   createSwaggerMiddleware,
   createRouteDefinitions,
-  createSwaggerManager,
-  registerSwaggerRoutes,
   Result,
   pipe,
   withErrorHandling,
