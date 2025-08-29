@@ -10,9 +10,9 @@ import cors from 'cors'
 import helmet from 'helmet'
 import compression from 'compression'
 import rateLimit from 'express-rate-limit'
-import swaggerJsdoc from 'swagger-jsdoc'
 import swaggerUi from 'swagger-ui-express'
 import { apiRoutes } from './routes'
+import { generateOpenAPISpec } from './swagger/functionalSwagger'
 import { logger } from '@ecommerce-enterprise/core'
 
 const app = express()
@@ -56,115 +56,8 @@ app.use(limiter)
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 
-// Swagger configuration - Production-ready implementation
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Ecommerce Enterprise API',
-      version: '1.0.0',
-      description: 'Enterprise-grade ecommerce API with functional programming patterns',
-      contact: {
-        name: 'Enterprise Ecommerce Team',
-        email: 'api@ecommerce-enterprise.com'
-      },
-      license: {
-        name: 'MIT',
-        url: 'https://opensource.org/licenses/MIT'
-      }
-    },
-    servers: [
-      {
-        url: 'http://localhost:3000',
-        description: 'Development server'
-      },
-      {
-        url: 'https://api.ecommerce-enterprise.com',
-        description: 'Production server'
-      }
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT'
-        }
-      },
-      schemas: {
-        User: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', format: 'uuid' },
-            email: { type: 'string', format: 'email' },
-            firstName: { type: 'string', minLength: 1, maxLength: 50 },
-            lastName: { type: 'string', minLength: 1, maxLength: 50 },
-            phone: { type: 'string' },
-            isEmailVerified: { type: 'boolean' },
-            createdAt: { type: 'string', format: 'date-time' },
-            updatedAt: { type: 'string', format: 'date-time' }
-          },
-          required: ['id', 'email', 'firstName', 'lastName', 'isEmailVerified', 'createdAt', 'updatedAt']
-        },
-        AuthTokens: {
-          type: 'object',
-          properties: {
-            accessToken: { type: 'string' },
-            refreshToken: { type: 'string' }
-          },
-          required: ['accessToken', 'refreshToken']
-        },
-        RegisterRequest: {
-          type: 'object',
-          properties: {
-            email: { type: 'string', format: 'email' },
-            password: { type: 'string', minLength: 8 },
-            firstName: { type: 'string', minLength: 1, maxLength: 50 },
-            lastName: { type: 'string', minLength: 1, maxLength: 50 },
-            phone: { type: 'string' }
-          },
-          required: ['email', 'password', 'firstName', 'lastName']
-        },
-        LoginRequest: {
-          type: 'object',
-          properties: {
-            email: { type: 'string', format: 'email' },
-            password: { type: 'string' }
-          },
-          required: ['email', 'password']
-        },
-        AuthResponse: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            message: { type: 'string' },
-            data: {
-              type: 'object',
-              properties: {
-                user: { $ref: '#/components/schemas/User' },
-                tokens: { $ref: '#/components/schemas/AuthTokens' }
-              }
-            }
-          },
-          required: ['success', 'message']
-        },
-        ErrorResponse: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            message: { type: 'string' },
-            error: { type: 'string' },
-            code: { type: 'string' }
-          },
-          required: ['success', 'message']
-        }
-      }
-    }
-  },
-  apis: ['./src/routes.ts'] // Path to the API docs
-}
-
-const swaggerSpec = swaggerJsdoc(swaggerOptions)
+// Functional Swagger setup - NO COMMENTS REQUIRED
+const swaggerSpec = generateOpenAPISpec()
 
 // Swagger UI setup
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
