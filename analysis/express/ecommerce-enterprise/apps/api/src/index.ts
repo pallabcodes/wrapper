@@ -2,7 +2,7 @@
  * Ecommerce Enterprise API - Main Entry Point
  * 
  * This file implements the main API server using functional programming patterns,
- * composition over inheritance, and enterprise-grade architecture.
+ * composition over inheritance, and enterprise-grade architecture with proper API versioning.
  */
 
 import express from 'express'
@@ -12,7 +12,8 @@ import compression from 'compression'
 import rateLimit from 'express-rate-limit'
 import swaggerUi from 'swagger-ui-express'
 import { apiRoutes } from './routes'
-import { generateOpenAPISpec } from './swagger/functionalSwagger'
+import { generateMultiVersionOpenAPISpec } from './swagger/versionedSwagger'
+import { registerVersionedRoutes } from './versioning/versionedRoutes'
 import { logger } from '@ecommerce-enterprise/core'
 
 const app = express()
@@ -56,19 +57,21 @@ app.use(limiter)
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 
-// Functional Swagger setup - NO COMMENTS REQUIRED
-const swaggerSpec = generateOpenAPISpec()
+// Functional Swagger setup - Multi-version support
+const swaggerSpec = generateMultiVersionOpenAPISpec()
 
-// Swagger UI setup
+// Swagger UI setup with versioned documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Ecommerce Enterprise API Documentation',
+  customSiteTitle: 'Ecommerce Enterprise API Documentation - Multi-Version',
   customfavIcon: '/favicon.ico',
   swaggerOptions: {
     persistAuthorization: true,
     displayRequestDuration: true,
     filter: true,
-    deepLinking: true
+    deepLinking: true,
+    tagsSorter: 'alpha',
+    operationsSorter: 'alpha'
   }
 }))
 
@@ -84,22 +87,67 @@ const createHealthResponse = () => ({
   timestamp: new Date().toISOString(),
   uptime: process.uptime(),
   version: process.env['npm_package_version'] || '1.0.0',
-  environment: process.env['NODE_ENV'] || 'development'
+  environment: process.env['NODE_ENV'] || 'development',
+  apiVersions: ['v1', 'v2', 'v3'],
+  latestVersion: 'v3'
 })
 
 app.get('/health', (_req, res) => {
   res.json(createHealthResponse())
 })
 
-// API routes
+// API versioning information endpoint
+app.get('/api/versions', (_req, res) => {
+  res.json({
+    success: true,
+    data: {
+      versions: [
+        {
+          version: 'v1',
+          status: 'active',
+          introducedAt: '2024-01-01',
+          features: ['Basic authentication', 'User management'],
+          endpoints: '/api/v1/*'
+        },
+        {
+          version: 'v2',
+          status: 'active',
+          introducedAt: '2024-06-01',
+          features: ['Bulk operations', 'Webhooks', 'Enhanced validation'],
+          endpoints: '/api/v2/*'
+        },
+        {
+          version: 'v3',
+          status: 'active',
+          introducedAt: '2024-12-01',
+          features: ['GraphQL API', 'Real-time events', 'Advanced analytics'],
+          endpoints: '/api/v3/*'
+        }
+      ],
+      defaultVersion: 'v1',
+      latestVersion: 'v3',
+      deprecationPolicy: {
+        deprecatedVersions: [],
+        sunsetVersions: []
+      }
+    }
+  })
+})
+
+// Register versioned API routes
+registerVersionedRoutes(app)
+
+// Legacy API routes for backward compatibility
 app.use('/api/v1', apiRoutes)
 
 // API routes (catch-all) - not documented in Swagger
-app.use('/api/v1', (_req, res) => {
+app.use('/api', (_req, res) => {
   res.json({
-    message: 'API v1 - Coming soon',
-    version: '1.0.0',
-    timestamp: new Date().toISOString()
+    message: 'Ecommerce Enterprise API',
+    versions: ['v1', 'v2', 'v3'],
+    documentation: '/api-docs',
+    health: '/health',
+    versionInfo: '/api/versions'
   })
 })
 
@@ -110,12 +158,5 @@ const errorHandler = (err: any, _req: express.Request, res: express.Response, _n
 }
 
 app.use(errorHandler)
-
-// 404 handler with functional response
-const notFoundHandler = (_req: express.Request, res: express.Response) => {
-  res.status(404).json({ error: 'Not found' })
-}
-
-app.use('*', notFoundHandler)
 
 export default app
