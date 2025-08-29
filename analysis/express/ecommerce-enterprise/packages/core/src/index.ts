@@ -25,7 +25,9 @@ export { logger } from './utils/logger'
 // DATABASE
 // ============================================================================
 
-export { getPrismaClient } from './database/client'
+export { db, pool, getDatabaseClient, withTransaction, runMigrations } from './database/client'
+export { getMongoClient, checkMongoHealth, mongoose } from './database/mongodb/client'
+export { initializeDatabase, cleanupDatabase } from './database'
 
 // ============================================================================
 // CACHE
@@ -44,13 +46,14 @@ export { queueManager } from './queue/queueManager'
 // ============================================================================
 
 export { authenticateToken, requireRole } from './middleware/auth'
-export { authController } from './modules/auth/authController'
+export * from './modules/auth/authController'
 export { authService } from './modules/auth/authService'
 export { authRoutes } from './modules/auth/authRoutes'
 
 // Auth types and utilities
 export * from './modules/auth/authUtils'
 export * from './modules/auth/authResponseHandler'
+export * from './modules/auth/authTypes'
 export * from './modules/auth/authSchemas'
 
 // ============================================================================
@@ -58,7 +61,7 @@ export * from './modules/auth/authSchemas'
 // ============================================================================
 
 export { productService } from './modules/product/productService'
-export { productController } from './modules/product/productController'
+export * from './modules/product/productController'
 export { productRoutes } from './modules/product/productRoutes'
 
 // Product types and utilities

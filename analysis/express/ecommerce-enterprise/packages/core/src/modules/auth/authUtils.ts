@@ -8,7 +8,6 @@ import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { AppError, ErrorCode } from '../../errors/AppError'
-import { env } from '../../config/env'
 import type { AuthTokens, TokenPayload } from './authTypes'
 
 // Functional utility for generating unique IDs
@@ -28,23 +27,27 @@ export const comparePassword = async (password: string, hash: string): Promise<b
 export const generateTokens = (userId: string): AuthTokens => {
   const accessToken = jwt.sign(
     { userId, type: 'access' as const },
-    env.JWT_SECRET,
+    process.env['JWT_SECRET'] || 'default-secret',
     { expiresIn: '15m' }
   )
   
   const refreshToken = jwt.sign(
     { userId, type: 'refresh' as const },
-    env.JWT_SECRET,
+    process.env['JWT_SECRET'] || 'default-secret',
     { expiresIn: '7d' }
   )
 
-  return { accessToken, refreshToken }
+  return { 
+    accessToken, 
+    refreshToken,
+    expiresIn: 15 * 60 // 15 minutes in seconds
+  }
 }
 
 // Functional utility for verifying JWT tokens
 export const verifyToken = (token: string): TokenPayload => {
   try {
-    return jwt.verify(token, env.JWT_SECRET) as TokenPayload
+    return jwt.verify(token, process.env['JWT_SECRET'] || 'default-secret') as TokenPayload
   } catch (error) {
     throw new AppError('Invalid token', ErrorCode.UNAUTHORIZED)
   }

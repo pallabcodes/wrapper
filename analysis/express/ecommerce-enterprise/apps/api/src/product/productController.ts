@@ -6,8 +6,7 @@
  */
 
 import { Request, Response } from 'express'
-import { productService } from '@ecommerce-enterprise/core'
-import { responseWrapper } from '@ecommerce-enterprise/core'
+import { productService, createSuccessResponse, createErrorResponse } from '@ecommerce-enterprise/core'
 
 // ============================================================================
 // PRODUCT CONTROLLERS - Direct Implementation
@@ -18,9 +17,9 @@ export const productController = {
   async createProduct(req: Request, res: Response) {
     try {
       const result = await productService.createProduct(req.body)
-      return responseWrapper.created(res, result, 'Product created successfully')
+      return createSuccessResponse(res, result, 'Product created successfully')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to create product', 400, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to create product')
     }
   },
 
@@ -29,18 +28,18 @@ export const productController = {
     try {
       const { id } = req.params
       if (!id) {
-        return responseWrapper.error(res, 'Product ID is required', 400)
+        return createErrorResponse(res, 'Product ID is required')
       }
       
       const product = await productService.getProductById(id)
       
       if (!product) {
-        return responseWrapper.error(res, 'Product not found', 404)
+        return createErrorResponse(res, 'Product not found')
       }
       
-      return responseWrapper.success(res, product, 'Product retrieved successfully')
+      return createSuccessResponse(res, product, 'Product retrieved successfully')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to get product', 500, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to get product')
     }
   },
 
@@ -49,18 +48,18 @@ export const productController = {
     try {
       const { sku } = req.params
       if (!sku) {
-        return responseWrapper.error(res, 'Product SKU is required', 400)
+        return createErrorResponse(res, 'Product SKU is required')
       }
       
       const product = await productService.getProductBySKU(sku)
       
       if (!product) {
-        return responseWrapper.error(res, 'Product not found', 404)
+        return createErrorResponse(res, 'Product not found')
       }
       
-      return responseWrapper.success(res, product, 'Product retrieved successfully')
+      return createSuccessResponse(res, product, 'Product retrieved successfully')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to get product', 500, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to get product')
     }
   },
 
@@ -69,13 +68,13 @@ export const productController = {
     try {
       const { id } = req.params
       if (!id) {
-        return responseWrapper.error(res, 'Product ID is required', 400)
+        return createErrorResponse(res, 'Product ID is required')
       }
       
       const result = await productService.updateProduct(id, req.body)
-      return responseWrapper.success(res, result, 'Product updated successfully')
+      return createSuccessResponse(res, result, 'Product updated successfully')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to update product', 400, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to update product')
     }
   },
 
@@ -84,13 +83,13 @@ export const productController = {
     try {
       const { id } = req.params
       if (!id) {
-        return responseWrapper.error(res, 'Product ID is required', 400)
+        return createErrorResponse(res, 'Product ID is required')
       }
       
       await productService.deleteProduct(id)
-      return responseWrapper.success(res, null, 'Product deleted successfully')
+      return createSuccessResponse(res, null, 'Product deleted successfully')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to delete product', 400, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to delete product')
     }
   },
 
@@ -99,9 +98,9 @@ export const productController = {
     try {
       const filters = req.query
       const result = await productService.listProducts(filters)
-      return responseWrapper.success(res, result, 'Products retrieved successfully')
+      return createSuccessResponse(res, result, 'Products retrieved successfully')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to list products', 500, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to list products')
     }
   },
 
@@ -111,13 +110,13 @@ export const productController = {
       const { q: query, ...filters } = req.query
       
       if (!query || typeof query !== 'string') {
-        return responseWrapper.error(res, 'Search query is required', 400)
+        return createErrorResponse(res, 'Search query is required')
       }
       
       const result = await productService.searchProducts(query, filters)
-      return responseWrapper.success(res, result, 'Products search completed')
+      return createSuccessResponse(res, result, 'Products search completed')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to search products', 500, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to search products')
     }
   },
 
@@ -126,14 +125,14 @@ export const productController = {
     try {
       const { category } = req.params
       if (!category) {
-        return responseWrapper.error(res, 'Category is required', 400)
+        return createErrorResponse(res, 'Category is required')
       }
       
       const filters = req.query
       const result = await productService.getProductsByCategory(category, filters)
-      return responseWrapper.success(res, result, 'Products by category retrieved')
+      return createSuccessResponse(res, result, 'Products by category retrieved')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to get products by category', 500, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to get products by category')
     }
   },
 
@@ -142,9 +141,9 @@ export const productController = {
     try {
       const filters = req.query
       const result = await productService.getActiveProducts(filters)
-      return responseWrapper.success(res, result, 'Active products retrieved')
+      return createSuccessResponse(res, result, 'Active products retrieved')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to get active products', 500, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to get active products')
     }
   },
 
@@ -155,37 +154,37 @@ export const productController = {
       const { quantity, operation } = req.body
       
       if (!id) {
-        return responseWrapper.error(res, 'Product ID is required', 400)
+        return createErrorResponse(res, 'Product ID is required')
       }
       
       if (!quantity || !operation || !['add', 'subtract'].includes(operation)) {
-        return responseWrapper.error(res, 'Quantity and operation (add/subtract) are required', 400)
+        return createErrorResponse(res, 'Quantity and operation (add/subtract) are required')
       }
       
       const result = await productService.updateProductStock(id, quantity, operation)
-      return responseWrapper.success(res, result, 'Product stock updated successfully')
+      return createSuccessResponse(res, result, 'Product stock updated successfully')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to update product stock', 400, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to update product stock')
     }
   },
 
   // Get product statistics
-  async getProductStats(req: Request, res: Response) {
+  async getProductStats(_req: Request, res: Response) {
     try {
       const stats = await productService.getProductStats()
-      return responseWrapper.success(res, stats, 'Product statistics retrieved')
+      return createSuccessResponse(res, stats, 'Product statistics retrieved')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to get product statistics', 500, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to get product statistics')
     }
   },
 
   // Get categories
-  async getCategories(req: Request, res: Response) {
+  async getCategories(_req: Request, res: Response) {
     try {
       const categories = await productService.getCategories()
-      return responseWrapper.success(res, categories, 'Categories retrieved')
+      return createSuccessResponse(res, categories, 'Categories retrieved')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to get categories', 500, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to get categories')
     }
   },
 
@@ -195,9 +194,9 @@ export const productController = {
       const { threshold = 10 } = req.query
       const thresholdNum = typeof threshold === 'string' ? parseInt(threshold, 10) : 10
       const products = await productService.getLowStockProducts(thresholdNum)
-      return responseWrapper.success(res, products, 'Low stock products retrieved')
+      return createSuccessResponse(res, products, 'Low stock products retrieved')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to get low stock products', 500, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to get low stock products')
     }
   },
 
@@ -207,13 +206,13 @@ export const productController = {
       const { updates } = req.body
       
       if (!Array.isArray(updates)) {
-        return responseWrapper.error(res, 'Updates array is required', 400)
+        return createErrorResponse(res, 'Updates array is required')
       }
       
       const result = await productService.bulkUpdateProducts(updates)
-      return responseWrapper.success(res, result, 'Products bulk updated successfully')
+      return createSuccessResponse(res, result, 'Products bulk updated successfully')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to bulk update products', 400, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to bulk update products')
     }
   },
 
@@ -224,19 +223,19 @@ export const productController = {
       const { quantity } = req.query
       
       if (!id) {
-        return responseWrapper.error(res, 'Product ID is required', 400)
+        return createErrorResponse(res, 'Product ID is required')
       }
       
       if (!quantity || typeof quantity !== 'string') {
-        return responseWrapper.error(res, 'Quantity is required', 400)
+        return createErrorResponse(res, 'Quantity is required')
       }
       
       const quantityNum = parseInt(quantity, 10)
       const isAvailable = await productService.validateProductAvailability(id, quantityNum)
       
-      return responseWrapper.success(res, { isAvailable }, 'Product availability validated')
+      return createSuccessResponse(res, { isAvailable }, 'Product availability validated')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to validate product availability', 500, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to validate product availability')
     }
   }
 }

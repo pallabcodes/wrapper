@@ -8,16 +8,23 @@ export {
   AppError, 
   ErrorCode, 
   ErrorSeverity,
-  env,
   logger,
-  getPrismaClient,
+  db,
+  pool,
+  getDatabaseClient,
+  withTransaction,
+  runMigrations,
+  getMongoClient,
+  checkMongoHealth,
+  mongoose,
+  initializeDatabase,
+  cleanupDatabase,
   redisClient,
   redisGet,
   redisSet,
   queueManager,
   authenticateToken,
   requireRole,
-  authController,
   authService,
   authRoutes,
   validateBody,
@@ -37,7 +44,9 @@ export {
   withErrorHandling,
   memoize,
   createEventEmitter,
-  createContainer
+  createContainer,
+  createSuccessResponse,
+  createErrorResponse
 } from '@ecommerce-enterprise/core'
 
 // Shared middleware

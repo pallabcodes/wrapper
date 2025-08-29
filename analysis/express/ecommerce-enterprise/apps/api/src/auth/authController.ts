@@ -6,8 +6,7 @@
  */
 
 import { Request, Response } from 'express'
-import { authService } from '@ecommerce-enterprise/core'
-import { responseWrapper } from '@ecommerce-enterprise/core'
+import { createSuccessResponse, createErrorResponse, authService } from '@ecommerce-enterprise/core'
 
 // ============================================================================
 // AUTH CONTROLLERS - Direct Implementation
@@ -18,9 +17,9 @@ export const authController = {
   async register(req: Request, res: Response) {
     try {
       const result = await authService.register(req.body)
-      return responseWrapper.created(res, result, 'User registered successfully')
+      return createSuccessResponse(res, result, 'User registered successfully')
     } catch (error) {
-      return responseWrapper.error(res, 'Registration failed', 400, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Registration failed')
     }
   },
 
@@ -28,9 +27,9 @@ export const authController = {
   async login(req: Request, res: Response) {
     try {
       const result = await authService.login(req.body)
-      return responseWrapper.success(res, result, 'Login successful')
+      return createSuccessResponse(res, result, 'Login successful')
     } catch (error) {
-      return responseWrapper.error(res, 'Login failed', 401, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Login failed')
     }
   },
 
@@ -38,9 +37,9 @@ export const authController = {
   async logout(req: Request, res: Response) {
     try {
       await authService.logout(req.body.refreshToken)
-      return responseWrapper.success(res, null, 'Logout successful')
+      return createSuccessResponse(res, null, 'Logout successful')
     } catch (error) {
-      return responseWrapper.error(res, 'Logout failed', 400, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Logout failed')
     }
   },
 
@@ -48,9 +47,9 @@ export const authController = {
   async refreshToken(req: Request, res: Response) {
     try {
       const tokens = await authService.refreshToken(req.body.refreshToken)
-      return responseWrapper.success(res, tokens, 'Token refreshed')
+      return createSuccessResponse(res, tokens, 'Token refreshed')
     } catch (error) {
-      return responseWrapper.error(res, 'Token refresh failed', 401, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Token refresh failed')
     }
   },
 
@@ -59,16 +58,16 @@ export const authController = {
     try {
       const userId = (req as any).user?.userId as string
       if (!userId) {
-        return responseWrapper.unauthorized(res, 'Authentication required')
+        return createErrorResponse(res, 'Authentication required')
       }
       
       const user = await authService.getUserById(userId)
       if (!user) {
-        return responseWrapper.error(res, 'User not found', 404)
+        return createErrorResponse(res, 'User not found')
       }
-      return responseWrapper.success(res, user, 'Profile retrieved')
+      return createSuccessResponse(res, user, 'Profile retrieved')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to get profile', 500, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to get profile')
     }
   },
 
@@ -77,13 +76,13 @@ export const authController = {
     try {
       const userId = (req as any).user?.userId as string
       if (!userId) {
-        return responseWrapper.unauthorized(res, 'Authentication required')
+        return createErrorResponse(res, 'Authentication required')
       }
       
       const updatedUser = await authService.updateProfile(userId, req.body)
-      return responseWrapper.success(res, updatedUser, 'Profile updated')
+      return createSuccessResponse(res, updatedUser, 'Profile updated')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to update profile', 400, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to update profile')
     }
   },
 
@@ -92,13 +91,13 @@ export const authController = {
     try {
       const userId = (req as any).user?.userId as string
       if (!userId) {
-        return responseWrapper.unauthorized(res, 'Authentication required')
+        return createErrorResponse(res, 'Authentication required')
       }
       
       await authService.changePassword(userId, req.body)
-      return responseWrapper.success(res, null, 'Password changed successfully')
+      return createSuccessResponse(res, null, 'Password changed successfully')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to change password', 400, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to change password')
     }
   },
 
@@ -106,9 +105,9 @@ export const authController = {
   async forgotPassword(req: Request, res: Response) {
     try {
       await authService.forgotPassword(req.body.email as string)
-      return responseWrapper.success(res, null, 'Password reset email sent')
+      return createSuccessResponse(res, null, 'Password reset email sent')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to send reset email', 400, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to send reset email')
     }
   },
 
@@ -116,9 +115,9 @@ export const authController = {
   async resetPassword(req: Request, res: Response) {
     try {
       await authService.resetPassword({ token: req.body.token as string, password: req.body.newPassword as string })
-      return responseWrapper.success(res, null, 'Password reset successfully')
+      return createSuccessResponse(res, null, 'Password reset successfully')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to reset password', 400, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to reset password')
     }
   },
 
@@ -126,9 +125,9 @@ export const authController = {
   async verifyEmail(req: Request, res: Response) {
     try {
       await authService.verifyEmail(req.body.token)
-      return responseWrapper.success(res, null, 'Email verified successfully')
+      return createSuccessResponse(res, null, 'Email verified successfully')
     } catch (error) {
-      return responseWrapper.error(res, 'Failed to verify email', 400, error as string)
+      return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to verify email')
     }
   }
 }

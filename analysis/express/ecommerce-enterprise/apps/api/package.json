@@ -16,15 +16,11 @@
     "@ecommerce-enterprise/core": "workspace:*",
     "@ecommerce-enterprise/shared": "workspace:*",
     "@ecommerce-enterprise/types": "workspace:*",
-    "@types/swagger-jsdoc": "^6.0.4",
-    "@types/swagger-ui-express": "^4.1.8",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
-    "helmet": "^7.1.0",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "helmet": "^7.1.0"
   },
   "devDependencies": {
     "@types/compression": "^1.7.5",
