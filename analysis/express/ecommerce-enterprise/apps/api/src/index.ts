@@ -12,7 +12,7 @@ import compression from 'compression'
 import rateLimit from 'express-rate-limit'
 import swaggerUi from 'swagger-ui-express'
 import { apiRoutes } from './routes'
-import { generateMultiVersionOpenAPISpec } from './swagger/versionedSwagger'
+import { generateVersionedOpenAPISpec } from './swagger/versionedSwagger'
 import { registerVersionedRoutes } from './versioning/versionedRoutes'
 import { logger } from '@ecommerce-enterprise/core'
 
@@ -57,29 +57,37 @@ app.use(limiter)
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 
-// Functional Swagger setup - Multi-version support
-const swaggerSpec = generateMultiVersionOpenAPISpec()
+  // Functional Swagger setup - Single endpoint with version switching
+  const v1Spec = generateVersionedOpenAPISpec('v1')
+  const v2Spec = generateVersionedOpenAPISpec('v2')
+  const v3Spec = generateVersionedOpenAPISpec('v3')
 
-// Swagger UI setup with versioned documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Ecommerce Enterprise API Documentation - Multi-Version',
-  customfavIcon: '/favicon.ico',
-  swaggerOptions: {
-    persistAuthorization: true,
-    displayRequestDuration: true,
-    filter: true,
-    deepLinking: true,
-    tagsSorter: 'alpha',
-    operationsSorter: 'alpha'
-  }
-}))
+  // Single Swagger UI endpoint with version switching
+  app.use('/api-docs', swaggerUi.serve, (req: any, res: any, next: any) => {
+    const version = req.query.v as string || 'v1'
+    
+    let spec
+    switch (version) {
+      case 'v2':
+        spec = v2Spec
+        break
+      case 'v3':
+        spec = v3Spec
+        break
+      default:
+        spec = v1Spec
+    }
 
-// Serve Swagger JSON
-app.get('/api-docs.json', (_req, res) => {
-  res.setHeader('Content-Type', 'application/json')
-  res.send(swaggerSpec)
-})
+    return swaggerUi.setup(spec, {
+      customSiteTitle: `Ecommerce Enterprise API - ${version.toUpperCase()}`,
+      swaggerOptions: {
+        persistAuthorization: true,
+        displayRequestDuration: true,
+        filter: true,
+        deepLinking: true
+      }
+    })(req, res, next)
+  })
 
 // Health check endpoint with functional response
 const createHealthResponse = () => ({
@@ -107,21 +115,24 @@ app.get('/api/versions', (_req, res) => {
           status: 'active',
           introducedAt: '2024-01-01',
           features: ['Basic authentication', 'User management'],
-          endpoints: '/api/v1/*'
+          endpoints: '/api/v1/*',
+          documentation: '/api-docs?v=v1'
         },
         {
           version: 'v2',
           status: 'active',
           introducedAt: '2024-06-01',
           features: ['Bulk operations', 'Webhooks', 'Enhanced validation'],
-          endpoints: '/api/v2/*'
+          endpoints: '/api/v2/*',
+          documentation: '/api-docs?v=v2'
         },
         {
           version: 'v3',
           status: 'active',
           introducedAt: '2024-12-01',
           features: ['GraphQL API', 'Real-time events', 'Advanced analytics'],
-          endpoints: '/api/v3/*'
+          endpoints: '/api/v3/*',
+          documentation: '/api-docs?v=v3'
         }
       ],
       defaultVersion: 'v1',
@@ -129,7 +140,8 @@ app.get('/api/versions', (_req, res) => {
       deprecationPolicy: {
         deprecatedVersions: [],
         sunsetVersions: []
-      }
+      },
+      documentation: '/api-docs'
     }
   })
 })
