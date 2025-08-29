@@ -92,9 +92,9 @@ export interface OpenAPISchema {
   items?: OpenAPISchema
   properties?: Record<string, OpenAPISchema>
   required?: string[]
-  enum?: any[]
-  default?: any
-  example?: any
+  enum?: string[] | number[]
+  default?: string | number | boolean
+  example?: string | number | boolean | Record<string, unknown>
   $ref?: string
 }
 

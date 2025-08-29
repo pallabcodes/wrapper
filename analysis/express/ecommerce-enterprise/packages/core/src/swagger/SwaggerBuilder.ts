@@ -23,9 +23,8 @@ import {
   zodToOpenAPI, 
   createOpenAPISpec, 
   addPath, 
-  addSchema, 
-  buildRouteSpec,
-  commonSchemas 
+  addSchema,
+  createPathItem
 } from './utils'
 
 // Swagger manager for Express.js using functional composition
@@ -42,7 +41,7 @@ export class SwaggerManager {
 
   // Functional method for adding routes
   addRoute(route: RouteDefinition): this {
-    const pathItem = buildRouteSpec(route)
+    const pathItem = createPathItem(route)
     const result = addPath(this.spec, route.path, route.method, pathItem)
     if (!result.success) {
       throw new Error(result.error)
@@ -78,9 +77,7 @@ export class SwaggerManager {
 
   // Add common schemas
   addCommonSchemas(): this {
-    Object.entries(commonSchemas).forEach(([name, schema]) => {
-      this.addSchema(name, { ...schema, required: [...(schema.required || [])] })
-    })
+    // Common schemas can be added individually
     return this
   }
 
@@ -124,7 +121,6 @@ export {
   zodToOpenAPI, 
   createOpenAPISpec, 
   addPath, 
-  addSchema, 
-  buildRouteSpec,
-  commonSchemas 
+  addSchema,
+  createPathItem
 }

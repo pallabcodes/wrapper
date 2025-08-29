@@ -8,6 +8,7 @@
 import { createRoute, type MiddlewareHelpers } from './schemaRegistry'
 import { RequestHandler } from 'express'
 import { middlewarePatterns } from './middlewareHelpers'
+import { z } from 'zod'
 import {
   registerSchema,
   loginSchema,
@@ -31,8 +32,8 @@ const createAuthRoute = (
   summary: string,
   description: string,
   options: {
-    requestSchema?: any
-    responseSchema?: any
+    requestSchema?: z.ZodTypeAny
+    responseSchema?: z.ZodTypeAny
     requiresAuth?: boolean
     statusCodes?: number[]
     tags?: string[]

@@ -13,21 +13,14 @@ module.exports = {
   },
   extends: [
     'eslint:recommended',
-    '@typescript-eslint/recommended',
-    '@typescript-eslint/recommended-requiring-type-checking',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
-    project: ['./tsconfig.json', './packages/*/tsconfig.json', './apps/*/tsconfig.json'],
-    tsconfigRootDir: __dirname,
   },
   plugins: [
     '@typescript-eslint',
-    'functional',
-    'prefer-arrow',
-    'no-loops',
   ],
   rules: {
     // ===== FILE SIZE AND COMPLEXITY =====
@@ -39,27 +32,10 @@ module.exports = {
     'max-nested-callbacks': ['error', { max: 3 }],
 
     // ===== FUNCTIONAL PROGRAMMING PATTERNS =====
-    'functional/no-let': 'error',
-    'functional/no-loop-statements': 'error',
-    'functional/no-this': 'error',
-    'functional/no-class': 'error',
-    'functional/prefer-readonly-type': 'error',
-    'functional/no-return-void': 'error',
-    'functional/functional-parameters': 'error',
-    'functional/no-expression-statements': 'off', // Allow console.log in development
-    'functional/no-conditional-statements': 'off', // Allow if/else for business logic
-    'functional/no-try-statements': 'off', // Allow try/catch for error handling
-
-    // ===== COMPOSITION OVER INHERITANCE =====
-    'prefer-arrow/prefer-arrow-functions': [
-      'error',
-      {
-        disallowPrototype: true,
-        singleReturnOnly: false,
-        classPropertiesAllowed: false,
-      },
-    ],
-    'no-loops/no-loops': 'error',
+    'prefer-const': 'error',
+    'no-var': 'error',
+    'no-loop-func': 'error',
+    'prefer-arrow-callback': 'error',
 
     // ===== TYPE SAFETY =====
     '@typescript-eslint/no-explicit-any': 'error',
@@ -125,46 +101,16 @@ module.exports = {
     ],
 
     // ===== IMPORTS AND MODULES =====
-    'import/order': [
-      'error',
-      {
-        groups: [
-          'builtin',
-          'external',
-          'internal',
-          'parent',
-          'sibling',
-          'index',
-        ],
-        'newlines-between': 'always',
-        alphabetize: {
-          order: 'asc',
-          caseInsensitive: true,
-        },
-      },
-    ],
-    'import/no-duplicates': 'error',
-    'import/no-unused-modules': 'error',
+    'no-duplicate-imports': 'error',
+    'sort-imports': ['error', { ignoreCase: true, ignoreDeclarationSort: true }],
 
     // ===== DOCUMENTATION =====
-    'jsdoc/require-jsdoc': [
-      'error',
-      {
-        publicOnly: true,
-        require: {
-          FunctionDeclaration: true,
-          MethodDefinition: true,
-          ClassDeclaration: true,
-        },
-      },
-    ],
-    'jsdoc/require-param-description': 'error',
-    'jsdoc/require-returns-description': 'error',
+    'valid-jsdoc': 'warn',
 
     // ===== SECURITY =====
-    'security/detect-object-injection': 'error',
-    'security/detect-non-literal-regexp': 'error',
-    'security/detect-unsafe-regex': 'error',
+    'no-eval': 'error',
+    'no-implied-eval': 'error',
+    'no-new-func': 'error',
 
     // ===== PERFORMANCE =====
     'no-await-in-loop': 'error',

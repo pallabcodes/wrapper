@@ -57,7 +57,7 @@ export type RouteDefinition = {
 }
 
 // Functional utility to convert Zod to OpenAPI
-const zodToOpenAPI = (schema: z.ZodTypeAny): any => {
+const zodToOpenAPI = (schema: z.ZodTypeAny): Record<string, unknown> => {
   if (!schema || !schema._def) {
     return { type: 'string' }
   }
@@ -66,14 +66,14 @@ const zodToOpenAPI = (schema: z.ZodTypeAny): any => {
 
   switch (typeName) {
     case 'ZodString':
-      const stringSchema: any = { type: 'string' }
+      const stringSchema: Record<string, unknown> = { type: 'string' }
       if (schema._def.checks) {
-        schema._def.checks.forEach((check: any) => {
-          if (check.kind === 'email') stringSchema.format = 'email'
-          if (check.kind === 'uuid') stringSchema.format = 'uuid'
-          if (check.kind === 'datetime') stringSchema.format = 'date-time'
-          if (check.kind === 'min') stringSchema.minLength = check.value
-          if (check.kind === 'max') stringSchema.maxLength = check.value
+        schema._def.checks.forEach((check: { kind: string; value?: number }) => {
+          if (check.kind === 'email') stringSchema['format'] = 'email'
+          if (check.kind === 'uuid') stringSchema['format'] = 'uuid'
+          if (check.kind === 'datetime') stringSchema['format'] = 'date-time'
+          if (check.kind === 'min') stringSchema['minLength'] = check.value
+          if (check.kind === 'max') stringSchema['maxLength'] = check.value
         })
       }
       return stringSchema
@@ -143,8 +143,8 @@ export const createRoute = (
 })
 
 // Functional OpenAPI path generator
-const generatePathItem = (route: RouteDefinition): any => {
-  const pathItem: any = {
+const generatePathItem = (route: RouteDefinition): Record<string, unknown> => {
+  const pathItem: Record<string, unknown> = {
     summary: route.summary,
     description: route.description,
     tags: route.tags,

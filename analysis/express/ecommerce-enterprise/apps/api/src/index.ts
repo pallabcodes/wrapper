@@ -165,8 +165,13 @@ registerVersionedRoutes(app)
 // Legacy API routes for backward compatibility
 app.use('/api/v1', apiRoutes)
 
-// API routes (catch-all) - not documented in Swagger
-app.use('/api', (_req, res) => {
+// API routes (catch-all) - only for non-versioned routes
+app.use('/api', (req, res, next) => {
+  // Skip if it's a versioned route
+  if (req.path.startsWith('/v1/') || req.path.startsWith('/v2/') || req.path.startsWith('/v3/')) {
+    return next()
+  }
+  
   res.json({
     message: 'Ecommerce Enterprise API',
     versions: ['v1', 'v2', 'v3'],

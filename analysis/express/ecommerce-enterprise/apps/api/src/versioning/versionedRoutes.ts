@@ -6,7 +6,7 @@
  */
 
 import { Request, Response, Application } from 'express'
-import { authRoutes as authRouter } from '@ecommerce-enterprise/core'
+import { authRouter } from '../auth/authRoutes'
 import { 
   createVersionedRoute, 
   composeVersionedRoutes, 
@@ -15,8 +15,7 @@ import {
 
 // V1 Routes - Original implementation
 const v1Routes = [
-  // Auth routes (original implementation)
-  // Use the auth router for all auth routes
+  // Auth routes using direct Express router
   createVersionedRoute('v1', '/auth', 'use', authRouter),
   
   // Version info endpoint

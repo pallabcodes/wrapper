@@ -13,6 +13,8 @@
 import { Router, Request, Response, NextFunction, RequestHandler } from 'express'
 import { RouteDefinition } from '../swagger/schemaRegistry'
 import { composeMiddlewareFromHelpers } from '../swagger/middlewareHelpers'
+import { validateBody, authenticateToken } from '@ecommerce-enterprise/core'
+import { authController } from '../auth/authController'
 
 // Extend Express Request interface for version metadata
 declare global {
@@ -161,10 +163,20 @@ export const composeRouteDefinitions = (routeDefinitions: RouteDefinition[], ver
   const router = createVersionRouter(version)
   
   routeDefinitions.forEach(routeDef => {
-    const { path, method, middleware, middlewareHelpers } = routeDef
+    const { path, method, middleware, middlewareHelpers, requestSchema, requiresAuth } = routeDef
     
     // Compose middleware from both direct and helper sources
     const allMiddleware: RequestHandler[] = []
+    
+    // Add validation middleware if requestSchema is provided
+    if (requestSchema) {
+      allMiddleware.push(validateBody(requestSchema))
+    }
+    
+    // Add authentication middleware if required
+    if (requiresAuth) {
+      allMiddleware.push(authenticateToken)
+    }
     
     // Add middleware from helpers if provided
     if (middlewareHelpers) {
@@ -176,8 +188,35 @@ export const composeRouteDefinitions = (routeDefinitions: RouteDefinition[], ver
       allMiddleware.push(...middleware)
     }
     
-    // Create a simple handler for now (in production, this would be the actual controller)
-    const handler: RequestHandler = (_req, res) => {
+    // Create handler based on route path - Simple, direct approach
+    const handler: RequestHandler = (req, res) => {
+      // Simple route matching - how internal teams do it
+      // Extract the endpoint from the full path
+      const endpoint = path.split('/').pop() || ''
+      
+      if (endpoint === 'register') {
+        return authController.register(req, res)
+      } else if (endpoint === 'login') {
+        return authController.login(req, res)
+      } else if (endpoint === 'logout') {
+        return authController.logout(req, res)
+      } else if (endpoint === 'refresh-token') {
+        return authController.refreshToken(req, res)
+      } else if (endpoint === 'forgot-password') {
+        return authController.forgotPassword(req, res)
+      } else if (endpoint === 'reset-password') {
+        return authController.resetPassword(req, res)
+      } else if (endpoint === 'verify-email') {
+        return authController.verifyEmail(req, res)
+      } else if (endpoint === 'me') {
+        return authController.getProfile(req, res)
+      } else if (endpoint === 'profile' && method === 'put') {
+        return authController.updateProfile(req, res)
+      } else if (endpoint === 'change-password') {
+        return authController.changePassword(req, res)
+      }
+      
+      // Default handler for other routes
       res.json({
         success: true,
         message: `${method.toUpperCase()} ${path}`,
