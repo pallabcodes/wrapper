@@ -9,6 +9,15 @@
 
 import { z } from 'zod'
 
+// File upload configuration
+export type FileUploadConfig = {
+  fieldName: string
+  isMultiple: boolean
+  allowedMimeTypes?: string[]
+  maxSize?: number // in bytes
+  description?: string
+}
+
 // Functional type for route definition
 export type RouteDefinition = {
   path: string
@@ -20,6 +29,7 @@ export type RouteDefinition = {
   responseSchema: z.ZodTypeAny
   requiresAuth: boolean
   statusCodes: number[]
+  fileUpload?: FileUploadConfig | undefined
 }
 
 // Functional utility to convert Zod to OpenAPI
@@ -89,7 +99,8 @@ export const createRoute = (
   responseSchema: z.ZodTypeAny,
   requestSchema?: z.ZodTypeAny,
   requiresAuth = false,
-  statusCodes = [200]
+  statusCodes = [200],
+  fileUpload?: FileUploadConfig
 ): RouteDefinition => ({
   path,
   method,
@@ -99,7 +110,8 @@ export const createRoute = (
   requestSchema,
   responseSchema,
   requiresAuth,
-  statusCodes
+  statusCodes,
+  fileUpload
 })
 
 // Functional OpenAPI path generator
@@ -111,14 +123,50 @@ const generatePathItem = (route: RouteDefinition): any => {
     responses: {}
   }
 
-  // Add request body if schema exists
-  if (route.requestSchema) {
+  // Add request body if schema exists or file upload
+  if (route.requestSchema || route.fileUpload) {
     pathItem.requestBody = {
       required: true,
-      content: {
-        'application/json': {
-          schema: zodToOpenAPI(route.requestSchema)
+      content: {}
+    }
+
+    // Add JSON schema if exists
+    if (route.requestSchema) {
+      pathItem.requestBody.content['application/json'] = {
+        schema: zodToOpenAPI(route.requestSchema)
+      }
+    }
+
+    // Add file upload schema if exists
+    if (route.fileUpload) {
+      const { fieldName, isMultiple, allowedMimeTypes, maxSize, description } = route.fileUpload
+      
+      pathItem.requestBody.content['multipart/form-data'] = {
+        schema: {
+          type: 'object',
+          properties: {
+            [fieldName]: {
+              type: isMultiple ? 'array' : 'string',
+              format: 'binary',
+              description: description || `Upload ${isMultiple ? 'files' : 'file'}`,
+              ...(isMultiple && {
+                items: {
+                  type: 'string',
+                  format: 'binary'
+                }
+              })
+            }
+          },
+          required: [fieldName]
         }
+      }
+
+      // Add file validation info
+      if (allowedMimeTypes || maxSize) {
+        pathItem.requestBody.content['multipart/form-data'].schema.properties[fieldName].description += 
+          `\n\n**Validation:**` +
+          (allowedMimeTypes ? `\n- Allowed types: ${allowedMimeTypes.join(', ')}` : '') +
+          (maxSize ? `\n- Max size: ${(maxSize / 1024 / 1024).toFixed(1)}MB` : '')
       }
     }
   }

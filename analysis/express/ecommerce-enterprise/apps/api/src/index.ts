@@ -5,7 +5,7 @@
  * composition over inheritance, and enterprise-grade architecture with proper API versioning.
  */
 
-import express from 'express'
+import express, { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import compression from 'compression'
@@ -63,8 +63,8 @@ app.use(express.urlencoded({ extended: true }))
   const v3Spec = generateVersionedOpenAPISpec('v3')
 
   // Single Swagger UI endpoint with version switching
-  app.use('/api-docs', swaggerUi.serve, (req: any, res: any, next: any) => {
-    const version = req.query.v as string || 'v1'
+  app.use('/api-docs', swaggerUi.serve, (req: Request, res: Response, next: NextFunction) => {
+    const version = (req.query['v'] as string) || 'v1'
     
     let spec
     switch (version) {
@@ -89,6 +89,15 @@ app.use(express.urlencoded({ extended: true }))
     })(req, res, next)
   })
 
+// Request ID middleware for tracking
+const addRequestId = (req: Request, res: Response, next: NextFunction) => {
+  req.headers['x-request-id'] = req.headers['x-request-id'] || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  res.setHeader('x-request-id', req.headers['x-request-id'])
+  next()
+}
+
+app.use(addRequestId)
+
 // Health check endpoint with functional response
 const createHealthResponse = () => ({
   status: 'ok',
@@ -97,7 +106,11 @@ const createHealthResponse = () => ({
   version: process.env['npm_package_version'] || '1.0.0',
   environment: process.env['NODE_ENV'] || 'development',
   apiVersions: ['v1', 'v2', 'v3'],
-  latestVersion: 'v3'
+  latestVersion: 'v3',
+  memory: {
+    used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+    total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
+  }
 })
 
 app.get('/health', (_req, res) => {
@@ -164,9 +177,21 @@ app.use('/api', (_req, res) => {
 })
 
 // Functional error handling middleware
-const errorHandler = (err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  logger.error('Unhandled error', { error: err.message, stack: err.stack })
-  res.status(500).json({ error: 'Internal server error' })
+const errorHandler = (err: Error, req: Request, res: Response, _next: NextFunction) => {
+  const requestId = req.headers['x-request-id']
+  logger.error('Unhandled error', { 
+    error: err.message, 
+    stack: err.stack,
+    requestId,
+    url: req.url,
+    method: req.method
+  })
+  
+  res.status(500).json({ 
+    error: 'Internal server error',
+    requestId,
+    timestamp: new Date().toISOString()
+  })
 }
 
 app.use(errorHandler)

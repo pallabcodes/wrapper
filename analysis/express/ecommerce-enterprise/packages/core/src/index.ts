@@ -85,3 +85,31 @@ export * from './swagger/utils'
 export { Result, pipe, withErrorHandling, memoize } from './utils/functional'
 export { createEventEmitter } from './utils/events'
 export { createContainer } from './utils/container'
+
+// ============================================================================
+// RESPONSE MAPPING
+// ============================================================================
+
+export {
+  baseResponseSchema,
+  type BaseResponse,
+  type ResponseMeta,
+  createResponse,
+  successResponse,
+  createdResponse,
+  updatedResponse,
+  deletedResponse,
+  errorResponse,
+  validationErrorResponse,
+  notFoundResponse,
+  unauthorizedResponse,
+  forbiddenResponse,
+  paginatedResponse,
+  cachedResponse,
+  withPagination,
+  withFilters,
+  withSorting,
+  withCache,
+  responseWrapper,
+  transformResponse
+} from './utils/responseMapper'

@@ -8,6 +8,7 @@
 import { z } from 'zod'
 import { generateOpenAPISpec } from './schemaRegistry'
 import { authRoutes } from './authRoutes'
+import { fileUploadRoutes } from './fileUploadRoutes'
 import { VERSION_CONFIG, APIVersion } from '../versioning/versionManager'
 
 // Response schemas for version-specific endpoints
@@ -161,6 +162,69 @@ const createVersionedAuthRoutes = (version: APIVersion) => {
   return baseRoutes
 }
 
+// Functional version-specific file upload route definitions
+const createVersionedFileUploadRoutes = (version: APIVersion) => {
+  const baseRoutes = fileUploadRoutes.map(route => ({
+    ...route,
+    path: route.path.replace('/api/v1', `/api/${version}`),
+    tags: route.tags.map(tag => 
+      tag === 'File Upload' ? `File Upload (${version.toUpperCase()})` : tag
+    )
+  }))
+  
+  // Add version-specific file upload features
+  if (version === 'v2') {
+    baseRoutes.push(
+      {
+        path: `/api/${version}/upload/batch-process`,
+        method: 'post' as const,
+        summary: 'Batch file processing (V2)',
+        description: 'Upload and process multiple files in batch with progress tracking',
+        tags: [`File Upload (${version.toUpperCase()})`],
+        requestSchema: undefined,
+        responseSchema: successResponseSchema,
+        requiresAuth: true,
+        statusCodes: [200],
+        fileUpload: {
+          fieldName: 'batchFiles',
+          isMultiple: true,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'application/pdf', 'text/csv'],
+          maxSize: 200 * 1024 * 1024, // 200MB
+          description: 'Batch upload multiple files for processing'
+        }
+      }
+    )
+  }
+  
+  if (version === 'v3') {
+    baseRoutes.push(
+      {
+        path: `/api/${version}/upload/ai-analysis`,
+        method: 'post' as const,
+        summary: 'AI-powered file analysis (V3)',
+        description: 'Upload files for AI-powered analysis and insights',
+        tags: [`File Upload (${version.toUpperCase()})`],
+        requestSchema: z.object({
+          analysisType: z.enum(['ocr', 'image-recognition', 'document-classification']),
+          priority: z.enum(['low', 'normal', 'high']).default('normal')
+        }),
+        responseSchema: successResponseSchema,
+        requiresAuth: true,
+        statusCodes: [200],
+        fileUpload: {
+          fieldName: 'files',
+          isMultiple: true,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'application/pdf', 'text/plain'],
+          maxSize: 500 * 1024 * 1024, // 500MB
+          description: 'Upload files for AI analysis'
+        }
+      }
+    )
+  }
+  
+  return baseRoutes
+}
+
 // Functional version info route
 const createVersionInfoRoute = (version: APIVersion) => ({
   path: `/api/${version}/version`,
@@ -179,6 +243,7 @@ export const generateVersionedOpenAPISpec = (version: APIVersion) => {
   const versionMeta = VERSION_CONFIG[version]
   const routes = [
     ...createVersionedAuthRoutes(version),
+    ...createVersionedFileUploadRoutes(version),
     createVersionInfoRoute(version)
   ]
   
@@ -215,6 +280,10 @@ export const generateVersionedOpenAPISpec = (version: APIVersion) => {
       {
         name: `Authentication (${version.toUpperCase()})`,
         description: `Authentication and authorization endpoints - ${version.toUpperCase()}`
+      },
+      {
+        name: `File Upload (${version.toUpperCase()})`,
+        description: `File upload and processing endpoints - ${version.toUpperCase()}`
       },
       {
         name: `System (${version.toUpperCase()})`,

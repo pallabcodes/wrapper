@@ -6,6 +6,7 @@
  */
 
 import { AppError, ErrorCode } from '../../errors/AppError'
+import { logger } from '../../utils/logger'
 import type { 
   User, 
   AuthTokens, 
@@ -122,8 +123,8 @@ export const authService = {
     
     resetTokens.set(token, { email, expiresAt })
     
-    // TODO: Send email with reset link
-    console.log(`Password reset token for ${email}: ${token}`)
+    // TODO: Implement email service integration
+    logger.info('Password reset token generated', { email, token })
   },
 
   // Reset password

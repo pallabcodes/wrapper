@@ -11,10 +11,12 @@ const PORT = process.env['PORT'] || 3000
 
 const server = app.listen(PORT, () => {
   logger.info(`🚀 Ecommerce Enterprise API Server running on port ${PORT}`)
-  console.log(`🚀 Server ready at http://localhost:${PORT}`)
-  console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`)
-  console.log(`🏥 Health Check: http://localhost:${PORT}/health`)
-  console.log(`🔐 Auth Endpoints: http://localhost:${PORT}/api/v1/auth`)
+  logger.info('Server startup complete', { 
+    port: PORT,
+    documentation: `/api-docs`,
+    health: `/health`,
+    authEndpoints: `/api/v1/auth`
+  })
 })
 
 // Graceful shutdown handling
