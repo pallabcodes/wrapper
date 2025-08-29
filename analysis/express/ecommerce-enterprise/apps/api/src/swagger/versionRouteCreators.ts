@@ -7,6 +7,7 @@
 
 import { z } from 'zod'
 import { authRoutes } from './authRoutes'
+import { productRoutes } from './productRoutes'
 import { fileUploadRoutes } from './fileUploadRoutes'
 import { APIVersion } from '../versioning/versionManager'
 import {
@@ -112,6 +113,75 @@ export const createVersionedAuthRoutes = (version: APIVersion) => {
         requestSchema: undefined,
         responseSchema: graphqlResponseSchema,
         requiresAuth: false,
+        statusCodes: [200]
+      }
+    )
+  }
+  
+  return baseRoutes
+}
+
+// ============================================================================
+// PRODUCT ROUTE CREATORS
+// ============================================================================
+
+export const createVersionedProductRoutes = (version: APIVersion) => {
+  const baseRoutes = productRoutes.map(route => ({
+    ...route,
+    path: route.path.replace('/api/v1', `/api/${version}`),
+    tags: [`Product Management (${version.toUpperCase()})`]
+  }))
+  
+  // Add version-specific features
+  if (version === 'v2') {
+    baseRoutes.push(
+      {
+        path: `/api/${version}/products/bulk-operations`,
+        method: 'post' as const,
+        summary: 'Bulk operations (V2)',
+        description: 'Perform bulk operations on multiple products',
+        tags: [`Product Management (${version.toUpperCase()})`],
+        requestSchema: undefined,
+        responseSchema: bulkOperationsResponseSchema,
+        requiresAuth: true,
+        statusCodes: [200]
+      },
+      {
+        path: `/api/${version}/products/analytics`,
+        method: 'get' as const,
+        summary: 'Product analytics (V2)',
+        description: 'Get advanced product analytics',
+        tags: [`Product Management (${version.toUpperCase()})`],
+        requestSchema: undefined,
+        responseSchema: analyticsResponseSchema,
+        requiresAuth: true,
+        statusCodes: [200]
+      }
+    )
+  }
+  
+  if (version === 'v3') {
+    baseRoutes.push(
+      {
+        path: `/api/${version}/products/realtime`,
+        method: 'get' as const,
+        summary: 'Real-time updates (V3)',
+        description: 'Get real-time product updates via SSE',
+        tags: [`Product Management (${version.toUpperCase()})`],
+        requestSchema: undefined,
+        responseSchema: realtimeResponseSchema,
+        requiresAuth: true,
+        statusCodes: [200]
+      },
+      {
+        path: `/api/${version}/products/graphql`,
+        method: 'post' as const,
+        summary: 'GraphQL endpoint (V3)',
+        description: 'GraphQL endpoint for product queries',
+        tags: [`Product Management (${version.toUpperCase()})`],
+        requestSchema: undefined,
+        responseSchema: graphqlResponseSchema,
+        requiresAuth: true,
         statusCodes: [200]
       }
     )

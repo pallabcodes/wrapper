@@ -7,6 +7,7 @@
 
 import { Request, Response, Application } from 'express'
 import { authRouter } from '../auth/authRoutes'
+import { productRouter } from '../product/productRoutes'
 import { 
   createVersionedRoute, 
   composeVersionedRoutes, 
@@ -18,6 +19,9 @@ const v1Routes = [
   // Auth routes using direct Express router
   createVersionedRoute('v1', '/auth', 'use', authRouter),
   
+  // Product routes using direct Express router
+  createVersionedRoute('v1', '/products', 'use', productRouter),
+  
   // Version info endpoint
   createVersionedRoute('v1', '/version', 'get', createVersionInfoHandler())
 ]
@@ -26,6 +30,9 @@ const v1Routes = [
 const v2Routes = [
   // Use the auth router for all auth routes
   createVersionedRoute('v2', '/auth', 'use', authRouter),
+  
+  // Use the product router for all product routes
+  createVersionedRoute('v2', '/products', 'use', productRouter),
   
   // New V2 features
   createVersionedRoute('v2', '/auth/bulk-operations', 'post', (_req: Request, res: Response) => {
@@ -52,6 +59,9 @@ const v2Routes = [
 const v3Routes = [
   // Use the auth router for all auth routes
   createVersionedRoute('v3', '/auth', 'use', authRouter),
+  
+  // Use the product router for all product routes
+  createVersionedRoute('v3', '/products', 'use', productRouter),
   
   // V2 features maintained
   createVersionedRoute('v3', '/auth/bulk-operations', 'post', (_req: Request, res: Response) => {

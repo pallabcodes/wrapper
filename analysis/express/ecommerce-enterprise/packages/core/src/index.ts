@@ -53,6 +53,20 @@ export * from './modules/auth/authUtils'
 export * from './modules/auth/authResponseHandler'
 export * from './modules/auth/authSchemas'
 
+// ============================================================================
+// PRODUCTS
+// ============================================================================
+
+export { productService } from './modules/product/productService'
+export { productController } from './modules/product/productController'
+export { productRoutes } from './modules/product/productRoutes'
+
+// Product types and utilities
+export * from './modules/product/productTypes'
+export * from './modules/product/productUtils'
+export * from './modules/product/productSchemas'
+export * from './modules/product/productResponseHandler'
+
 
 
 // ============================================================================

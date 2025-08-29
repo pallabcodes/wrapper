@@ -9,6 +9,7 @@ import { generateOpenAPISpec } from './schemaRegistry'
 import { VERSION_CONFIG, APIVersion } from '../versioning/versionManager'
 import {
   createVersionedAuthRoutes,
+  createVersionedProductRoutes,
   createVersionedFileUploadRoutes,
   createVersionInfoRoute
 } from './versionRouteCreators'
@@ -21,6 +22,7 @@ export const generateVersionedOpenAPISpec = (version: APIVersion) => {
   const versionMeta = VERSION_CONFIG[version]
   const routes = [
     ...createVersionedAuthRoutes(version),
+    ...createVersionedProductRoutes(version),
     ...createVersionedFileUploadRoutes(version),
     createVersionInfoRoute(version)
   ]
