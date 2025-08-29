@@ -49,10 +49,10 @@ export { authService } from './modules/auth/authService'
 export { authRoutes } from './modules/auth/authRoutes'
 
 // Auth types and utilities
-export type * from './modules/auth/authTypes'
 export * from './modules/auth/authUtils'
 export * from './modules/auth/authResponseHandler'
 export * from './modules/auth/authRoutes.types'
+export * from './modules/auth/authSchemas'
 
 // ============================================================================
 // VALIDATION
