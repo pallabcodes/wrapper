@@ -217,7 +217,7 @@ export const composeRouteDefinitions = (routeDefinitions: RouteDefinition[], ver
       }
       
       // Default handler for other routes
-      res.json({
+      return res.json({
         success: true,
         message: `${method.toUpperCase()} ${path}`,
         data: { route: path, method, version }

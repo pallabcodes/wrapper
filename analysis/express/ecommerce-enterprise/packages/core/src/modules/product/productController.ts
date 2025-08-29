@@ -1,12 +1,11 @@
 /**
- * Product Controller - Core Business Logic
+ * Product Controller - Business Logic Layer
  * 
- * Pure business logic controllers without HTTP concerns.
- * Following the same pattern as auth module.
+ * Pure business logic for product operations.
+ * Following internal team patterns for enterprise applications.
  */
 
 import { productService } from './productService'
-import { productResponseHandler } from './productResponseHandler'
 import type { 
   CreateProductData, 
   UpdateProductData, 

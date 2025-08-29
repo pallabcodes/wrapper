@@ -22,8 +22,8 @@ export const productResponseHandler = {
       data,
       timestamp: new Date().toISOString(),
       meta: {
-        version: process.env.npm_package_version || '1.0.0',
-        environment: process.env.NODE_ENV || 'development'
+        version: process.env['npm_package_version'] || '1.0.0',
+        environment: process.env['NODE_ENV'] || 'development'
       }
     }
     
@@ -38,8 +38,8 @@ export const productResponseHandler = {
       data,
       timestamp: new Date().toISOString(),
       meta: {
-        version: process.env.npm_package_version || '1.0.0',
-        environment: process.env.NODE_ENV || 'development'
+        version: process.env['npm_package_version'] || '1.0.0',
+        environment: process.env['NODE_ENV'] || 'development'
       }
     }
     
@@ -58,8 +58,8 @@ export const productResponseHandler = {
       } : undefined,
       timestamp: new Date().toISOString(),
       meta: {
-        version: process.env.npm_package_version || '1.0.0',
-        environment: process.env.NODE_ENV || 'development'
+        version: process.env['npm_package_version'] || '1.0.0',
+        environment: process.env['NODE_ENV'] || 'development'
       }
     }
     

@@ -7,12 +7,10 @@
 
 import { Router } from 'express'
 import { productController } from './productController'
-import { validateBody, validateParams, validateQuery } from '../../middleware/validation'
+import { validateBody } from '../../middleware/validation'
 import {
   createProductSchema,
-  updateProductSchema,
-  productFiltersSchema,
-  productIdSchema
+  updateProductSchema
 } from './productSchemas'
 
 // ============================================================================

@@ -4,8 +4,6 @@
  * Type definitions for the product module using functional programming patterns.
  */
 
-import { z } from 'zod'
-
 // ============================================================================
 // CORE PRODUCT TYPES
 // ============================================================================
@@ -61,6 +59,8 @@ export interface ProductFilters {
   isActive?: boolean
   tags?: string[]
   search?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
   limit?: number
   offset?: number
 }

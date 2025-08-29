@@ -59,7 +59,7 @@ export const productService = {
     // Validate input data
     const validationErrors = validateProductData(data)
     if (validationErrors.length > 0) {
-      throw new AppError(`Validation failed: ${validationErrors.join(', ')}`, ErrorCode.BAD_REQUEST)
+      throw new AppError(`Validation failed: ${validationErrors.join(', ')}`, ErrorCode.VALIDATION_ERROR)
     }
 
     // Check if SKU already exists
@@ -172,8 +172,8 @@ export const productService = {
       throw new AppError('Product not found', ErrorCode.NOT_FOUND)
     }
 
-    if (operation === 'subtract' && !checkStockAvailability(product, quantity)) {
-      throw new AppError('Insufficient stock', ErrorCode.BAD_REQUEST)
+    if (operation === 'subtract' && product.stockQuantity < quantity) {
+      throw new AppError('Insufficient stock', ErrorCode.VALIDATION_ERROR)
     }
 
     const updatedProduct = updateStock(product, quantity, operation)
