@@ -48,6 +48,12 @@ export { authController } from './modules/auth/authController'
 export { authService } from './modules/auth/authService'
 export { authRoutes } from './modules/auth/authRoutes'
 
+// Auth types and utilities
+export type * from './modules/auth/authTypes'
+export * from './modules/auth/authUtils'
+export * from './modules/auth/authResponseHandler'
+export * from './modules/auth/authRoutes.types'
+
 // ============================================================================
 // VALIDATION
 // ============================================================================
@@ -66,6 +72,11 @@ export { rateLimiter } from './middleware/rateLimiter'
 
 export { SwaggerManager, createOpenAPISpec, addPath, addSchema, zodToOpenAPI } from './swagger/SwaggerBuilder'
 export { createSwaggerMiddleware, createRouteDefinitions } from './swagger/SwaggerMiddleware'
+export { createSwaggerManager, registerSwaggerRoutes } from './swagger/SwaggerSetup'
+
+// Swagger types and utilities
+export type * from './swagger/types'
+export * from './swagger/utils'
 
 // ============================================================================
 // UTILITIES

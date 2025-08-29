@@ -1,121 +1,83 @@
 /**
  * Swagger Middleware for Express.js
  * 
- * Provides a clean, functional approach to serving OpenAPI documentation
- * without the verbose comment-based approach.
+ * This file provides middleware and utilities for integrating Swagger documentation
+ * with Express.js applications using functional programming patterns.
  */
 
 import { Request, Response, NextFunction } from 'express'
-import { SwaggerManager, RouteDefinition } from './SwaggerBuilder'
 import { z } from 'zod'
+import { SwaggerManager, RouteDefinition } from './SwaggerBuilder'
 
-// Express.js middleware factory
+// Functional middleware creator
 export const createSwaggerMiddleware = (
-  swaggerManager: SwaggerManager,
-  options: {
-    uiPath?: string
-    jsonPath?: string
-    yamlPath?: string
-  } = {}
+  swaggerManager: SwaggerManager
 ) => {
-  const {
-    uiPath = '/api-docs',
-    jsonPath = '/api-docs.json',
-    yamlPath = '/api-docs.yaml'
-  } = options
-
-  const serveJson = (_req: Request, res: Response) => {
-    res.setHeader('Content-Type', 'application/json')
-    res.send(swaggerManager.toJSON())
-  }
-
-  const serveYaml = (_req: Request, res: Response) => {
-    const yaml = require('js-yaml')
-    const spec = swaggerManager.getSpec()
-    const yamlString = yaml.dump(spec)
-    
-    res.setHeader('Content-Type', 'text/yaml')
-    res.send(yamlString)
-  }
-
-  const serveUI = (_req: Request, res: Response) => {
-    const html = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="API Documentation" />
-    <title>API Documentation</title>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css" />
-</head>
-<body>
-    <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js" crossorigin></script>
-    <script>
-        window.onload = () => {
-            window.ui = SwaggerUIBundle({
-                url: '${jsonPath}',
+  return {
+    serve: (_req: Request, res: Response) => {
+      res.setHeader('Content-Type', 'application/json')
+      res.send(swaggerManager.toJSON())
+    },
+    setup: (_swaggerSpec: any) => {
+      return (_req: Request, res: Response) => {
+        res.setHeader('Content-Type', 'text/html')
+        res.send(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Ecommerce Enterprise API</title>
+            <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css" />
+          </head>
+          <body>
+            <div id="swagger-ui"></div>
+            <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js" crossorigin></script>
+            <script>
+              window.ui = SwaggerUIBundle({
+                url: '/api-docs.json',
                 dom_id: '#swagger-ui',
-                deepLinking: true,
                 presets: [
-                    SwaggerUIBundle.presets.apis,
-                    SwaggerUIStandalonePreset
+                  SwaggerUIBundle.presets.apis,
+                  SwaggerUIStandalonePreset
                 ],
                 plugins: [
-                    SwaggerUIBundle.plugins.DownloadUrl
+                  SwaggerUIBundle.plugins.DownloadUrl
                 ],
                 layout: "StandaloneLayout"
-            });
-        };
-    </script>
-</body>
-</html>`
-    
-    res.setHeader('Content-Type', 'text/html')
-    res.send(html)
-  }
-
-  const registerRoutes = (app: any) => {
-    app.get(jsonPath, serveJson)
-    app.get(yamlPath, serveYaml)
-    app.get(uiPath, serveUI)
-  }
-
-  return {
-    serveJson,
-    serveYaml,
-    serveUI,
-    registerRoutes
+              });
+            </script>
+          </body>
+          </html>
+        `)
+      }
+    }
   }
 }
 
-// High-level route registration helper
+// Functional route registration
 export const registerSwaggerRoute = (
   swaggerManager: SwaggerManager,
   route: RouteDefinition
 ) => {
   swaggerManager.addRoute(route)
-  return route
 }
 
-// Express.js route decorator (functional approach)
+// Functional route decorator
 export const swaggerRoute = (
   swaggerManager: SwaggerManager,
   routeDefinition: RouteDefinition
 ) => {
-  // Register the route in Swagger
-  swaggerManager.addRoute(routeDefinition)
-  
-  // Return a function that can be used as Express middleware
   return (req: Request, _res: Response, next: NextFunction) => {
+    // Register the route in Swagger
+    swaggerManager.addRoute(routeDefinition)
+    
     // Add route metadata to request for potential use
     req.swaggerRoute = routeDefinition
+    
     next()
   }
 }
 
-// Type augmentation for Express Request
+// Extend Request interface for Swagger metadata
 declare global {
   namespace Express {
     interface Request {
@@ -124,40 +86,14 @@ declare global {
   }
 }
 
-// Predefined route definitions for common patterns
+// Functional CRUD route generators
 export const createRouteDefinitions = {
-  // Health check route
-  health: (path: string = '/health'): RouteDefinition => ({
-    path,
-    method: 'get',
-    summary: 'Health Check',
-    description: 'Check if the service is healthy',
-    tags: ['System'],
-    responses: {
-      '200': {
-        description: 'Service is healthy',
-        schema: z.object({
-          status: z.string(),
-          timestamp: z.string(),
-          uptime: z.number()
-        })
-      }
-    }
-  }),
-
-  // CRUD operations
   list: (path: string, resource: string, schema: z.ZodTypeAny): RouteDefinition => ({
     path,
     method: 'get',
     summary: `List ${resource}`,
     description: `Get a list of ${resource}`,
     tags: [resource],
-    queryParams: z.object({
-      page: z.string().optional(),
-      limit: z.string().optional(),
-      sort: z.string().optional(),
-      filter: z.string().optional()
-    }),
     responses: {
       '200': {
         description: `List of ${resource}`,
@@ -200,7 +136,10 @@ export const createRouteDefinitions = {
     summary: `Create ${resource}`,
     description: `Create a new ${resource}`,
     tags: [resource],
-    requestBody: schema,
+    requestBody: {
+      required: true,
+      schema: schema
+    },
     responses: {
       '201': {
         description: `${resource} created successfully`,
@@ -221,7 +160,10 @@ export const createRouteDefinitions = {
     pathParams: z.object({
       id: z.string()
     }),
-    requestBody: schema,
+    requestBody: {
+      required: true,
+      schema: schema
+    },
     responses: {
       '200': {
         description: `${resource} updated successfully`,

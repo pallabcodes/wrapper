@@ -1,31 +1,13 @@
 /**
- * Auth Routes - Functional Programming Approach
+ * API Routes with Swagger Documentation
  * 
- * This file implements authentication routes using functional programming patterns,
- * composition over inheritance, and type-safe validation with Zod schemas.
+ * This file contains all API routes with proper JSDoc comments for Swagger documentation.
  */
 
 import { Router } from 'express'
-import { authController } from './authController'
-import { authenticateToken } from '../../middleware/auth'
-import { validateBody } from '../../middleware/validation'
-import { 
-  registerRequestSchema, 
-  loginRequestSchema, 
-  logoutRequestSchema, 
-  refreshTokenRequestSchema 
-} from './authSchemas'
+import { authRoutes } from '@ecommerce-enterprise/core'
 
 const router = Router()
-
-// Functional route composition with validation middleware
-const createAuthRoute = (path: string, method: 'get' | 'post' | 'put' | 'delete', handler: any, schema?: any) => {
-  const routeHandler = schema 
-    ? [validateBody(schema), handler]
-    : [handler]
-  
-  return router[method](path, ...routeHandler)
-}
 
 /**
  * @swagger
@@ -60,7 +42,6 @@ const createAuthRoute = (path: string, method: 'get' | 'post' | 'put' | 'delete'
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-createAuthRoute('/register', 'post', authController.register, registerRequestSchema)
 
 /**
  * @swagger
@@ -89,7 +70,6 @@ createAuthRoute('/register', 'post', authController.register, registerRequestSch
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-createAuthRoute('/login', 'post', authController.login, loginRequestSchema)
 
 /**
  * @swagger
@@ -128,7 +108,6 @@ createAuthRoute('/login', 'post', authController.login, loginRequestSchema)
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-createAuthRoute('/logout', 'post', authController.logout, logoutRequestSchema)
 
 /**
  * @swagger
@@ -172,12 +151,6 @@ createAuthRoute('/logout', 'post', authController.logout, logoutRequestSchema)
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-createAuthRoute('/refresh-token', 'post', authController.refreshToken, refreshTokenRequestSchema)
-
-// Protected routes using functional composition
-const createProtectedRoute = (path: string, method: 'get' | 'post' | 'put' | 'delete', handler: any) => {
-  return router[method](path, authenticateToken, handler)
-}
 
 /**
  * @swagger
@@ -212,7 +185,6 @@ const createProtectedRoute = (path: string, method: 'get' | 'post' | 'put' | 'de
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-createProtectedRoute('/me', 'get', authController.getCurrentUser)
 
 /**
  * @swagger
@@ -251,7 +223,6 @@ createProtectedRoute('/me', 'get', authController.getCurrentUser)
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-createAuthRoute('/verify-email', 'post', authController.verifyEmail)
 
 /**
  * @swagger
@@ -291,7 +262,6 @@ createAuthRoute('/verify-email', 'post', authController.verifyEmail)
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-createAuthRoute('/forgot-password', 'post', authController.forgotPassword)
 
 /**
  * @swagger
@@ -334,7 +304,6 @@ createAuthRoute('/forgot-password', 'post', authController.forgotPassword)
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-createAuthRoute('/reset-password', 'post', authController.resetPassword)
 
 /**
  * @swagger
@@ -379,7 +348,6 @@ createAuthRoute('/reset-password', 'post', authController.resetPassword)
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-createProtectedRoute('/change-password', 'post', authController.changePassword)
 
 /**
  * @swagger
@@ -429,7 +397,6 @@ createProtectedRoute('/change-password', 'post', authController.changePassword)
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-createProtectedRoute('/profile', 'put', authController.updateProfile)
 
 /**
  * @swagger
@@ -459,6 +426,8 @@ createProtectedRoute('/profile', 'put', authController.updateProfile)
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-createProtectedRoute('/delete-account', 'delete', authController.deleteAccount)
 
-export { router as authRoutes }
+// Mount auth routes
+router.use('/auth', authRoutes)
+
+export { router as apiRoutes }
