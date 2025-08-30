@@ -28,6 +28,11 @@ import {
 // In-memory storage for demo (replace with database in production)
 const products: Map<string, Product> = new Map()
 
+// Test utilities for clearing storage
+export const clearProductStorage = (): void => {
+  products.clear()
+}
+
 // ============================================================================
 // CORE PRODUCT FUNCTIONS
 // ============================================================================

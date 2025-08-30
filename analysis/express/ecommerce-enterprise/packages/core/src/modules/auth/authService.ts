@@ -21,7 +21,8 @@ import {
   createExpirationDate,
   isTokenExpired,
   sanitizeUser,
-  createUser
+  createUser,
+  isStrongPassword
 } from './authUtils'
 
 // In-memory storage for demo (replace with database in production)
@@ -29,6 +30,14 @@ const users: Map<string, StoredUser> = new Map()
 const refreshTokens: Map<string, string> = new Map()
 const resetTokens: Map<string, TokenEntry> = new Map()
 const verificationTokens: Map<string, TokenEntry> = new Map()
+
+// Test utilities for clearing storage
+export const clearAuthStorage = (): void => {
+  users.clear()
+  refreshTokens.clear()
+  resetTokens.clear()
+  verificationTokens.clear()
+}
 
 // Core authentication functions
 const findUserByEmail = (email: string): StoredUser | undefined => 
@@ -54,6 +63,10 @@ export const authService = {
       throw new AppError('User already exists', ErrorCode.CONFLICT)
     }
 
+    if (!isStrongPassword(data.password)) {
+      throw new AppError('Password must be at least 8 characters with uppercase, lowercase, and number', ErrorCode.VALIDATION_ERROR)
+    }
+
     const hashedPassword = await hashPassword(data.password)
     const user = createUser(data)
     
@@ -66,6 +79,10 @@ export const authService = {
   },
 
   async login(data: LoginData): Promise<AuthResult> {
+    if (!data.email || !data.password) {
+      throw new AppError('Email and password are required', ErrorCode.VALIDATION_ERROR)
+    }
+
     const user = findUserByEmail(data.email)
     if (!user) {
       throw new AppError('Invalid credentials', ErrorCode.UNAUTHORIZED)
