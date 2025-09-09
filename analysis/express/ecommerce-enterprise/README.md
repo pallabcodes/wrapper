@@ -4,7 +4,7 @@ Enterprise-grade ecommerce platform with modular monolith architecture using pnp
 
 ## Architecture
 
-This project uses a **modular monolith** architecture that can be instantly extracted to microservices without code changes.
+This project uses a **modular monolith** architecture that can be instantly extracted to microservices without code changes. We've already extracted the **Payment** and **Notification** modules into standalone microservices following enterprise-grade patterns.
 
 ### Workspace Structure
 
@@ -12,14 +12,37 @@ This project uses a **modular monolith** architecture that can be instantly extr
 ├── packages/
 │   ├── core/          # Core utilities and patterns
 │   ├── shared/        # Shared components
-│   └── types/         # TypeScript type definitions
+│   ├── types/         # TypeScript type definitions
+│   ├── payment/       # 🚀 Payment Microservice (Port 3001)
+│   └── notification/  # 📧 Notification Microservice (Port 3002)
 ├── apps/
-│   └── api/           # Main API application
+│   └── api/           # Main API application (Port 3000)
 └── services/
-    ├── auth/          # Authentication microservice (extractable)
-    ├── payment/       # Payment microservice (extractable)
-    └── notification/  # Notification microservice (extractable)
+    └── auth/          # Authentication microservice (extractable)
 ```
+
+### Microservices Status
+
+✅ **Payment Microservice** - Fully extracted and running  
+✅ **Notification Microservice** - Fully extracted and running  
+🔄 **Auth Module** - Ready for extraction  
+
+## 🚀 Quick Start with Microservices
+
+```bash
+# Start infrastructure (PostgreSQL, Redis)
+docker-compose up -d postgres redis
+
+# Build and start microservices
+npm run docker:build:microservices
+npm run docker:run:microservices
+
+# Verify services
+curl http://localhost:3001/health  # Payment service
+curl http://localhost:3002/health  # Notification service
+```
+
+📖 **See [Quick Start Guide](QUICKSTART_MICROSERVICES.md) for detailed instructions**
 
 ## Quick Start
 
@@ -52,18 +75,22 @@ pnpm --filter @ecommerce-enterprise/core test
 
 ## Microservice Extraction
 
-Extract any module to a standalone microservice:
+We've already extracted the **Payment** and **Notification** modules into standalone microservices. The **Auth** module is ready for extraction.
+
+### Current Status
+
+- ✅ **Payment Microservice**: Running on port 3001 with Stripe, PayPal, Braintree support
+- ✅ **Notification Microservice**: Running on port 3002 with Email, SMS, Push, In-App support
+- 🔄 **Auth Module**: Ready for extraction to microservice
+
+### Extract Auth Module
 
 ```bash
-# Extract auth module
+# Extract auth module (when ready)
 pnpm extract:auth
-
-# Extract payment module
-pnpm extract:payment
-
-# Extract notification module
-pnpm extract:notification
 ```
+
+📖 **See [Microservices Architecture](MICROSERVICES.md) for complete details**
 
 ## Production Deployment
 
@@ -74,8 +101,28 @@ pnpm build
 # Deploy to production
 pnpm deploy
 
-# Docker build
+# Docker build (all services)
 pnpm docker:build
+
+# Docker build (microservices only)
+pnpm docker:build:microservices
+
+# Start microservices
+pnpm docker:run:microservices
+```
+
+### Microservices Deployment
+
+Each microservice can be deployed independently:
+
+```bash
+# Deploy payment service
+docker build -t ecommerce-payment:latest packages/payment/
+docker run -d -p 3001:3001 ecommerce-payment:latest
+
+# Deploy notification service  
+docker build -t ecommerce-notification:latest packages/notification/
+docker run -d -p 3002:3002 ecommerce-notification:latest
 ```
 
 ## Features

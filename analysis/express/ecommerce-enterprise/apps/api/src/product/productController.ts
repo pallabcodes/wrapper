@@ -6,7 +6,13 @@
  */
 
 import { Request, Response } from 'express'
-import { productService, createSuccessResponse, createErrorResponse } from '@ecommerce-enterprise/core'
+import { 
+  productService, 
+  createSuccessResponse, 
+  createErrorResponse, 
+  createNotFoundResponse,
+  AppError 
+} from '@ecommerce-enterprise/core'
 
 // ============================================================================
 // PRODUCT CONTROLLERS - Direct Implementation
@@ -34,11 +40,17 @@ export const productController = {
       const product = await productService.getProductById(id)
       
       if (!product) {
-        return createErrorResponse(res, 'Product not found')
+        return createNotFoundResponse(res, 'Product')
       }
       
       return createSuccessResponse(res, product, 'Product retrieved successfully')
     } catch (error) {
+      if (error instanceof AppError) {
+        if (error.code === 'NOT_FOUND') {
+          return createNotFoundResponse(res, 'Product')
+        }
+        return createErrorResponse(res, error.message)
+      }
       return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to get product')
     }
   },
@@ -89,6 +101,9 @@ export const productController = {
       await productService.deleteProduct(id)
       return createSuccessResponse(res, null, 'Product deleted successfully')
     } catch (error) {
+      if (error instanceof AppError) {
+        return createErrorResponse(res, error.message);
+      }
       return createErrorResponse(res, error instanceof Error ? error.message : 'Failed to delete product')
     }
   },

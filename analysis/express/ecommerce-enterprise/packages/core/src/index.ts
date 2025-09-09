@@ -105,6 +105,23 @@ export { createEventEmitter } from './utils/events'
 export { createContainer } from './utils/container'
 
 // ============================================================================
+// RESPONSE WRAPPER
+// ============================================================================
+
+export {
+  createSuccessResponse,
+  createErrorResponse,
+  createNotFoundResponse,
+  createValidationErrorResponse,
+  createUnauthorizedResponse,
+  createForbiddenResponse,
+  createConflictResponse,
+  createInternalErrorResponse,
+  type ApiResponse,
+  type ErrorResponse
+} from './utils/responseWrapper'
+
+// ============================================================================
 // RESPONSE MAPPING
 // ============================================================================
 

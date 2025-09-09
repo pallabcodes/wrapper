@@ -6,7 +6,7 @@
  */
 
 import { Request, Response } from 'express'
-import { createSuccessResponse, createErrorResponse, authService } from '@ecommerce-enterprise/core'
+import { createSuccessResponse, createErrorResponse, createConflictResponse, createUnauthorizedResponse, authService, AppError } from '@ecommerce-enterprise/core'
 
 
 // ============================================================================
@@ -20,6 +20,15 @@ export const authController = {
       const result = await authService.register(req.body)
       return createSuccessResponse(res, result, 'User registered successfully')
     } catch (error) {
+      if (error instanceof AppError) {
+        if (error.code === 'CONFLICT') {
+          return createConflictResponse(res, error.message)
+        }
+        if (error.code === 'VALIDATION_ERROR') {
+          return createErrorResponse(res, error.message)
+        }
+        return createErrorResponse(res, error.message)
+      }
       return createErrorResponse(res, error instanceof Error ? error.message : 'Registration failed')
     }
   },
@@ -30,6 +39,15 @@ export const authController = {
       const result = await authService.login(req.body)
       return createSuccessResponse(res, result, 'Login successful')
     } catch (error) {
+      if (error instanceof AppError) {
+        if (error.code === 'UNAUTHORIZED') {
+          return createUnauthorizedResponse(res, error.message)
+        }
+        if (error.code === 'VALIDATION_ERROR') {
+          return createErrorResponse(res, error.message)
+        }
+        return createErrorResponse(res, error.message)
+      }
       return createErrorResponse(res, error instanceof Error ? error.message : 'Login failed')
     }
   },

@@ -28,7 +28,11 @@
     "docker:run": "docker run -p 3000:3000 ecommerce-enterprise",
     "docker:compose": "docker-compose up -d",
     "docker:compose:down": "docker-compose down",
-    "health": "curl -f http://localhost:3000/health || exit 1"
+    "docker:build:microservices": "docker-compose build payment notification",
+    "docker:run:microservices": "docker-compose up -d payment notification",
+    "health": "curl -f http://localhost:3000/health || exit 1",
+    "health:payment": "curl -f http://localhost:3001/health || exit 1",
+    "health:notification": "curl -f http://localhost:3002/health || exit 1"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",

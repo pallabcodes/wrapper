@@ -21,7 +21,7 @@ export const createProductRouter = () => {
   const router = Router()
 
   // Product CRUD operations
-  router.post('/', validateBody(createProductSchema), productController.createProduct)
+  router.post('/', authenticateToken, validateBody(createProductSchema), productController.createProduct)
   router.get('/', productController.listProducts)
   router.get('/search', productController.searchProducts)
   router.get('/stats', productController.getProductStats)
