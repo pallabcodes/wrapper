@@ -1,0 +1,53 @@
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  rootDir: './',
+  roots: ['<rootDir>/src/', '<rootDir>/test/'],
+  testMatch: [
+    '**/__tests__/**/*.+(ts|tsx|js)',
+    '**/+(*.)+(spec|test).+(ts|tsx|js)',
+    '**/?(*.)+(spec|test).+(ts|tsx|js)'
+  ],
+  transform: {
+    '^.+\\.(ts|tsx)$': 'ts-jest',
+  },
+  collectCoverageFrom: [
+    'src/**/*.(t|j)s',
+    '!src/**/*.module.ts',
+    '!src/main.ts',
+    '!src/**/*.config.ts',
+    '!src/**/*.entity.ts',
+    '!src/**/*.dto.ts',
+    '!src/**/*.interface.ts',
+    '!src/**/*.type.ts',
+    '!src/**/*.enum.ts',
+    '!src/**/migrations/**',
+    '!src/**/*.spec.ts',
+    '!src/**/*.test.ts',
+  ],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html', 'json'],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
+  moduleFileExtensions: ['js', 'json', 'ts'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@ecommerce-enterprise/core(.*)$': '<rootDir>/../core/src$1',
+    '^@ecommerce-enterprise/shared(.*)$': '<rootDir>/../shared/src$1',
+    '^@ecommerce-enterprise/types(.*)$': '<rootDir>/../types/src$1',
+  },
+  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
+  testTimeout: 10000,
+  maxWorkers: '50%',
+  detectOpenHandles: true,
+  forceExit: true,
+  clearMocks: true,
+  resetMocks: true,
+  restoreMocks: true,
+};

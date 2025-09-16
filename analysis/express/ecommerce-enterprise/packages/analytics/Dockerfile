@@ -1,4 +1,4 @@
-# Payment Microservice Dockerfile - Production
+# Analytics Microservice Dockerfile - Production
 FROM node:18-alpine
 
 # Install curl for health checks
@@ -14,7 +14,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all dependencies (including dev dependencies for build)
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
@@ -29,11 +29,11 @@ RUN npm prune --omit=dev
 USER nodejs
 
 # Expose port
-EXPOSE 3001
+EXPOSE 3003
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD curl -f http://localhost:3001/health || exit 1
+  CMD curl -f http://localhost:3003/api/v1/analytics/health || exit 1
 
 # Start the application
-CMD ["npm", "run", "start"]
+CMD ["npm", "run", "start:prod"]

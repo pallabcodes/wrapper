@@ -2,19 +2,18 @@ services:
   postgres:
     profiles: ["infra", "all"]
     image: postgres:15-alpine
-    container_name: ecommerce-postgres
+    container_name: ecommerce-postgres-dev
     env_file:
-      - env.prod
+      - env.dev
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
+    # No host port binding needed in dev; services use internal network
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ecommerce_enterprise"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,9 +21,9 @@ services:
   redis:
     profiles: ["infra", "all"]
     image: redis:7-alpine
-    container_name: ecommerce-redis
-    ports:
-      - "6379:6379"
+    container_name: ecommerce-redis-dev
+    # No host port binding needed in dev; services use internal network
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     healthcheck:
@@ -33,103 +32,106 @@ services:
       timeout: 5s
       retries: 5
 
-  # Payment Microservice
-  payment:
-    profiles: ["payment", "core", "all"]
-    build:
-      context: ./packages/payment
-      dockerfile: Dockerfile
-    container_name: ecommerce-payment
-    ports:
-      - "3001:3001"
-    env_file:
-      - env.prod
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      PORT: ${PAYMENT_PORT}
-      REDIS_URL: ${REDIS_URL}
-      POSTGRES_URL: ${POSTGRES_URL}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:3001/ready || curl -sf http://localhost:3001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # Notification Microservice
-  notification:
-    profiles: ["notification", "core", "all"]
-    build:
-      context: ./packages/notification
-      dockerfile: Dockerfile
-    container_name: ecommerce-notification
-    ports:
-      - "3002:3002"
-    env_file:
-      - env.prod
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      PORT: ${NOTIFICATION_PORT}
-      REDIS_URL: ${REDIS_URL}
-      POSTGRES_URL: ${POSTGRES_URL}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:3002/ready || curl -sf http://localhost:3002/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # Analytics Microservice
   analytics:
     profiles: ["analytics", "all"]
     build:
       context: ./packages/analytics
-      dockerfile: Dockerfile
-    container_name: ecommerce-analytics
+      dockerfile: Dockerfile.dev
+    container_name: ecommerce-analytics-dev
     ports:
       - "3003:3003"
     env_file:
-      - env.prod
+      - env.dev
     environment:
       NODE_ENV: ${NODE_ENV}
       PORT: ${ANALYTICS_PORT}
-      REDIS_URL: ${REDIS_URL}
       DATABASE_URL: ${DATABASE_URL}
       DATABASE_HOST: ${DATABASE_HOST}
       DATABASE_PORT: ${DATABASE_PORT}
       DATABASE_USER: ${DATABASE_USER}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       DATABASE_NAME: ${DATABASE_NAME}
+      REDIS_URL: ${REDIS_URL}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    volumes:
+      - ./packages/analytics:/app
+      - /app/node_modules
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:3003/ready || curl -sf http://localhost:3003/api/v1/analytics/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+
+  payment:
+    profiles: ["payment", "core", "all"]
+    build:
+      context: ./packages/payment
+      dockerfile: Dockerfile.dev
+    container_name: ecommerce-payment-dev
+    ports:
+      - "3001:3001"
+    env_file:
+      - env.dev
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PAYMENT_PORT}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./packages/payment:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3001/ready || curl -sf http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  notification:
+    profiles: ["notification", "core", "all"]
+    build:
+      context: ./packages/notification
+      dockerfile: Dockerfile.dev
+    container_name: ecommerce-notification-dev
+    ports:
+      - "3002:3002"
+    env_file:
+      - env.dev
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${NOTIFICATION_PORT}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./packages/notification:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3002/ready || curl -sf http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   analytics-migrate:
     profiles: ["analytics", "all"]
     build:
       context: ./packages/analytics
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: ecommerce-analytics-migrate
     env_file:
-      - env.prod
+      - env.dev
     environment:
       NODE_ENV: ${NODE_ENV}
       DATABASE_URL: ${DATABASE_URL}
@@ -148,10 +150,10 @@ services:
     profiles: ["payment", "all"]
     build:
       context: ./packages/payment
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: ecommerce-payment-migrate
     env_file:
-      - env.prod
+      - env.dev
     environment:
       NODE_ENV: ${NODE_ENV}
       DATABASE_URL: ${DATABASE_URL}
@@ -166,10 +168,10 @@ services:
     profiles: ["notification", "all"]
     build:
       context: ./packages/notification
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: ecommerce-notification-migrate
     env_file:
-      - env.prod
+      - env.dev
     environment:
       NODE_ENV: ${NODE_ENV}
       DATABASE_URL: ${DATABASE_URL}
@@ -183,3 +185,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  default:
+    name: ecommerce_network

@@ -43,6 +43,7 @@ curl http://localhost:3002/health  # Notification service
 ```
 
 📖 **See [Quick Start Guide](QUICKSTART_MICROSERVICES.md) for detailed instructions**
+📘 Also see the concise runbook: `docs/RUNBOOK.md`
 
 ## Quick Start
 
