@@ -5,7 +5,7 @@
  * Following the same pattern as auth module.
  */
 
-import { Router } from 'express'
+import { Router, Router as ExpressRouter } from 'express'
 import { productController } from './productController'
 import { validateBody } from '../../middleware/validation'
 import {
@@ -13,11 +13,11 @@ import {
   updateProductSchema
 } from './productSchemas'
 
-// ============================================================================
+// ==========================================================================
 // CORE ROUTE SETUP - Framework Agnostic
-// ============================================================================
+// ==========================================================================
 
-const router = Router()
+const router: ExpressRouter = Router()
 
 // Functional route composition
 const createProductRoute = (path: string, method: 'get' | 'post' | 'put' | 'delete' | 'patch', handler: any, schema?: any) => {

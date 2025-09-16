@@ -10,14 +10,15 @@ RUN adduser -S nodejs -u 1001
 
 WORKDIR /app
 
-# Copy package files first for better caching
-COPY package*.json ./
-
-# Install all dependencies (including dev dependencies)
-RUN npm install --legacy-peer-deps
-
-# Copy source code (excluding node_modules)
-COPY . .
+# Copy monorepo package manifests and install at root to resolve workspace deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN npm i -g pnpm@8 && pnpm fetch
+COPY packages ./packages
+WORKDIR /app/packages/analytics
+RUN pnpm install --recursive --offline
+WORKDIR /app
+RUN pnpm -r build --filter @ecommerce-enterprise/authx && pnpm -r install
+WORKDIR /app/packages/analytics
 
 # Switch to non-root user
 USER nodejs
@@ -30,4 +31,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD curl -f http://localhost:3003/api/v1/analytics/health || exit 1
 
 # Start the application in development mode with hot reload
-CMD ["npm", "run", "start:dev"]
+CMD ["pnpm", "run", "start:dev"]

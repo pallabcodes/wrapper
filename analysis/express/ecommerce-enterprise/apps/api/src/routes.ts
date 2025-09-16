@@ -8,7 +8,7 @@ import { Router } from 'express'
 import { authRoutes } from '@ecommerce-enterprise/core'
 import { productRouter } from './product/productRoutes'
 
-const router = Router()
+const router: Router = Router()
 
 // Mount auth routes
 router.use('/auth', authRoutes)

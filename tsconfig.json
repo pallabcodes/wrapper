@@ -36,7 +36,13 @@
       "@/shared/*": ["shared/*"],
       "@/infrastructure/*": ["infrastructure/*"],
       "@/types/*": ["types/*"],
-      "@/utils/*": ["utils/*"]
+      "@/utils/*": ["utils/*"],
+      "@ecommerce-enterprise/core": [
+        "analysis/express/ecommerce-enterprise/packages/core/src/index.ts"
+      ],
+      "@ecommerce-enterprise/core/*": [
+        "analysis/express/ecommerce-enterprise/packages/core/src/*"
+      ]
     },
     "typeRoots": ["./node_modules/@types", "./types"],
     "types": ["node", "jest"]

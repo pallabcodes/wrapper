@@ -13,7 +13,7 @@ import rateLimit from 'express-rate-limit'
 import { apiRoutes } from './routes'
 import { logger } from '@ecommerce-enterprise/core'
 
-const app = express()
+const app: express.Express = express()
 
 // Security middleware
 app.use(helmet({

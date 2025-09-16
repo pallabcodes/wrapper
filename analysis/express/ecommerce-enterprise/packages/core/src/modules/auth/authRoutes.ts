@@ -5,7 +5,7 @@
  * Swagger documentation is handled by the functional swagger system.
  */
 
-import { Router } from 'express'
+import { Router, Router as ExpressRouter } from 'express'
 import { registerUser, loginUser, getUserProfile, changePassword, refreshToken } from './authController'
 import { authenticateToken } from '../../middleware/auth'
 import { validateBody } from '../../middleware/validation'
@@ -15,7 +15,7 @@ import {
   refreshTokenSchema 
 } from './authSchemas'
 
-const router = Router()
+const router: ExpressRouter = Router()
 
 // Functional route composition
 const createAuthRoute = (path: string, method: 'get' | 'post' | 'put' | 'delete', handler: any, schema?: any) => {

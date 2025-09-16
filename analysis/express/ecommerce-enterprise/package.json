@@ -64,8 +64,8 @@
   "devDependencies": {
     "@playwright/test": "^1.55.0",
     "@types/bcrypt": "^6.0.0",
-    "@types/jest": "^29.5.12",
-    "@types/node": "^20.11.24",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.19.11",
     "@types/supertest": "^6.0.2",
     "@typescript-eslint/eslint-plugin": "^7.1.0",
     "@typescript-eslint/parser": "^7.1.0",

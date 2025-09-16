@@ -35,8 +35,8 @@ services:
   analytics:
     profiles: ["analytics", "all"]
     build:
-      context: ./packages/analytics
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: packages/analytics/Dockerfile.dev
     container_name: ecommerce-analytics-dev
     ports:
       - "3003:3003"
@@ -58,8 +58,8 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./packages/analytics:/app
-      - /app/node_modules
+      - ./packages/analytics:/app/packages/analytics
+      - /app/packages/analytics/node_modules
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:3003/ready || curl -sf http://localhost:3003/api/v1/analytics/health"]
       interval: 30s

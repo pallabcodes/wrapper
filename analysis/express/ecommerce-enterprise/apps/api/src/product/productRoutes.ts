@@ -5,7 +5,7 @@
  * Direct, functional, no over-engineering.
  */
 
-import { Router } from 'express'
+import { Router, Router as ExpressRouter } from 'express'
 import { productController } from './productController'
 import { validateBody, authenticateToken } from '@ecommerce-enterprise/core'
 import {
@@ -17,8 +17,8 @@ import {
 // PRODUCT ROUTES - Direct Implementation
 // ============================================================================
 
-export const createProductRouter = () => {
-  const router = Router()
+export const createProductRouter = (): ExpressRouter => {
+  const router: ExpressRouter = Router()
 
   // Product CRUD operations
   router.post('/', authenticateToken, validateBody(createProductSchema), productController.createProduct)
@@ -42,4 +42,4 @@ export const createProductRouter = () => {
 }
 
 // Export the router for direct use
-export const productRouter = createProductRouter()
+export const productRouter: ExpressRouter = createProductRouter()

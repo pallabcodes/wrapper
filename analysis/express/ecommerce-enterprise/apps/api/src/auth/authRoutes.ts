@@ -5,7 +5,7 @@
  * Simple, direct, working - no over-engineering.
  */
 
-import { Router } from 'express'
+import { Router, Router as ExpressRouter } from 'express'
 import { authController } from './authController'
 import { validateBody, authenticateToken } from '@ecommerce-enterprise/core'
 import {
@@ -24,8 +24,8 @@ import {
 // DIRECT ROUTE SETUP - How internal teams do it
 // ============================================================================
 
-export const createAuthRouter = () => {
-  const router = Router()
+export const createAuthRouter = (): ExpressRouter => {
+  const router: ExpressRouter = Router()
 
   // Public routes (no auth required)
   router.post('/register', validateBody(registerSchema), authController.register)
@@ -45,4 +45,4 @@ export const createAuthRouter = () => {
 }
 
 // Export the router for direct use
-export const authRouter = createAuthRouter()
+export const authRouter: ExpressRouter = createAuthRouter()

@@ -1,0 +1,10 @@
+{
+  "testEnvironment": "node",
+  "rootDir": "../",
+  "testMatch": ["<rootDir>/dist/test/**/*.spec.js", "<rootDir>/dist/test/**/*.e2e.js"],
+  "moduleFileExtensions": ["js", "json"],
+  "verbose": false,
+  "testTimeout": 30000
+}
+
+

@@ -1,0 +1,28 @@
+{
+  "name": "@ecommerce-enterprise/authx",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -w -p tsconfig.build.json",
+    "lint": "eslint 'src/**/*.ts'",
+    "type-check": "tsc -p tsconfig.build.json --noEmit"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0",
+    "@nestjs/passport": "^10.0.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "jose": "^5.9.6",
+    "openid-client": "^5.7.0",
+    "@simplewebauthn/server": "^10.0.0",
+    "ioredis": "^5.4.1",
+    "cookie": "^0.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
+

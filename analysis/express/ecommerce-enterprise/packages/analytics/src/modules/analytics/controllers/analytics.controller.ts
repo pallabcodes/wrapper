@@ -1,4 +1,6 @@
 import { Controller, Get, Post, Body, Logger } from '@nestjs/common';
+import { Auth, Policies } from '@ecommerce-enterprise/authx';
+import { RateLimit } from '../shared/decorators/rate-limit.decorator';
 
 // Services
 import { AnalyticsService } from '../services/analytics.service';
@@ -12,6 +14,7 @@ export class AnalyticsController {
 
   constructor(private readonly analyticsService: AnalyticsService) {}
 
+  @Auth()
   @Post('events')
   async trackEvent(@Body() dto: any) {
     this.logger.debug('Tracking analytics event', { eventType: dto.eventType });
@@ -25,6 +28,9 @@ export class AnalyticsController {
     return result;
   }
 
+  @Auth()
+  @Policies((p) => (p.roles || []).includes('admin'))
+  @RateLimit(60)
   @Get('events')
   async getEvents() {
     this.logger.debug('Getting analytics events');
