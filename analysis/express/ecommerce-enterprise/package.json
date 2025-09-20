@@ -59,7 +59,11 @@
     "health:payment": "curl -f http://localhost:3001/health || exit 1",
     "health:notification": "curl -f http://localhost:3002/health || exit 1",
     "health:analytics": "curl -f http://localhost:3003/health || exit 1",
-    "health:all": "npm run health && npm run health:payment && npm run health:notification && npm run health:analytics"
+    "health:all": "npm run health && npm run health:payment && npm run health:notification && npm run health:analytics",
+    "release": "node scripts/release.js",
+    "release:patch": "node scripts/release.js patch",
+    "release:minor": "node scripts/release.js minor",
+    "release:major": "node scripts/release.js major"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
@@ -78,13 +82,19 @@
     "supertest": "^6.3.4",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@fastify/compress": "^8.0.1",
+    "@fastify/etag": "^5.0.1",
+    "@fastify/helmet": "^11.1.1",
+    "@nestjs/platform-fastify": "^11.1.6",
     "bcrypt": "^6.0.0",
     "dotenv": "^16.4.5",
     "jsonwebtoken": "^9.0.2",
-    "postgres": "^3.4.7"
+    "postgres": "^3.4.7",
+    "tsx": "^4.6.0"
   },
   "engines": {
     "node": ">=18.0.0",

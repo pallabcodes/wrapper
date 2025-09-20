@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { randomUUID } from 'crypto';
 import { AuthPrincipal } from '../types/auth.types';
 

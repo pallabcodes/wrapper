@@ -39,7 +39,8 @@
   "include": [
     "packages/**/*",
     "apps/**/*",
-    "scripts/**/*"
+    "scripts/**/*",
+    "src/types/ambient.d.ts"
   ],
   "exclude": [
     "node_modules",

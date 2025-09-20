@@ -1,6 +1,7 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Inject } from '@nestjs/common';
 import { JwtServiceX } from '@ecommerce-enterprise/authx';
 import net from 'net';
+import { METRICS_REGISTRY } from '../shared/observability/metrics.module';
 
 function tryConnect(host: string, port: number, timeoutMs = 1500): Promise<boolean> {
     return new Promise((resolve) => {
@@ -17,7 +18,7 @@ function tryConnect(host: string, port: number, timeoutMs = 1500): Promise<boole
 
 @Controller()
 export class HealthController {
-    constructor(private readonly jwt: JwtServiceX) {}
+    constructor(private readonly jwt: JwtServiceX, @Inject(METRICS_REGISTRY) private readonly registry: any) {}
 
     @Get('live')
     live() {
@@ -46,6 +47,11 @@ export class HealthController {
 
         const ok = dbOk && redisOk && jwtOk;
         return { status: ok ? 'ok' : 'degraded', checks: { dbOk, redisOk, jwtOk } };
+    }
+
+    @Get('metrics')
+    async metrics() {
+        return (await this.registry.metrics()) as any;
     }
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "@ecommerce-enterprise/authx",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -12,6 +12,7 @@
   "dependencies": {
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
+    "@nestjs/config": "^3.0.0",
     "@nestjs/passport": "^10.0.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
@@ -19,10 +20,21 @@
     "openid-client": "^5.7.0",
     "@simplewebauthn/server": "^10.0.0",
     "ioredis": "^5.4.1",
-    "cookie": "^0.6.0"
+    "cookie": "^0.6.0",
+    "axios": "^1.6.0",
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0",
+    "joi": "^17.11.0"
   },
   "devDependencies": {
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "@types/node": "^20.0.0",
+    "@types/passport-jwt": "^3.0.13",
+    "@types/uuid": "^9.0.7",
+    "eslint": "^8.57.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0"
   }
 }
-

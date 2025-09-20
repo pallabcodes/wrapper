@@ -8,4 +8,15 @@ export * from './services/jwt.service';
 export * from './services/session.store';
 export * from './services/oidc.service';
 export * from './services/webauthn.service';
+export * from './services/otp.service';
+export * from './decorators/permissions.decorator';
+export * from './guards/permissions.guard';
+export * from './services/rebac.service';
+export * from './decorators/relation-check.decorator';
+export * from './guards/relation.guard';
+export * from './decorators/abac.decorator';
+export * from './guards/abac.guard';
+export * from './services/policy.service';
+export * from './services/decision-audit.service';
+export * from './decorators/chaos.decorator';
 

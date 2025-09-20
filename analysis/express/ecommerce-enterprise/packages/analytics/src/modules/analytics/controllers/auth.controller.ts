@@ -1,7 +1,7 @@
 import { Body, Controller, Post, Res, Req, Get } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { AuthAppService } from '../services/auth-app.service';
-import { Auth } from '@ecommerce-enterprise/authx';
+import { Auth, OtpService } from '@ecommerce-enterprise/authx';
 
 class LoginDto {
     email?: string;
@@ -11,7 +11,7 @@ class LoginDto {
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly auth: AuthAppService) { }
+    constructor(private readonly auth: AuthAppService, private readonly otp: OtpService) { }
 
     @Post('login')
     async login(@Body() body: LoginDto, @Res({ passthrough: true }) res: Response) {
@@ -42,6 +42,23 @@ export class AuthController {
     me(@Req() req: Request) {
         const anyReq = req as Request & { auth?: { sub: string; roles?: string[] } };
         return { sub: anyReq.auth?.sub, roles: anyReq.auth?.roles ?? [] };
+    }
+
+    @Post('otp/request')
+    async requestOtp(@Body() body: { subject: string; channel: 'email' | 'sms' }) {
+        const { ticketId, expiresIn } = await this.otp.requestCode(body.subject, body.channel);
+        return { ticketId, expiresIn };
+    }
+
+    @Post('otp/verify')
+    async verifyOtp(@Body() body: { ticketId: string; code: string; roles?: string[] }) {
+        const res = await this.otp.verifyCode(body.ticketId, body.code);
+        if (!res.ok || !res.subject) {
+            return { ok: false };
+        }
+        const principal = this.buildPrincipal({ email: res.subject, roles: body.roles ?? ['user'] });
+        const tokens = await this.auth.login(principal);
+        return { ok: true, ...tokens };
     }
 
     private buildPrincipal(body: LoginDto): { sub: string; roles?: string[]; email?: string } {

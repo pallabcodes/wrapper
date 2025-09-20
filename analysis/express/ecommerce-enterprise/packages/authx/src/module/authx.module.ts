@@ -3,6 +3,10 @@ import { JwtServiceX } from '../services/jwt.service';
 import { OidcService } from '../services/oidc.service';
 import { SessionStore } from '../services/session.store';
 import { WebAuthnService } from '../services/webauthn.service';
+import { OtpService } from '../services/otp.service';
+import { PolicyService } from '../services/policy.service';
+import { DecisionAuditService } from '../services/decision-audit.service';
+import { TenantService } from '../services/tenant.service';
 
 export interface AuthXModuleOptions {
   session?: { redisUrl?: string; ttlSeconds?: number; rolling?: boolean };
@@ -37,8 +41,12 @@ export class AuthXModule {
         JwtServiceX,
         OidcService,
         WebAuthnService,
+        OtpService,
+        PolicyService,
+        DecisionAuditService,
+        TenantService,
       ],
-      exports: [SessionStore, JwtServiceX, OidcService, WebAuthnService],
+      exports: [SessionStore, JwtServiceX, OidcService, WebAuthnService, OtpService, PolicyService, DecisionAuditService, TenantService],
     };
   }
 
@@ -52,8 +60,8 @@ export class AuthXModule {
       module: AuthXModule,
       global: true,
       imports: options.imports ?? [],
-      providers: [optionsProvider, SessionStore, JwtServiceX, OidcService, WebAuthnService],
-      exports: [SessionStore, JwtServiceX, OidcService, WebAuthnService],
+      providers: [optionsProvider, SessionStore, JwtServiceX, OidcService, WebAuthnService, OtpService, PolicyService, DecisionAuditService, TenantService],
+      exports: [SessionStore, JwtServiceX, OidcService, WebAuthnService, OtpService, PolicyService, DecisionAuditService, TenantService],
     };
   }
 }

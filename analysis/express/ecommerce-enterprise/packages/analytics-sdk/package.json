@@ -1,0 +1,19 @@
+{
+  "name": "@ecommerce-enterprise/analytics-sdk",
+  "version": "0.1.0",
+  "description": "Typed client SDK for Analytics API (generated types, lightweight fetch wrapper)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
+
+

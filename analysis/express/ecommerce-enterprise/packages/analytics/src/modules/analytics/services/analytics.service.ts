@@ -26,6 +26,7 @@ import { AnalyticsMetrics } from '../interfaces/analytics-metrics.interface';
 @Injectable()
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
+  constructor() {}
 
   // ============================================================================
   // MAIN BUSINESS METHODS (OOP + FP Hybrid)
@@ -159,6 +160,9 @@ export class AnalyticsService {
   async getRealtimeMetrics(timeRange: string = '1h'): Promise<any> {
     const timeWindow = this.parseTimeRange(timeRange);
     
+    // Example: batch by eventType to reduce duplicate queries in a tick
+    // Example of using repository loader elsewhere as needed
+
     const events = await db.select()
       .from(analyticsEvents)
       .where(
