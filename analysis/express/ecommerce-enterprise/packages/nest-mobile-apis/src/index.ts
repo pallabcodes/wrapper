@@ -11,9 +11,11 @@ export { MobileSecurityService } from './services/mobile-security.service';
 export { MobileApiInterceptor } from './interceptors/mobile-api.interceptor';
 export { MobileCacheInterceptor } from './interceptors/mobile-cache.interceptor';
 export { MobileOptimizationInterceptor } from './interceptors/mobile-optimization.interceptor';
+export { AuthContextInterceptor } from './interceptors/auth-context.interceptor';
 
 // Guards
 export { MobileSecurityGuard } from './guards/mobile-security.guard';
+export { RbacGuard } from './guards/rbac.guard';
 
 // Decorators
 export * from './decorators/mobile-api.decorator';

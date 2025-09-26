@@ -57,6 +57,13 @@ export class MobileCachingService {
     }
   }
 
+  buildTenantAwareKey(baseKey: string, context?: { tenantId?: string; userId?: string; device?: Partial<MobileDeviceInfo> }): string {
+    const tenant = context?.tenantId || 'public';
+    const user = context?.userId ? `u:${context.userId}` : 'u:anon';
+    const platform = context?.device?.platform || 'unknown';
+    return `t:${tenant}:${user}:${platform}:${baseKey}`;
+  }
+
   async set<T>(key: string, value: T, options?: Partial<CacheOptions>): Promise<void> {
     try {
       const ttl = options?.ttl || 300; // 5 minutes default

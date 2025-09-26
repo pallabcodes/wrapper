@@ -1,9 +1,11 @@
-import { SetMetadata, applyDecorators, UseInterceptors } from '@nestjs/common';
+import { SetMetadata, applyDecorators, UseInterceptors, UseGuards } from '@nestjs/common';
 import { MobileApiInterceptor } from '../interceptors/mobile-api.interceptor';
+import { AuthContextInterceptor } from '../interceptors/auth-context.interceptor';
 import { MobileCacheInterceptor } from '../interceptors/mobile-cache.interceptor';
 import { MobileOptimizationInterceptor } from '../interceptors/mobile-optimization.interceptor';
 import { MobileSecurityGuard } from '../guards/mobile-security.guard';
-import { MobileDeviceInfo, MobileApiOptions } from '../interfaces/mobile-api.interface';
+import { MobileDeviceInfo, MobileApiOptions, RbacRequirement } from '../interfaces/mobile-api.interface';
+import { RbacGuard } from '../guards/rbac.guard';
 
 export const MOBILE_API_METADATA = 'mobile_api_metadata';
 export const MOBILE_CACHE_METADATA = 'mobile_cache_metadata';
@@ -46,7 +48,7 @@ export interface MobileSecurityOptions {
 export function MobileApi(options: MobileApiOptions = {}) {
   return applyDecorators(
     SetMetadata(MOBILE_API_METADATA, options),
-    UseInterceptors(MobileApiInterceptor),
+    UseInterceptors(AuthContextInterceptor, MobileApiInterceptor),
   );
 }
 
@@ -95,6 +97,62 @@ export function MobileEndpoint(
     MobileOptimization(optimizationOptions),
     MobileSecurity(securityOptions),
   );
+}
+
+/**
+ * Preset: Read-heavy endpoint with caching and light optimization
+ */
+export function MobileReadHeavy(options: { cacheKey?: string; ttl?: number } = {}) {
+  const { cacheKey = 'read:heavy', ttl = 60 } = options;
+  return applyDecorators(
+    MobileApi({ compress: true, cacheKey, cacheTtl: ttl }),
+    MobileCache({ key: cacheKey, ttl, strategy: 'cache-first' }),
+    MobileOptimization({ enableImageOptimization: true, quality: 80 })
+  );
+}
+
+/**
+ * Preset: Secure read-heavy endpoint (auth + caching + optimization)
+ */
+export function MobileSecureReadHeavy(options: {
+  cacheKey?: string;
+  ttl?: number;
+  allowedPlatforms?: string[];
+  sessionTimeout?: number;
+} = {}) {
+  const { cacheKey = 'secure:read:heavy', ttl = 60, allowedPlatforms = ['ios','android','web'], sessionTimeout = 30000 } = options;
+  return applyDecorators(
+    MobileReadHeavy({ cacheKey, ttl }),
+    MobileSecurity({ requireAuth: true, allowedPlatforms, sessionTimeout })
+  );
+}
+
+// RBAC decorators
+export const RBAC_METADATA_KEY = 'mobile:rbac';
+
+export function RequireRoles(...roles: string[]) {
+  const requirement: RbacRequirement = { anyRole: roles };
+  return applyDecorators(SetMetadata(RBAC_METADATA_KEY, requirement), UseGuards(RbacGuard));
+}
+
+export function RequireAllRoles(...roles: string[]) {
+  const requirement: RbacRequirement = { allRoles: roles };
+  return applyDecorators(SetMetadata(RBAC_METADATA_KEY, requirement), UseGuards(RbacGuard));
+}
+
+export function RequirePermissions(...permissions: string[]) {
+  const requirement: RbacRequirement = { anyPermission: permissions };
+  return applyDecorators(SetMetadata(RBAC_METADATA_KEY, requirement), UseGuards(RbacGuard));
+}
+
+export function RequireAllPermissions(...permissions: string[]) {
+  const requirement: RbacRequirement = { allPermissions: permissions };
+  return applyDecorators(SetMetadata(RBAC_METADATA_KEY, requirement), UseGuards(RbacGuard));
+}
+
+export function RequireOwner(resourceParam: string = 'userId') {
+  const requirement: RbacRequirement = { allowIfOwner: true, resourceParam };
+  return applyDecorators(SetMetadata(RBAC_METADATA_KEY, requirement), UseGuards(RbacGuard));
 }
 
 /**

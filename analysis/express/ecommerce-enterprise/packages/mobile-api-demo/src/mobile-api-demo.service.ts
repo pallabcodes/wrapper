@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { MobileDeviceInfo, MobileApiRequest } from '@ecommerce-enterprise/nest-mobile-apis';
+import { MobileDeviceInfo } from '@ecommerce-enterprise/nest-mobile-apis';
 
 @Injectable()
 export class MobileApiDemoService {
@@ -312,19 +312,6 @@ export class MobileApiDemoService {
 
   async sendPushNotification(userId: string, deviceInfo: MobileDeviceInfo) {
     this.logger.log(`Sending push notification to ${userId} on ${deviceInfo.platform}`);
-
-    const payload = {
-      title: 'New Product Available!',
-      body: 'Check out our latest collection of mobile-optimized products',
-      data: {
-        type: 'product_update',
-        productId: 'product-123',
-        deepLink: 'ecommerce://product/product-123',
-      },
-      badge: 1,
-      sound: 'default',
-      priority: 'high' as const,
-    };
 
     const result = {
       success: true,

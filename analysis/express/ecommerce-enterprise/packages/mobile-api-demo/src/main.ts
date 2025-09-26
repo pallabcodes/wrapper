@@ -33,7 +33,7 @@ async function bootstrap() {
   // Add global prefix
   app.setGlobalPrefix('api/v1');
 
-  const port = process.env.PORT || 3017;
+  const port = Number(process.env['PORT'] ?? 3017);
   await app.listen(port);
   
   const logger = new Logger('MobileApiDemo');

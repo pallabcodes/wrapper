@@ -215,3 +215,23 @@ export interface MobilePerformanceMetrics {
     slowestRequest: string;
   };
 }
+
+// RBAC types
+export type Role = string;
+export type Permission = string;
+
+export interface RbacRequirement {
+  anyRole?: Role[];
+  allRoles?: Role[];
+  anyPermission?: Permission[];
+  allPermissions?: Permission[];
+  allowIfOwner?: boolean;
+  resourceParam?: string;
+}
+
+export interface RbacContext {
+  userId?: string;
+  tenantId?: string;
+  roles?: Role[];
+  permissions?: Permission[];
+}

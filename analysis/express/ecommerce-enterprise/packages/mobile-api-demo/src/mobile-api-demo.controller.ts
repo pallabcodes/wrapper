@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { MobileApiDemoService } from './mobile-api-demo.service';
 import { MobileDeviceInfo } from '@ecommerce-enterprise/nest-mobile-apis';
+import { MobileApi, MobileOptimization, MobileSecurity, MobileReadHeavy, MobileSecureReadHeavy, RequireRoles, RequirePermissions, RequireOwner } from '@ecommerce-enterprise/nest-mobile-apis';
 
 @Controller('mobile-api-demo')
 export class MobileApiDemoController {
@@ -21,6 +22,7 @@ export class MobileApiDemoController {
   }
 
   @Get('health')
+  @MobileApi({ compress: true })
   async getHealth() {
     this.logger.log('Health endpoint called');
     this.logger.log('Service instance:', !!this.mobileApiDemoService);
@@ -31,6 +33,7 @@ export class MobileApiDemoController {
   }
 
   @Get('products')
+  @MobileReadHeavy({ cacheKey: 'products:list', ttl: 60 })
   async getProducts(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
@@ -41,6 +44,7 @@ export class MobileApiDemoController {
   }
 
   @Get('products/:id')
+  @MobileReadHeavy({ cacheKey: 'products:detail', ttl: 120 })
   async getProductDetails(
     @Param('id') productId: string,
     @Headers() headers: any,
@@ -50,6 +54,8 @@ export class MobileApiDemoController {
   }
 
   @Get('profile/:userId')
+  @MobileSecureReadHeavy({ cacheKey: 'profile:read', ttl: 30 })
+  @RequireOwner('userId')
   async getUserProfile(
     @Param('userId') userId: string,
     @Headers() headers: any,
@@ -59,6 +65,7 @@ export class MobileApiDemoController {
   }
 
   @Get('offline/:userId')
+  @MobileSecureReadHeavy({ cacheKey: 'offline:data', ttl: 120 })
   async getOfflineData(
     @Param('userId') userId: string,
     @Headers() headers: any,
@@ -69,6 +76,8 @@ export class MobileApiDemoController {
 
   @Post('offline/:userId/sync')
   @HttpCode(HttpStatus.OK)
+  @MobileSecurity({ requireAuth: true })
+  @RequirePermissions('offline:sync')
   async syncOfflineData(
     @Param('userId') userId: string,
     @Headers() headers: any,
@@ -79,6 +88,8 @@ export class MobileApiDemoController {
 
   @Post('notifications/:userId')
   @HttpCode(HttpStatus.OK)
+  @MobileSecurity({ requireAuth: true })
+  @RequireRoles('admin', 'support')
   async sendPushNotification(
     @Param('userId') userId: string,
     @Headers() headers: any,
@@ -88,18 +99,21 @@ export class MobileApiDemoController {
   }
 
   @Get('analytics')
+  @MobileApi({ compress: true })
   async getAnalytics(@Headers() headers: any) {
     const deviceInfo = this.extractDeviceInfo(headers);
     return this.mobileApiDemoService.getAnalytics(deviceInfo);
   }
 
   @Get('performance')
+  @MobileReadHeavy({ cacheKey: 'metrics', ttl: 30 })
   async getPerformanceMetrics(@Headers() headers: any) {
     const deviceInfo = this.extractDeviceInfo(headers);
     return this.mobileApiDemoService.getPerformanceMetrics(deviceInfo);
   }
 
   @Get('test/optimization')
+  @MobileOptimization({ enableImageOptimization: true, enableMinification: true, quality: 75 })
   async testOptimization(@Headers() headers: any) {
     const deviceInfo = this.extractDeviceInfo(headers);
     
@@ -180,6 +194,7 @@ export class MobileApiDemoController {
   }
 
   @Get('test/caching')
+  @MobileReadHeavy({ cacheKey: 'test:caching', ttl: 45 })
   async testCaching(@Headers() headers: any) {
     const deviceInfo = this.extractDeviceInfo(headers);
     
@@ -208,6 +223,7 @@ export class MobileApiDemoController {
   }
 
   @Get('test/security')
+  @MobileSecurity({ requireAuth: true, allowedPlatforms: ['ios', 'android', 'web'] })
   async testSecurity(@Headers() headers: any) {
     const deviceInfo = this.extractDeviceInfo(headers);
     
@@ -241,15 +257,21 @@ export class MobileApiDemoController {
   }
 
   private extractDeviceInfo(headers: any): MobileDeviceInfo {
-    const userAgent = headers['user-agent'] || '';
-    const platform = headers['x-device-platform'] || this.detectPlatform(userAgent);
-    const version = headers['x-device-version'] || this.detectVersion(userAgent);
-    const model = headers['x-device-model'] || 'Unknown';
-    const screenSize = this.parseScreenSize(headers['x-screen-size']);
-    const connectionSpeed = headers['x-connection-speed'] || 'unknown';
-    const appVersion = headers['x-app-version'] || '1.0.0';
-    const language = headers['accept-language']?.split(',')[0] || 'en-US';
-    const timezone = headers['x-timezone'] || 'UTC';
+    const userAgent = (headers['user-agent'] as string | undefined) ?? '';
+    const rawPlatform = (headers['x-device-platform'] as string | undefined) ?? this.detectPlatform(userAgent);
+    const platform = (['ios', 'android', 'web', 'unknown'] as const).includes(rawPlatform as any)
+      ? (rawPlatform as 'ios' | 'android' | 'web' | 'unknown')
+      : 'unknown';
+    const version = (headers['x-device-version'] as string | undefined) ?? this.detectVersion(userAgent);
+    const model = (headers['x-device-model'] as string | undefined) ?? 'Unknown';
+    const screenSize = this.parseScreenSize(headers['x-screen-size'] as string | undefined);
+    const rawSpeed = (headers['x-connection-speed'] as string | undefined) ?? 'unknown';
+    const connectionSpeed = (['slow', 'medium', 'fast', 'unknown'] as const).includes(rawSpeed as any)
+      ? (rawSpeed as 'slow' | 'medium' | 'fast' | 'unknown')
+      : 'unknown';
+    const appVersion = (headers['x-app-version'] as string | undefined) ?? '1.0.0';
+    const language = ((headers['accept-language'] as string | undefined)?.split(',')[0]) ?? 'en-US';
+    const timezone = (headers['x-timezone'] as string | undefined) ?? 'UTC';
 
     return {
       platform,
@@ -272,15 +294,15 @@ export class MobileApiDemoController {
     };
   }
 
-  private detectPlatform(userAgent: string): string {
+  private detectPlatform(userAgent: string): 'ios' | 'android' | 'web' | 'unknown' {
     if (/iPhone|iPad|iPod/.test(userAgent)) {
       return 'ios';
     }
     if (/Android/.test(userAgent)) {
       return 'android';
     }
-    if (/Windows Phone/.test(userAgent)) {
-      return 'windows-phone';
+    if (/Windows|Mac|Linux/.test(userAgent)) {
+      return 'web';
     }
     return 'unknown';
   }
@@ -292,7 +314,7 @@ export class MobileApiDemoController {
     }
 
     const androidMatch = userAgent.match(/Android (\d+\.?\d*)/);
-    if (androidMatch) {
+    if (androidMatch && androidMatch[1]) {
       return androidMatch[1];
     }
 

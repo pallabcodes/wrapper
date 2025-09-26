@@ -93,15 +93,21 @@ export class SimpleMobileDemoController {
   }
 
   private extractDeviceInfo(headers: any) {
-    const userAgent = headers['user-agent'] || '';
-    const platform = headers['x-device-platform'] || this.detectPlatform(userAgent);
-    const version = headers['x-device-version'] || this.detectVersion(userAgent);
-    const model = headers['x-device-model'] || 'Unknown';
-    const screenSize = this.parseScreenSize(headers['x-screen-size']);
-    const connectionSpeed = headers['x-connection-speed'] || 'unknown';
-    const appVersion = headers['x-app-version'] || '1.0.0';
-    const language = headers['accept-language']?.split(',')[0] || 'en-US';
-    const timezone = headers['x-timezone'] || 'UTC';
+    const userAgent = (headers['user-agent'] as string | undefined) ?? '';
+    const rawPlatform = (headers['x-device-platform'] as string | undefined) ?? this.detectPlatform(userAgent);
+    const platform = (['ios', 'android', 'web', 'unknown'] as const).includes(rawPlatform as any)
+      ? (rawPlatform as 'ios' | 'android' | 'web' | 'unknown')
+      : 'unknown';
+    const version = (headers['x-device-version'] as string | undefined) ?? this.detectVersion(userAgent);
+    const model = (headers['x-device-model'] as string | undefined) ?? 'Unknown';
+    const screenSize = this.parseScreenSize(headers['x-screen-size'] as string | undefined);
+    const rawSpeed = (headers['x-connection-speed'] as string | undefined) ?? 'unknown';
+    const connectionSpeed = (['slow', 'medium', 'fast', 'unknown'] as const).includes(rawSpeed as any)
+      ? (rawSpeed as 'slow' | 'medium' | 'fast' | 'unknown')
+      : 'unknown';
+    const appVersion = (headers['x-app-version'] as string | undefined) ?? '1.0.0';
+    const language = ((headers['accept-language'] as string | undefined)?.split(',')[0]) ?? 'en-US';
+    const timezone = (headers['x-timezone'] as string | undefined) ?? 'UTC';
 
     return {
       platform,
@@ -124,15 +130,15 @@ export class SimpleMobileDemoController {
     };
   }
 
-  private detectPlatform(userAgent: string): string {
+  private detectPlatform(userAgent: string): 'ios' | 'android' | 'web' | 'unknown' {
     if (/iPhone|iPad|iPod/.test(userAgent)) {
       return 'ios';
     }
     if (/Android/.test(userAgent)) {
       return 'android';
     }
-    if (/Windows Phone/.test(userAgent)) {
-      return 'windows-phone';
+    if (/Windows|Mac|Linux/.test(userAgent)) {
+      return 'web';
     }
     return 'unknown';
   }
@@ -144,7 +150,7 @@ export class SimpleMobileDemoController {
     }
 
     const androidMatch = userAgent.match(/Android (\d+\.?\d*)/);
-    if (androidMatch) {
+    if (androidMatch && androidMatch[1]) {
       return androidMatch[1];
     }
 

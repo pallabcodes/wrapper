@@ -5,11 +5,23 @@ import {
   CallHandler,
   Logger,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { MobileApiService } from '../services/mobile-api.service';
 import { MOBILE_API_METADATA } from '../decorators/mobile-api.decorator';
 import { MobileDeviceInfo, MobileApiOptions } from '../interfaces/mobile-api.interface';
+
+// Optional OpenTelemetry (no hard dependency)
+function getTracer() {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const api = require('@opentelemetry/api');
+    return api.trace.getTracer('@ecommerce-enterprise/nest-mobile-apis');
+  } catch {
+    return undefined;
+  }
+}
 
 @Injectable()
 export class MobileApiInterceptor implements NestInterceptor {
@@ -32,6 +44,22 @@ export class MobileApiInterceptor implements NestInterceptor {
 
     const startTime = Date.now();
 
+    // Ensure a request id for tracing
+    let requestId: string | string[] | number | undefined = request.headers['x-request-id'] || response.getHeader('X-Request-Id');
+    if (!requestId) {
+      requestId = `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      response.setHeader('X-Request-Id', requestId as string);
+    }
+
+    const tracer = getTracer();
+    const span = tracer?.startSpan('mobile.api', {
+      attributes: {
+        'mobile.device.platform': deviceInfo.platform,
+        'mobile.device.version': deviceInfo.version,
+        'http.route': request?.route?.path || handler?.name || 'unknown',
+      },
+    });
+
     return next.handle().pipe(
       tap(async (data) => {
         const responseTime = Date.now() - startTime;
@@ -49,17 +77,58 @@ export class MobileApiInterceptor implements NestInterceptor {
 
         // Log performance metrics
         this.logger.debug(`Mobile API call completed in ${responseTime}ms for ${deviceInfo.platform} ${deviceInfo.version}`);
+
+        // OTel span attributes
+        if (span) {
+          span.setAttribute('http.status_code', response.statusCode || 200);
+          span.setAttribute('mobile.response_time_ms', responseTime);
+          span.end();
+        }
       }),
       catchError((error) => {
         const responseTime = Date.now() - startTime;
         
         this.logger.error(`Mobile API error after ${responseTime}ms:`, error);
+
+        if (span) {
+          try {
+            span.recordException(error);
+            span.setAttribute('mobile.response_time_ms', responseTime);
+            span.setAttribute('error', true);
+            span.end();
+          } catch {}
+        }
         
         // Add error headers
         response.setHeader('X-Mobile-API-Error', 'true');
-        response.setHeader('X-Error-Code', error.code || 'UNKNOWN_ERROR');
-        
-        throw error;
+        response.setHeader('X-Error-Code', (error && (error.code || error.name)) || 'UNKNOWN_ERROR');
+
+        const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+        const message = error instanceof HttpException ? (error.getResponse() as any)?.message || error.message : (error && error.message) || 'Internal Server Error';
+        const code = (error && (error.code || error.name)) || 'UNKNOWN_ERROR';
+
+        const errorBody = {
+          success: false,
+          error: {
+            code,
+            message: Array.isArray(message) ? message.join(', ') : message,
+            details: (error && (error.response || error.stack)) || undefined,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+            requestId: response.getHeader('X-Request-Id') || requestId || `req-${Date.now()}`,
+            version: (deviceInfo && deviceInfo.appVersion) || '1.0.0',
+            deviceInfo,
+            performance: {
+              responseTime,
+              memoryUsage: process.memoryUsage().heapUsed / (1024 * 1024),
+              cacheHit: false,
+            },
+          },
+        };
+
+        response.status(status);
+        return of(errorBody);
       }),
     );
   }

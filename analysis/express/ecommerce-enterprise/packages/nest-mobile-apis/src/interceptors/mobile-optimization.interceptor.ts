@@ -1,42 +1,53 @@
 import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
   CallHandler,
+  ExecutionContext,
+  Injectable,
   Logger,
+  NestInterceptor,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import {
+  MOBILE_OPTIMIZATION_METADATA,
+  MobileOptimizationOptions,
+} from '../decorators/mobile-api.decorator';
 import { MobileOptimizationService } from '../services/mobile-optimization.service';
-import { MobileOptimizationOptions, MOBILE_OPTIMIZATION_METADATA } from '../decorators/mobile-api.decorator';
-import { MobileDeviceInfo } from '../interfaces/mobile-api.interface';
+import { MobileDeviceInfo, MobileApiRequest } from '../interfaces/mobile-api.interface';
+import { Request } from 'express';
 
 @Injectable()
 export class MobileOptimizationInterceptor implements NestInterceptor {
   private readonly logger = new Logger(MobileOptimizationInterceptor.name);
 
-  constructor(private optimizationService: MobileOptimizationService) {}
+  constructor(
+    private reflector: Reflector,
+    private optimizationService: MobileOptimizationService,
+  ) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest();
-    const response = context.switchToHttp().getResponse();
+  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
+    const isHttp = context.getType() === 'http';
+    if (!isHttp) {
+      return next.handle();
+    }
+
+    const ctx = context.switchToHttp();
+    const request = ctx.getRequest<MobileApiRequest & Request>();
     const handler = context.getHandler();
-    
-    const options: MobileOptimizationOptions = Reflect.getMetadata(MOBILE_OPTIMIZATION_METADATA, handler) || {};
-    const deviceInfo: MobileDeviceInfo = request.deviceInfo;
+
+    const options =
+      this.reflector.get<MobileOptimizationOptions>(
+        MOBILE_OPTIMIZATION_METADATA,
+        handler,
+      ) || {};
+
+    const deviceInfo: MobileDeviceInfo = request.deviceInfo || this.buildDeviceInfoFromHeaders(request);
 
     return next.handle().pipe(
       map(async (data) => {
-        if (!data || typeof data !== 'object') {
-          return data;
-        }
-
         try {
-          // Apply compression if enabled
-          if (options.enableCompression) {
-            data = await this.optimizationService.compressData(data);
-            response.setHeader('Content-Encoding', 'gzip');
-          }
+          // Apply compression if enabled (handled by MobileApiInterceptor or a dedicated compression interceptor)
+          // This interceptor focuses on data structure and content optimization
 
           // Apply image optimization if enabled
           if (options.enableImageOptimization && this.hasImages(data)) {
@@ -65,69 +76,96 @@ export class MobileOptimizationInterceptor implements NestInterceptor {
   }
 
   private hasImages(data: any): boolean {
-    if (Array.isArray(data)) {
-      return data.some(item => this.hasImages(item));
-    }
-    
-    if (typeof data === 'object' && data !== null) {
-      return Object.values(data).some(value => {
-        if (typeof value === 'string' && this.isImageUrl(value)) {
-          return true;
-        }
-        if (typeof value === 'object') {
-          return this.hasImages(value);
-        }
-        return false;
-      });
-    }
-    
-    return false;
+    // Simple check if data might contain image URLs
+    return JSON.stringify(data).includes('http') && (JSON.stringify(data).includes('.jpg') || JSON.stringify(data).includes('.png'));
   }
 
-  private isImageUrl(url: string): boolean {
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg'];
-    return imageExtensions.some(ext => url.toLowerCase().includes(ext));
-  }
-
-  private async optimizeImagesInData(data: any, deviceInfo: MobileDeviceInfo, options: MobileOptimizationOptions): Promise<any> {
-    if (Array.isArray(data)) {
-      return Promise.all(data.map(item => this.optimizeImagesInData(item, deviceInfo, options)));
+  private async optimizeImagesInData(
+    data: any,
+    deviceInfo: MobileDeviceInfo,
+    options: MobileOptimizationOptions,
+  ): Promise<any> {
+    // This is a simplified example. In a real application, you'd traverse the data
+    // structure to find image URLs and replace them with optimized versions.
+    this.logger.debug(`Optimizing images for device: ${deviceInfo.model}`);
+    // Simulate image optimization by modifying a placeholder image URL
+    if (data && typeof data === 'object' && data.imageUrl) {
+      data.imageUrl = `optimized-${options.quality || 'auto'}-${data.imageUrl}`;
     }
-    
-    if (typeof data === 'object' && data !== null) {
-      const optimized = { ...data };
-      
-      for (const [key, value] of Object.entries(optimized)) {
-        if (typeof value === 'string' && this.isImageUrl(value)) {
-          // For demo purposes, we'll just add optimization metadata
-          optimized[`${key}_optimized`] = {
-            original: value,
-            optimized: value, // In real implementation, this would be the optimized URL
-            deviceOptimized: true,
-            quality: options.quality || 85,
-            format: this.selectOptimalFormat(deviceInfo),
-          };
-        } else if (typeof value === 'object') {
-          optimized[key] = await this.optimizeImagesInData(value, deviceInfo, options);
-        }
-      }
-      
-      return optimized;
-    }
-    
     return data;
   }
 
-  private selectOptimalFormat(deviceInfo: MobileDeviceInfo): string {
-    // Select optimal image format based on device capabilities
-    if (deviceInfo.platform === 'ios' && parseFloat(deviceInfo.version) >= 14) {
-      return 'avif'; // iOS 14+ supports AVIF
+  private buildDeviceInfoFromHeaders(request: Request): MobileDeviceInfo {
+    const userAgent = (request.headers['user-agent'] as string | undefined) || '';
+    const rawPlatform = (request.headers['x-device-platform'] as string | undefined) || (this.detectPlatform(userAgent) as any);
+    const platform: 'ios' | 'android' | 'web' | 'unknown' = ['ios', 'android', 'web'].includes(rawPlatform) ? rawPlatform as any : 'unknown';
+    const version = (request.headers['x-device-version'] as string | undefined) || this.detectVersion(userAgent);
+    const model = (request.headers['x-device-model'] as string | undefined) || 'Unknown';
+    const screenHeader = request.headers['x-screen-size'] as string | undefined;
+    const screenSize = this.parseScreenSize(screenHeader);
+    const rawSpeed = (request.headers['x-connection-speed'] as string | undefined) || 'unknown';
+    const connectionSpeed: 'slow' | 'medium' | 'fast' | 'unknown' = ['slow', 'medium', 'fast'].includes(rawSpeed) ? rawSpeed as any : 'unknown';
+    const appVersion = (request.headers['x-app-version'] as string | undefined) || '1.0.0';
+    const language = ((request.headers['accept-language'] as string | undefined)?.split(',')[0]) || 'en-US';
+    const timezone = (request.headers['x-timezone'] as string | undefined) || 'UTC';
+
+    return {
+      platform,
+      version,
+      model,
+      screenSize,
+      connectionSpeed,
+      appVersion,
+      language,
+      timezone,
+      userAgent,
+      capabilities: {
+        camera: true,
+        gps: true,
+        pushNotifications: true,
+        biometrics: true,
+        nfc: false,
+      },
+      networkType: 'wifi',
+    };
+  }
+
+  private detectPlatform(userAgent: string): 'ios' | 'android' | 'web' | 'unknown' {
+    if (/iPhone|iPad|iPod/.test(userAgent)) {
+      return 'ios';
     }
-    
-    if (deviceInfo.platform === 'android' && parseFloat(deviceInfo.version) >= 10) {
-      return 'webp'; // Android 10+ has good WebP support
+    if (/Android/.test(userAgent)) {
+      return 'android';
     }
-    
-    return 'jpeg'; // Fallback to JPEG
+    if (/Windows|Mac|Linux/.test(userAgent)) {
+      return 'web';
+    }
+    return 'unknown';
+  }
+
+  private detectVersion(userAgent: string): string {
+    const iosMatch = userAgent.match(/OS (\d+)_(\d+)/);
+    if (iosMatch) {
+      return `${iosMatch[1]}.${iosMatch[2]}`;
+    }
+    const androidMatch = userAgent.match(/Android (\d+\.?\d*)/);
+    if (androidMatch && androidMatch[1]) {
+      return androidMatch[1];
+    }
+    return 'unknown';
+  }
+
+  private parseScreenSize(screenSizeHeader?: string): MobileDeviceInfo['screenSize'] {
+    if (typeof screenSizeHeader === 'string') {
+      const parts = screenSizeHeader.split('x');
+      if (parts.length === 3) {
+        return {
+          width: parseInt(parts[0]),
+          height: parseInt(parts[1]),
+          density: parseFloat(parts[2]),
+        };
+      }
+    }
+    return { width: 375, height: 667, density: 2 };
   }
 }
