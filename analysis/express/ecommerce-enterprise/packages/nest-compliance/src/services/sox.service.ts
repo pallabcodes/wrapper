@@ -244,7 +244,7 @@ export class SOXService {
     return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
   }
 
-  private getConflictingRoles(action: string, resource: string): string[] {
+  private getConflictingRoles(action: string, _resource: string): string[] {
     // Simulate role conflict detection
     const conflicts: Record<string, string[]> = {
       'approve_payment': ['initiate_payment', 'process_payment'],
@@ -255,12 +255,12 @@ export class SOXService {
     return conflicts[action] || [];
   }
 
-  private async getUserRoles(userId: string): Promise<string[]> {
+  private async getUserRoles(_userId: string): Promise<string[]> {
     // Simulate user role retrieval
     return ['user', 'financial_user'];
   }
 
-  private async logSegregationViolation(userId: string, action: string, resource: string, conflictingRoles: string[], userRoles: string[]): Promise<void> {
+  private async logSegregationViolation(userId: string, _action: string, _resource: string, _conflictingRoles: string[], _userRoles: string[]): Promise<void> {
     this.logger.warn(`Segregation of duties violation logged for user: ${userId}`);
   }
 
@@ -271,7 +271,7 @@ export class SOXService {
   }
 
   private calculateComplianceScore(auditLogs: AuditLog[]): number {
-    const totalLogs = auditLogs.length;
+    // const totalLogs = auditLogs.length;
     const criticalIssues = auditLogs.filter(log => log.severity === 'critical').length;
     const highIssues = auditLogs.filter(log => log.severity === 'high').length;
     
@@ -288,14 +288,14 @@ export class SOXService {
     }
     
     const segregationViolations = auditLogs.filter(log => 
-      log.details?.violationType === 'segregation_of_duties'
+      log.details?.['violationType'] === 'segregation_of_duties'
     ).length;
     if (segregationViolations > 0) {
       recommendations.push('Review and update segregation of duties policies');
     }
     
     const dataIntegrityIssues = auditLogs.filter(log => 
-      log.details?.violationType === 'data_integrity'
+      log.details?.['violationType'] === 'data_integrity'
     ).length;
     if (dataIntegrityIssues > 0) {
       recommendations.push('Implement additional data integrity checks');
@@ -308,7 +308,7 @@ export class SOXService {
     return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
   }
 
-  private async logDataIntegrityViolation(data: any, expectedChecksum: string, actualChecksum: string): Promise<void> {
+  private async logDataIntegrityViolation(_data: any, expectedChecksum: string, actualChecksum: string): Promise<void> {
     this.logger.error(`Data integrity violation logged: expected ${expectedChecksum}, got ${actualChecksum}`);
   }
 

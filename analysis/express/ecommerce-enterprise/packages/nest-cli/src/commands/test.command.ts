@@ -1,10 +1,10 @@
-import { Command } from 'commander';
+import * as commander from 'commander';
 import { TestService } from '../services/test.service';
 
 export class TestCommand {
   constructor(private readonly testService: TestService) {}
 
-  register(program: Command): void {
+  register(program: commander.Command): void {
     const testCommand = program
       .command('test')
       .description('Run tests')

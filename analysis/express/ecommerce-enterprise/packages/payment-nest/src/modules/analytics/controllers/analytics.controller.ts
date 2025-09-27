@@ -2,7 +2,7 @@ import {
   Controller,
   Get,
   Query,
-  UseGuards,
+  // UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -13,7 +13,14 @@ import {
 } from '@nestjs/swagger';
 import { RequirePermissions } from '@ecommerce-enterprise/authx';
 import { AnalyticsService } from '../services/analytics.service';
-import { Context } from '../../shared/decorators/context.decorator';
+import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+
+const Context = createParamDecorator(
+  (data: string, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest();
+    return request[data];
+  },
+);
 
 @ApiTags('analytics')
 @Controller('analytics')
@@ -43,15 +50,15 @@ export class AnalyticsController {
   @ApiQuery({ name: 'endDate', required: false, type: String, description: 'End date (YYYY-MM-DD)' })
   @RequirePermissions('payments:analytics')
   async getRevenueAnalytics(
+    @Context('tenantId') tenantId: string,
     @Query('period') period: string = 'month',
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-    @Context('tenantId') tenantId: string,
   ): Promise<any> {
     return this.analyticsService.getRevenueAnalytics(tenantId, {
       period,
-      startDate,
-      endDate,
+      ...(startDate && { startDate }),
+      ...(endDate && { endDate }),
     });
   }
 
@@ -65,15 +72,15 @@ export class AnalyticsController {
   @ApiQuery({ name: 'endDate', required: false, type: String, description: 'End date (YYYY-MM-DD)' })
   @RequirePermissions('payments:analytics')
   async getTransactionAnalytics(
+    @Context('tenantId') tenantId: string,
     @Query('period') period: string = 'month',
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-    @Context('tenantId') tenantId: string,
   ): Promise<any> {
     return this.analyticsService.getTransactionAnalytics(tenantId, {
       period,
-      startDate,
-      endDate,
+      ...(startDate && { startDate }),
+      ...(endDate && { endDate }),
     });
   }
 
@@ -87,15 +94,15 @@ export class AnalyticsController {
   @ApiQuery({ name: 'endDate', required: false, type: String, description: 'End date (YYYY-MM-DD)' })
   @RequirePermissions('payments:analytics')
   async getProviderAnalytics(
+    @Context('tenantId') tenantId: string,
     @Query('period') period: string = 'month',
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-    @Context('tenantId') tenantId: string,
   ): Promise<any> {
     return this.analyticsService.getProviderAnalytics(tenantId, {
       period,
-      startDate,
-      endDate,
+      ...(startDate && { startDate }),
+      ...(endDate && { endDate }),
     });
   }
 }

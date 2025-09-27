@@ -5,7 +5,7 @@ import { RetryOptions } from '../interfaces/enterprise-options.interface';
 @Injectable()
 export class RetryService {
   private readonly logger = new Logger(RetryService.name);
-  private options: RetryOptions;
+  private options!: RetryOptions;
 
   constructor(private readonly configService: ConfigService) {
     this.initializeRetry();
@@ -43,17 +43,17 @@ export class RetryService {
         lastError = error as Error;
         
         if (attempt === retryOptions.maxAttempts) {
-          this.logger.error(`${operationName} - All retry attempts failed`, error.stack);
+          this.logger.error(`${operationName} - All retry attempts failed`, (error as Error).stack);
           throw lastError;
         }
 
         // Check if error is retryable
         if (!this.isRetryableError(error)) {
-          this.logger.warn(`${operationName} - Non-retryable error, not retrying`, error.message);
+          this.logger.warn(`${operationName} - Non-retryable error, not retrying`, (error as Error).message);
           throw lastError;
         }
 
-        this.logger.warn(`${operationName} - Attempt ${attempt} failed, retrying in ${delay}ms`, error.message);
+        this.logger.warn(`${operationName} - Attempt ${attempt} failed, retrying in ${delay}ms`, (error as Error).message);
         
         // Wait before retry
         await this.sleep(delay);

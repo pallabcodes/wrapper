@@ -45,7 +45,7 @@ export class ComplianceGuard implements CanActivate {
 
       return isValid;
     } catch (error) {
-      this.logger.error(`Compliance validation error: ${error.message}`, error.stack);
+      this.logger.error(`Compliance validation error: ${(error as Error).message}`, (error as Error).stack);
       return false;
     }
   }

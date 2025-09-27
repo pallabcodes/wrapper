@@ -57,3 +57,8 @@ export { userSchema, productSchema, orderSchema } from './schemas'
 
 // Shared types
 export * from './types'
+
+// Validation components
+export * from './modules/shared-validation.module';
+export * from './validation/shared-validation.service';
+export * from './controllers/shared-validation.controller';

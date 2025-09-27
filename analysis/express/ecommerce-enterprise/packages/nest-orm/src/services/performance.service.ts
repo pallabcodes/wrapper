@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DatabaseQuery, QueryAnalysis, PerformanceMetrics } from '../types';
 
 @Injectable()
 export class PerformanceService {
-  private readonly logger = new Logger(PerformanceService.name);
+  // private readonly logger = new Logger(PerformanceService.name);
   private queryHistory: Array<{
     query: DatabaseQuery;
     executionTime: number;
@@ -274,7 +274,7 @@ export class PerformanceService {
   /**
    * Analyze query patterns
    */
-  private analyzePatterns(query: DatabaseQuery): Array<{
+  private analyzePatterns(_query: DatabaseQuery): Array<{
     type: string;
     frequency: number;
     averageTime: number;
@@ -287,11 +287,12 @@ export class PerformanceService {
 
     // Query type patterns
     const typePatterns = this.queryHistory.reduce((acc, q) => {
-      if (!acc[q.query.type]) {
-        acc[q.query.type] = { count: 0, totalTime: 0 };
+      const queryType = q.query?.type || 'unknown';
+      if (!acc[queryType]) {
+        acc[queryType] = { count: 0, totalTime: 0 };
       }
-      acc[q.query.type].count++;
-      acc[q.query.type].totalTime += q.executionTime;
+      acc[queryType].count++;
+      acc[queryType].totalTime += q.executionTime;
       return acc;
     }, {} as Record<string, { count: number; totalTime: number }>);
 
@@ -305,11 +306,12 @@ export class PerformanceService {
 
     // Table usage patterns
     const tablePatterns = this.queryHistory.reduce((acc, q) => {
-      if (!acc[q.query.table]) {
-        acc[q.query.table] = { count: 0, totalTime: 0 };
+      const tableName = q.query?.table || 'unknown';
+      if (!acc[tableName]) {
+        acc[tableName] = { count: 0, totalTime: 0 };
       }
-      acc[q.query.table].count++;
-      acc[q.query.table].totalTime += q.executionTime;
+      acc[tableName].count++;
+      acc[tableName].totalTime += q.executionTime;
       return acc;
     }, {} as Record<string, { count: number; totalTime: number }>);
 

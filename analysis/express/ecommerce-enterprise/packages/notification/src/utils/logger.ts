@@ -4,8 +4,8 @@
 
 import winston from 'winston'
 
-const logLevel = process.env.LOG_LEVEL || 'info'
-const isDevelopment = process.env.NODE_ENV === 'development'
+const logLevel = process.env['LOG_LEVEL'] || 'info'
+const isDevelopment = process.env['NODE_ENV'] === 'development'
 
 // Create custom format for development
 const devFormat = winston.format.combine(

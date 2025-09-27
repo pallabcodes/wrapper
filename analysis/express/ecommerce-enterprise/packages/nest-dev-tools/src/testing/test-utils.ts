@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 
 export class TestUtils {
   static async createTestingModule(module: any): Promise<TestingModule> {
@@ -13,7 +13,7 @@ export class TestUtils {
   }
 
   static async makeRequest(app: INestApplication, method: string, url: string, data?: any): Promise<request.Response> {
-    const agent = request(app.getHttpServer());
+    const agent = (request as any)(app.getHttpServer());
     
     switch (method.toLowerCase()) {
       case 'get':

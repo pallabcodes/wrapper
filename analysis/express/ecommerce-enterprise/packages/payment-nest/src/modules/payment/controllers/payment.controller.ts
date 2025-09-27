@@ -25,7 +25,14 @@ import { CreatePaymentDto } from '../dto/create-payment.dto';
 import { UpdatePaymentDto } from '../dto/update-payment.dto';
 import { PaymentResponseDto } from '../dto/payment-response.dto';
 import { PaymentListResponseDto } from '../dto/payment-list-response.dto';
-import { Context } from '../../shared/decorators/context.decorator';
+import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+
+const Context = createParamDecorator(
+  (data: string, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest();
+    return request[data];
+  },
+);
 
 @ApiTags('payments')
 @Controller('payments')
@@ -41,8 +48,7 @@ export class PaymentController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @RequirePermissions('payments:create')
-  @RelationCheck('user', 'userId', 'owner')
-  @Require((ctx) => ctx.user.tenantId === ctx.body.tenantId)
+  @Require((ctx) => ctx.principal.tenantId === ctx.req.body.tenantId)
   async createPayment(
     @Body() createPaymentDto: CreatePaymentDto,
     @Context('userId') userId: string,
@@ -62,18 +68,18 @@ export class PaymentController {
   @ApiQuery({ name: 'provider', required: false, type: String, description: 'Filter by payment provider' })
   @RequirePermissions('payments:read')
   async getPayments(
+    @Context('userId') userId: string,
+    @Context('tenantId') tenantId: string,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('status') status?: string,
     @Query('provider') provider?: string,
-    @Context('userId') userId: string,
-    @Context('tenantId') tenantId: string,
   ): Promise<PaymentListResponseDto> {
     return this.paymentService.getPayments(userId, tenantId, {
       page,
       limit,
-      status,
-      provider,
+      ...(status && { status }),
+      ...(provider && { provider }),
     });
   }
 
@@ -85,7 +91,6 @@ export class PaymentController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @RequirePermissions('payments:read')
-  @RelationCheck('payment', 'id', 'owner')
   async getPayment(
     @Param('id') id: string,
     @Context('userId') userId: string,
@@ -103,7 +108,6 @@ export class PaymentController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @RequirePermissions('payments:update')
-  @RelationCheck('payment', 'id', 'owner')
   async updatePayment(
     @Param('id') id: string,
     @Body() updatePaymentDto: UpdatePaymentDto,
@@ -123,7 +127,6 @@ export class PaymentController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @RequirePermissions('payments:delete')
-  @RelationCheck('payment', 'id', 'owner')
   async cancelPayment(
     @Param('id') id: string,
     @Context('userId') userId: string,
@@ -142,7 +145,6 @@ export class PaymentController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @RequirePermissions('payments:refund')
-  @RelationCheck('payment', 'id', 'owner')
   async refundPayment(
     @Param('id') id: string,
     @Body() refundData: { amount?: number; reason?: string },
@@ -160,7 +162,6 @@ export class PaymentController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @RequirePermissions('payments:read')
-  @RelationCheck('payment', 'id', 'owner')
   async getPaymentStatus(
     @Param('id') id: string,
     @Context('userId') userId: string,

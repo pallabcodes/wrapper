@@ -46,7 +46,7 @@ router.get('/:userId', async (req: Request, res: Response) => {
       data: preferences
     })
   } catch (error) {
-    logger.error('Failed to get user preferences', { error, userId: req.params.userId })
+    logger.error('Failed to get user preferences', { error, userId: req.params['userId'] })
     res.status(500).json({
       success: false,
       error: 'Failed to get user preferences'
@@ -69,7 +69,7 @@ router.put('/:userId', async (req: Request, res: Response) => {
       message: 'Preferences updated successfully'
     })
   } catch (error) {
-    logger.error('Failed to update user preferences', { error, userId: req.params.userId })
+    logger.error('Failed to update user preferences', { error, userId: req.params['userId'] })
     res.status(500).json({
       success: false,
       error: 'Failed to update user preferences'
@@ -92,7 +92,7 @@ router.patch('/:userId/:channel', async (req: Request, res: Response) => {
       message: `${channel} preferences updated successfully`
     })
   } catch (error) {
-    logger.error('Failed to update channel preferences', { error, userId: req.params.userId, channel: req.params.channel })
+    logger.error('Failed to update channel preferences', { error, userId: req.params['userId'], channel: req.params['channel'] })
     res.status(500).json({
       success: false,
       error: 'Failed to update channel preferences'
@@ -115,7 +115,7 @@ router.post('/:userId/toggle', async (req: Request, res: Response) => {
       message: `Notifications ${enabled ? 'enabled' : 'disabled'} for ${channel || 'all channels'}`
     })
   } catch (error) {
-    logger.error('Failed to toggle notifications', { error, userId: req.params.userId })
+    logger.error('Failed to toggle notifications', { error, userId: req.params['userId'] })
     res.status(500).json({
       success: false,
       error: 'Failed to toggle notifications'
@@ -159,7 +159,7 @@ router.get('/:userId/history', async (req: Request, res: Response) => {
       }
     })
   } catch (error) {
-    logger.error('Failed to get notification history', { error, userId: req.params.userId })
+    logger.error('Failed to get notification history', { error, userId: req.params['userId'] })
     res.status(500).json({
       success: false,
       error: 'Failed to get notification history'

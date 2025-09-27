@@ -1,16 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as promClient from 'prom-client';
 
 @Injectable()
 export class DatabaseMetrics {
-  private readonly logger = new Logger(DatabaseMetrics.name);
+  // private readonly logger = new Logger(DatabaseMetrics.name);
   
-  private readonly queryCounter: promClient.Counter<string>;
-  private readonly queryDuration: promClient.Histogram<string>;
-  private readonly errorCounter: promClient.Counter<string>;
-  private readonly cacheHitCounter: promClient.Counter<string>;
-  private readonly transactionCounter: promClient.Counter<string>;
-  private readonly transactionDuration: promClient.Histogram<string>;
+  private readonly queryCounter: promClient.Counter;
+  private readonly queryDuration: promClient.Histogram;
+  private readonly errorCounter: promClient.Counter;
+  private readonly cacheHitCounter: promClient.Counter;
+  private readonly transactionCounter: promClient.Counter;
+  private readonly transactionDuration: promClient.Histogram;
 
   constructor() {
     this.queryCounter = new promClient.Counter({
@@ -71,7 +71,7 @@ export class DatabaseMetrics {
 
   recordTransaction(status: 'success' | 'error', duration: number): void {
     this.transactionCounter.inc({ status });
-    this.transactionDuration.observe(duration / 1000);
+    this.transactionDuration.observe({ status }, duration / 1000);
   }
 
   async getMetrics(): Promise<string> {

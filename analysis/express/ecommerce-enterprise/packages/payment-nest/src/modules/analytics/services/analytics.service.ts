@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PaymentRepository } from '../../payment/repositories/payment.repository';
-import { PaymentStatus, PaymentProvider } from '../../payment/entities/payment.entity';
+import { PaymentProvider } from '../../payment/entities/payment.entity';
 
 export interface AnalyticsFilters {
   period: string;
@@ -110,7 +110,7 @@ export class AnalyticsService {
     return { startDate, endDate };
   }
 
-  private async getDailyRevenue(tenantId: string, startDate: Date, endDate: Date): Promise<any[]> {
+  private async getDailyRevenue(_tenantId: string, _startDate: Date, _endDate: Date): Promise<any[]> {
     // This would typically involve a complex SQL query
     // For now, we'll return mock data
     return [
@@ -120,7 +120,7 @@ export class AnalyticsService {
     ];
   }
 
-  private async getMonthlyRevenue(tenantId: string, startDate: Date, endDate: Date): Promise<any[]> {
+  private async getMonthlyRevenue(_tenantId: string, _startDate: Date, _endDate: Date): Promise<any[]> {
     // This would typically involve a complex SQL query
     // For now, we'll return mock data
     return [
@@ -130,7 +130,7 @@ export class AnalyticsService {
     ];
   }
 
-  private async getDailyTransactions(tenantId: string, startDate: Date, endDate: Date): Promise<any[]> {
+  private async getDailyTransactions(_tenantId: string, _startDate: Date, _endDate: Date): Promise<any[]> {
     // This would typically involve a complex SQL query
     // For now, we'll return mock data
     return [

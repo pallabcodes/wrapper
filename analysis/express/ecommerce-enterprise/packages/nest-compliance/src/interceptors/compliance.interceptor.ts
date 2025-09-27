@@ -1,7 +1,7 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { ComplianceService } from '../services/compliance.service';
+// import { ComplianceService } from '../services/compliance.service';
 import { Reflector } from '@nestjs/core';
 import { COMPLIANCE_METADATA_KEY, ComplianceOptions } from '../decorators/compliance.decorator';
 
@@ -10,7 +10,7 @@ export class ComplianceInterceptor implements NestInterceptor {
   private readonly logger = new Logger(ComplianceInterceptor.name);
 
   constructor(
-    private complianceService: ComplianceService,
+    // private readonly complianceService: ComplianceService,
     private reflector: Reflector
   ) {}
 
@@ -25,7 +25,7 @@ export class ComplianceInterceptor implements NestInterceptor {
     }
 
     const request = context.switchToHttp().getRequest();
-    const response = context.switchToHttp().getResponse();
+    // const response = context.switchToHttp().getResponse();
     const user = request.user;
     const method = request.method;
     const url = request.url;
@@ -76,7 +76,7 @@ export class ComplianceInterceptor implements NestInterceptor {
 
       this.logger.debug(`Compliance event logged: ${type}`, event);
     } catch (error) {
-      this.logger.error(`Failed to log compliance event: ${error.message}`, error.stack);
+      this.logger.error(`Failed to log compliance event: ${(error as Error).message}`, (error as Error).stack);
     }
   }
 

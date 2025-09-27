@@ -10,7 +10,7 @@
  * - Railway-oriented programming patterns
  */
 
-import { z } from 'zod'
+// const { z } = require('zod')
 import type { 
   OpenAPISpec, 
   OpenAPISchema, 
@@ -61,7 +61,7 @@ export class SwaggerManager {
   }
 
   // Functional method for adding Zod schemas
-  addZodSchema(name: string, zodSchema: z.ZodTypeAny): this {
+  addZodSchema(name: string, zodSchema: any): this {
     return this.addSchema(name, zodToOpenAPI(zodSchema))
   }
 

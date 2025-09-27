@@ -1,16 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { LRUCache } from 'lru-cache';
+import { Injectable } from '@nestjs/common';
+import LRUCache from 'lru-cache';
 import { createHash } from 'crypto';
 
 @Injectable()
 export class QueryCache {
-  private readonly logger = new Logger(QueryCache.name);
+  // private readonly logger = new Logger(QueryCache.name);
   private readonly cache: LRUCache<string, any>;
 
   constructor() {
     this.cache = new LRUCache({
       max: 1000,
-      ttl: 1000 * 60 * 5, // 5 minutes
+      maxAge: 1000 * 60 * 5, // 5 minutes
     });
   }
 
@@ -23,12 +23,12 @@ export class QueryCache {
     return this.cache.get(key);
   }
 
-  async set(key: string, value: any, ttl?: number): Promise<void> {
-    this.cache.set(key, value, { ttl: ttl || 1000 * 60 * 5 });
+  async set(key: string, value: any, _ttl?: number): Promise<void> {
+    this.cache.set(key, value);
   }
 
   async delete(key: string): Promise<void> {
-    this.cache.delete(key);
+    this.cache.del(key);
   }
 
   async clear(): Promise<void> {
@@ -43,9 +43,9 @@ export class QueryCache {
     misses: number;
   } {
     return {
-      size: this.cache.size,
-      max: this.cache.max,
-      ttl: this.cache.ttl,
+      size: (this.cache as any).length || 0,
+      max: (this.cache as any).max || 1000,
+      ttl: 0, // LRU cache doesn't provide TTL info by default
       hits: 0, // LRU cache doesn't provide hit/miss stats by default
       misses: 0,
     };

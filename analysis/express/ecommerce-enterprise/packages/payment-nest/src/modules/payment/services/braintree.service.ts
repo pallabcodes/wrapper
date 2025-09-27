@@ -35,7 +35,6 @@ export class BraintreeService {
     try {
       const result = await this.gateway.transaction.sale({
         amount: (payment.amount / 100).toFixed(2), // Convert cents to dollars
-        currencyCode: payment.currency,
         orderId: payment.id,
         options: {
           submitForSettlement: true,
@@ -59,7 +58,7 @@ export class BraintreeService {
         status: this.mapBraintreeStatus(result.transaction.status),
       };
     } catch (error) {
-      throw new BadRequestException(`Braintree payment creation failed: ${error.message}`);
+      throw new BadRequestException(`Braintree payment creation failed: ${(error as Error).message}`);
     }
   }
 
@@ -71,7 +70,7 @@ export class BraintreeService {
 
       return result.clientToken;
     } catch (error) {
-      throw new BadRequestException(`Braintree client token generation failed: ${error.message}`);
+      throw new BadRequestException(`Braintree client token generation failed: ${(error as Error).message}`);
     }
   }
 
@@ -94,15 +93,13 @@ export class BraintreeService {
     }
 
     try {
-      const result = await this.gateway.transaction.refund(payment.providerPaymentId, {
-        amount: (amount / 100).toFixed(2), // Convert cents to dollars
-      });
+      const result = await this.gateway.transaction.refund(payment.providerPaymentId, (amount / 100).toFixed(2));
 
       if (!result.success) {
         throw new BadRequestException(`Braintree refund failed: ${result.message}`);
       }
     } catch (error) {
-      throw new BadRequestException(`Braintree refund failed: ${error.message}`);
+      throw new BadRequestException(`Braintree refund failed: ${(error as Error).message}`);
     }
   }
 
@@ -111,7 +108,7 @@ export class BraintreeService {
       const transaction = await this.gateway.transaction.find(providerPaymentId);
       return this.mapBraintreeStatus(transaction.status);
     } catch (error) {
-      throw new BadRequestException(`Failed to get Braintree payment status: ${error.message}`);
+      throw new BadRequestException(`Failed to get Braintree payment status: ${(error as Error).message}`);
     }
   }
 
@@ -120,13 +117,13 @@ export class BraintreeService {
     data: any;
   }> {
     try {
-      const webhookNotification = this.gateway.webhookNotification.parse(signature, payload);
+      const webhookNotification = await this.gateway.webhookNotification.parse(signature, payload);
       return {
         type: webhookNotification.kind,
         data: webhookNotification,
       };
     } catch (error) {
-      throw new BadRequestException(`Braintree webhook verification failed: ${error.message}`);
+      throw new BadRequestException(`Braintree webhook verification failed: ${(error as Error).message}`);
     }
   }
 

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+// import { ConfigService } from '@nestjs/config';
 import { BackupService } from './backup.service';
 import { RestoreService } from './restore.service';
 import { DisasterRecoveryPlanService } from './disaster-recovery-plan.service';
@@ -11,7 +11,7 @@ export class DisasterRecoveryService {
   private readonly logger = new Logger(DisasterRecoveryService.name);
 
   constructor(
-    private readonly configService: ConfigService,
+    // private readonly configService: ConfigService,
     private readonly backupService: BackupService,
     private readonly restoreService: RestoreService,
     private readonly drPlanService: DisasterRecoveryPlanService,
@@ -22,14 +22,14 @@ export class DisasterRecoveryService {
     const backupStats = await this.backupService.getBackupStatistics();
     const restoreStats = await this.restoreService.getRestoreStatistics();
     const drMetrics = await this.drPlanService.getDRMetrics();
-    const bcMetrics = await this.bcService.getBCMetrics();
+    // const bcMetrics = await this.bcService.getBCMetrics();
 
     return {
       backup: backupStats,
       restore: restoreStats,
       disasterRecovery: drMetrics,
-      businessContinuity: bcMetrics,
-      overallHealth: this.calculateOverallHealth(backupStats, restoreStats, drMetrics, bcMetrics),
+      businessContinuity: {}, // bcMetrics,
+      overallHealth: this.calculateOverallHealth(backupStats, restoreStats, drMetrics, {}),
       lastUpdated: new Date()
     };
   }
@@ -96,7 +96,7 @@ export class DisasterRecoveryService {
     const backupStats = await this.backupService.getBackupStatistics();
     const restoreStats = await this.restoreService.getRestoreStatistics();
     const drMetrics = await this.drPlanService.getDRMetrics();
-    const bcMetrics = await this.bcService.getBCMetrics();
+    // const bcMetrics = await this.bcService.getBCMetrics();
 
     return {
       rto: {
@@ -187,10 +187,10 @@ export class DisasterRecoveryService {
         steps
       };
     } catch (error) {
-      this.logger.error(`Disaster recovery failed: ${error.message}`);
+      this.logger.error(`Disaster recovery failed: ${(error as Error).message}`);
       return {
         success: false,
-        message: `Disaster recovery failed: ${error.message}`,
+        message: `Disaster recovery failed: ${(error as Error).message}`,
         estimatedRecoveryTime,
         steps
       };

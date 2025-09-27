@@ -37,22 +37,6 @@ declare module 'ajv-keywords' {
   export default function addKeywords(ajv: Ajv): Ajv;
 }
 
-declare module 'zod' {
-  export interface ZodType<Output = any, Def = any, Input = Output> {
-    parse(input: unknown): Output;
-    safeParse(input: unknown): { success: true; data: Output } | { success: false; error: any };
-  }
-  
-  export const z: {
-    string(): ZodType<string>;
-    number(): ZodType<number>;
-    boolean(): ZodType<boolean>;
-    object<T>(shape: T): ZodType<T>;
-    array<T>(schema: ZodType<T>): ZodType<T[]>;
-    optional<T>(schema: ZodType<T>): ZodType<T | undefined>;
-    nullable<T>(schema: ZodType<T>): ZodType<T | null>;
-  };
-}
 
 declare module 'yup' {
   export interface Schema<T = any> {

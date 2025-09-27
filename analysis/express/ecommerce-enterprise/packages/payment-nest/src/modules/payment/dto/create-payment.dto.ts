@@ -20,27 +20,27 @@ export class CreatePaymentDto {
   @IsPositive()
   @Min(1)
   @Max(99999999)
-  amount: number;
+  amount!: number;
 
   @ApiProperty({ description: 'Currency code', example: 'USD' })
   @IsString()
-  currency: string;
+  currency!: string;
 
   @ApiProperty({ description: 'Payment provider', enum: PaymentProvider, example: PaymentProvider.STRIPE })
   @IsEnum(PaymentProvider)
-  provider: PaymentProvider;
+  provider!: PaymentProvider;
 
   @ApiProperty({ description: 'Payment method', enum: PaymentMethod, example: PaymentMethod.CARD })
   @IsEnum(PaymentMethod)
-  method: PaymentMethod;
+  method!: PaymentMethod;
 
   @ApiProperty({ description: 'Payment description', example: 'Monthly subscription' })
   @IsString()
-  description: string;
+  description!: string;
 
   @ApiProperty({ description: 'Customer email', example: 'customer@example.com' })
   @IsString()
-  customerEmail: string;
+  customerEmail!: string;
 
   @ApiProperty({ description: 'Payment metadata', example: { orderId: 'order_123', productId: 'prod_456' } })
   @IsOptional()
@@ -58,5 +58,5 @@ export class CreatePaymentDto {
 
   @ApiProperty({ description: 'Tenant ID for multi-tenancy', example: 'tenant_123' })
   @IsString()
-  tenantId: string;
+  tenantId!: string;
 }

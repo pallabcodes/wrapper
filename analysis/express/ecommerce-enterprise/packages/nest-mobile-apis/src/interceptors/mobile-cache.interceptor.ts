@@ -14,7 +14,7 @@ import { MobileCacheOptions, MOBILE_CACHE_METADATA } from '../decorators/mobile-
 export class MobileCacheInterceptor implements NestInterceptor {
   private readonly logger = new Logger(MobileCacheInterceptor.name);
 
-  constructor(private cachingService: MobileCachingService) {}
+  constructor(private readonly cachingService: MobileCachingService) {}
 
   async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
     const request = context.switchToHttp().getRequest();
@@ -58,8 +58,8 @@ export class MobileCacheInterceptor implements NestInterceptor {
         if (strategy === 'cache-first' || strategy === 'network-first') {
           try {
             await this.cachingService.set(cacheKey, data, {
-              ttl: options.ttl,
-              tags: options.tags,
+              ttl: options.ttl || 300,
+              tags: options.tags || [],
             });
             this.logger.debug(`Cached data for key: ${cacheKey}`);
           } catch (error) {

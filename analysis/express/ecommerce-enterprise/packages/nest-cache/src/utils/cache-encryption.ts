@@ -1,7 +1,4 @@
-import { createCipher, createDecipher, randomBytes, scrypt } from 'crypto';
-import { promisify } from 'util';
-
-const scryptAsync = promisify(scrypt);
+import { createCipher, createDecipher, randomBytes } from 'crypto';
 
 export class CacheEncryption {
   private algorithm = 'aes-256-cbc';
@@ -22,7 +19,11 @@ export class CacheEncryption {
 
   async decrypt(encryptedData: string): Promise<any> {
     const [ivHex, encrypted] = encryptedData.split(':');
-    const iv = Buffer.from(ivHex, 'hex');
+    if (!ivHex || !encrypted) {
+      throw new Error('Invalid encrypted data format');
+    }
+    // IV not used in createDecipher but kept for completeness
+    Buffer.from(ivHex, 'hex');
     const decipher = createDecipher(this.algorithm, this.key);
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');

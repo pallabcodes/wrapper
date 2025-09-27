@@ -15,7 +15,7 @@ export class CompressedStore implements CacheStore {
       const value = JSON.parse(decompressed.toString());
       return {
         value,
-        ttl: compressed.ttl,
+        ttl: compressed.ttl || 0,
         createdAt: compressed.createdAt,
         accessCount: compressed.accessCount,
         lastAccessed: compressed.lastAccessed,

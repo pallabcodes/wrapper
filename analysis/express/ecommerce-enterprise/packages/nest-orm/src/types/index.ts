@@ -1,6 +1,6 @@
 export * from '../interfaces/orm-options.interface';
 
-export interface DatabaseQuery<T = any> {
+export interface DatabaseQuery<_T = any> {
   /** Query type */
   type: 'select' | 'insert' | 'update' | 'delete' | 'raw';
   

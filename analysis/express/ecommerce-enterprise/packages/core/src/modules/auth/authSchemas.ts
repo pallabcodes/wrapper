@@ -5,7 +5,7 @@
  * Kept separate to maintain clean controllers.
  */
 
-import { z } from 'zod'
+const { z } = require('zod')
 
 // ============================================================================
 // VALIDATION SCHEMAS

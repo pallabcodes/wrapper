@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { DatabaseQuery, QueryResult, TransactionOptions, TransactionResult } from '../types';
+import { DatabaseQuery, QueryResult, TransactionOptions } from '../types';
 
 @Injectable()
 export class PrismaService {
@@ -80,7 +80,7 @@ export class PrismaService {
       };
 
     } catch (error) {
-      this.logger.error(`Prisma query execution failed: ${error.message}`, error.stack);
+      this.logger.error(`Prisma query execution failed: ${(error as Error).message}`, (error as Error).stack);
       throw error;
     }
   }
@@ -89,10 +89,10 @@ export class PrismaService {
     queries: DatabaseQuery[],
     options?: TransactionOptions
   ): Promise<T> {
-    const startTime = Date.now();
+    // const startTime = Date.now();
     
     try {
-      const result = await this.prisma.$transaction(async (tx) => {
+      const result = await this.prisma.$transaction(async (tx: any) => {
         const results = [];
         
         for (const query of queries) {
@@ -109,7 +109,7 @@ export class PrismaService {
       return result as T;
 
     } catch (error) {
-      this.logger.error(`Prisma transaction execution failed: ${error.message}`, error.stack);
+      this.logger.error(`Prisma transaction execution failed: ${(error as Error).message}`, (error as Error).stack);
       throw error;
     }
   }

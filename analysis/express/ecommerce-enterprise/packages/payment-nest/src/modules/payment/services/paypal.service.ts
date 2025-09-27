@@ -124,6 +124,7 @@ export class PayPalService {
 
     return new Promise((resolve, reject) => {
       const refundData = {
+        payer_id: payment.providerPaymentId,
         amount: {
           total: (amount / 100).toFixed(2), // Convert cents to dollars
           currency: payment.currency,
@@ -131,7 +132,7 @@ export class PayPalService {
         description: `Refund for payment ${payment.id}`,
       };
 
-      paypal.payment.refund(payment.providerPaymentId, refundData, (error, refundResult) => {
+      paypal.payment.execute(payment.providerPaymentId, refundData, (error, refundResult) => {
         if (error) {
           reject(new BadRequestException(`PayPal refund failed: ${error.message}`));
           return;
@@ -157,7 +158,7 @@ export class PayPalService {
 
   async voidPayment(paymentId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      paypal.payment.void(paymentId, (error, voidResult) => {
+      paypal.payment.execute(paymentId, { payer_id: paymentId }, (error, voidResult) => {
         if (error) {
           reject(new BadRequestException(`PayPal void failed: ${error.message}`));
           return;

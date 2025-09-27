@@ -1,14 +1,13 @@
-import { Command } from 'commander';
+import * as commander from 'commander';
 import { GenerateService } from '../services/generate.service';
 
 export class GenerateCommand {
   constructor(private readonly generateService: GenerateService) {}
 
-  register(program: Command): void {
+  register(program: commander.Command): void {
     const generateCommand = program
       .command('generate')
-      .description('Generate NestJS components')
-      .alias('g');
+      .description('Generate NestJS components');
 
     generateCommand
       .command('module <name>')

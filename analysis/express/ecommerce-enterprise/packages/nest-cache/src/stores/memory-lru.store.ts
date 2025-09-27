@@ -1,5 +1,5 @@
 import { CacheStore, CacheEntry } from '../interfaces/cache-store.interface';
-import { LRUCache } from 'lru-cache';
+import LRUCache from 'lru-cache';
 
 export class MemoryLRUStore implements CacheStore {
   private cache: LRUCache<string, CacheEntry>;
@@ -7,7 +7,7 @@ export class MemoryLRUStore implements CacheStore {
   constructor(options: { max: number; ttl?: number } = { max: 1000 }) {
     this.cache = new LRUCache({
       max: options.max,
-      ttl: options.ttl || 1000 * 60 * 60, // 1 hour default
+      maxAge: options.ttl || 1000 * 60 * 60, // 1 hour default
     });
   }
 
@@ -23,11 +23,11 @@ export class MemoryLRUStore implements CacheStore {
       accessCount: 0,
       lastAccessed: Date.now(),
     };
-    this.cache.set(key, entry, { ttl: ttl || 1000 * 60 * 60 });
+    this.cache.set(key, entry);
   }
 
   async del(key: string): Promise<void> {
-    this.cache.delete(key);
+    this.cache.del(key);
   }
 
   async exists(key: string): Promise<boolean> {
@@ -62,7 +62,7 @@ export class MemoryLRUStore implements CacheStore {
     const entry = this.cache.get(key);
     if (entry) {
       entry.ttl = ttl;
-      this.cache.set(key, entry, { ttl });
+      this.cache.set(key, entry);
     }
   }
 
@@ -89,7 +89,7 @@ export class MemoryLRUStore implements CacheStore {
 
   async mdel(keys: string[]): Promise<void> {
     for (const key of keys) {
-      this.cache.delete(key);
+      this.cache.del(key);
     }
   }
 

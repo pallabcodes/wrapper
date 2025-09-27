@@ -8,7 +8,7 @@ import { RetryService } from './retry.service';
 @Injectable()
 export class SAPService {
   private readonly logger = new Logger(SAPService.name);
-  private sapAdapter: SAPAdapter;
+  private sapAdapter!: SAPAdapter;
   private isConnected = false;
 
   constructor(
@@ -32,7 +32,7 @@ export class SAPService {
       this.isConnected = true;
       this.logger.log('SAP service initialized successfully');
     } catch (error) {
-      this.logger.error(`Failed to initialize SAP service: ${error.message}`, error.stack);
+      this.logger.error(`Failed to initialize SAP service: ${(error as Error).message}`, (error as Error).stack);
     }
   }
 
@@ -62,7 +62,7 @@ export class SAPService {
       await this.cacheService.set(cacheKey, result, 300); // 5 minutes cache
       return result;
     } catch (error) {
-      this.logger.error(`SAP RFC call failed: ${functionName}`, error.stack);
+      this.logger.error(`SAP RFC call failed: ${functionName}`, (error as Error).stack);
       throw error;
     }
   }
@@ -92,7 +92,7 @@ export class SAPService {
       await this.cacheService.set(cacheKey, result, 600); // 10 minutes cache
       return result;
     } catch (error) {
-      this.logger.error(`SAP OData query failed: ${entitySet}`, error.stack);
+      this.logger.error(`SAP OData query failed: ${entitySet}`, (error as Error).stack);
       throw error;
     }
   }
@@ -112,7 +112,7 @@ export class SAPService {
       await this.cacheService.deletePattern(`sap_odata_${entitySet}_*`);
       return result;
     } catch (error) {
-      this.logger.error(`SAP OData create failed: ${entitySet}`, error.stack);
+      this.logger.error(`SAP OData create failed: ${entitySet}`, (error as Error).stack);
       throw error;
     }
   }
@@ -132,7 +132,7 @@ export class SAPService {
       await this.cacheService.deletePattern(`sap_odata_${entitySet}_*`);
       return result;
     } catch (error) {
-      this.logger.error(`SAP OData update failed: ${entitySet}`, error.stack);
+      this.logger.error(`SAP OData update failed: ${entitySet}`, (error as Error).stack);
       throw error;
     }
   }
@@ -151,7 +151,7 @@ export class SAPService {
       // Invalidate related cache
       await this.cacheService.deletePattern(`sap_odata_${entitySet}_*`);
     } catch (error) {
-      this.logger.error(`SAP OData delete failed: ${entitySet}`, error.stack);
+      this.logger.error(`SAP OData delete failed: ${entitySet}`, (error as Error).stack);
       throw error;
     }
   }
@@ -170,7 +170,7 @@ export class SAPService {
       this.logger.log(`IDoc sent successfully: ${idocId}`);
       return idocId;
     } catch (error) {
-      this.logger.error(`SAP IDoc send failed: ${messageType}`, error.stack);
+      this.logger.error(`SAP IDoc send failed: ${messageType}`, (error as Error).stack);
       throw error;
     }
   }
@@ -188,7 +188,7 @@ export class SAPService {
 
       return result;
     } catch (error) {
-      this.logger.error(`SAP IDoc receive failed: ${idocId}`, error.stack);
+      this.logger.error(`SAP IDoc receive failed: ${idocId}`, (error as Error).stack);
       throw error;
     }
   }
@@ -230,7 +230,7 @@ export class SAPService {
           result.recordsFailed++;
           result.errors.push({
             recordId: data.id,
-            error: error.message,
+            error: (error as Error).message,
             code: 'SYNC_ERROR',
             timestamp: new Date(),
           });
@@ -245,7 +245,7 @@ export class SAPService {
     } catch (error) {
       result.success = false;
       result.duration = Date.now() - startTime;
-      this.logger.error(`Data sync failed: ${error.message}`, error.stack);
+      this.logger.error(`Data sync failed: ${(error as Error).message}`, (error as Error).stack);
       throw error;
     }
   }
@@ -253,11 +253,11 @@ export class SAPService {
   private async syncCustomer(data: EnterpriseData): Promise<void> {
     // Sync customer data to SAP
     const customerData = {
-      KUNNR: data.data.customerNumber,
-      NAME1: data.data.name,
-      ORT01: data.data.city,
-      PSTLZ: data.data.postalCode,
-      LAND1: data.data.country,
+      KUNNR: data.data['customerNumber'],
+      NAME1: data.data['name'],
+      ORT01: data.data['city'],
+      PSTLZ: data.data['postalCode'],
+      LAND1: data.data['country'],
     };
 
     await this.createODataEntity('CustomerSet', customerData);
@@ -266,10 +266,10 @@ export class SAPService {
   private async syncProduct(data: EnterpriseData): Promise<void> {
     // Sync product data to SAP
     const productData = {
-      MATNR: data.data.productNumber,
-      MAKTX: data.data.description,
-      MEINS: data.data.unit,
-      PRICE: data.data.price,
+      MATNR: data.data['productNumber'],
+      MAKTX: data.data['description'],
+      MEINS: data.data['unit'],
+      PRICE: data.data['price'],
     };
 
     await this.createODataEntity('ProductSet', productData);
@@ -278,10 +278,10 @@ export class SAPService {
   private async syncOrder(data: EnterpriseData): Promise<void> {
     // Sync order data to SAP
     const orderData = {
-      VBELN: data.data.orderNumber,
-      ERDAT: data.data.orderDate,
-      KUNNR: data.data.customerNumber,
-      NETWR: data.data.netValue,
+      VBELN: data.data['orderNumber'],
+      ERDAT: data.data['orderDate'],
+      KUNNR: data.data['customerNumber'],
+      NETWR: data.data['netValue'],
     };
 
     await this.createODataEntity('OrderSet', orderData);

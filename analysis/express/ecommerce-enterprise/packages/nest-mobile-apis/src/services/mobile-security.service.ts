@@ -246,7 +246,7 @@ export class MobileSecurityService {
   }
 
   private async performAuthentication(
-    userId: string,
+    _userId: string,
     credentials: any,
     deviceInfo: MobileDeviceInfo,
   ): Promise<boolean> {
@@ -309,7 +309,7 @@ export class MobileSecurityService {
         throw new Error('Invalid signature');
       }
 
-      return JSON.parse(Buffer.from(payload, 'base64url').toString());
+      return JSON.parse(Buffer.from(payload || '', 'base64url').toString());
     } catch (error) {
       throw new Error('Invalid token');
     }

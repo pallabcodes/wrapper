@@ -148,4 +148,43 @@ export class PaymentRepository {
       pendingPayments: parseInt(stats.pendingPayments) || 0,
     };
   }
+
+  // Three-phase payment support methods
+  async findByCaptureId(captureId: string): Promise<Payment | null> {
+    return this.paymentRepository.findOne({ 
+      where: { 
+        metadata: {
+          capture: {
+            captureId: captureId
+          }
+        }
+      } 
+    });
+  }
+
+  async findByAuthorizationId(authorizationId: string): Promise<Payment | null> {
+    return this.paymentRepository.findOne({ 
+      where: { 
+        providerPaymentId: authorizationId 
+      } 
+    });
+  }
+
+  async findExpiredAuthorizations(): Promise<Payment[]> {
+    const now = new Date();
+    return this.paymentRepository
+      .createQueryBuilder('payment')
+      .where('payment.status = :status', { status: PaymentStatus.PROCESSING })
+      .andWhere('JSON_EXTRACT(payment.metadata, "$.authorization.expiresAt") < :now', { now })
+      .getMany();
+  }
+
+  async findPendingCaptures(): Promise<Payment[]> {
+    return this.paymentRepository
+      .createQueryBuilder('payment')
+      .where('payment.status = :status', { status: PaymentStatus.PROCESSING })
+      .andWhere('JSON_EXTRACT(payment.metadata, "$.capture") IS NOT NULL')
+      .andWhere('JSON_EXTRACT(payment.metadata, "$.settlement") IS NULL')
+      .getMany();
+  }
 }

@@ -74,7 +74,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       data: notification
     })
   } catch (error) {
-    logger.error('Failed to get notification status', { error, id: req.params.id })
+    logger.error('Failed to get notification status', { error, id: req.params['id'] })
     res.status(500).json({
       success: false,
       error: 'Failed to get notification status'
@@ -96,7 +96,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       message: 'Notification cancelled successfully'
     })
   } catch (error) {
-    logger.error('Failed to cancel notification', { error, id: req.params.id })
+    logger.error('Failed to cancel notification', { error, id: req.params['id'] })
     res.status(500).json({
       success: false,
       error: 'Failed to cancel notification'
@@ -118,7 +118,7 @@ router.post('/:id/resend', async (req: Request, res: Response) => {
       message: 'Notification resent successfully'
     })
   } catch (error) {
-    logger.error('Failed to resend notification', { error, id: req.params.id })
+    logger.error('Failed to resend notification', { error, id: req.params['id'] })
     res.status(500).json({
       success: false,
       error: 'Failed to resend notification'

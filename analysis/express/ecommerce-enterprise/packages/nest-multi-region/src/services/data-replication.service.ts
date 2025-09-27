@@ -8,7 +8,7 @@ import {
 } from '../interfaces/multi-region.interface';
 import { RegionManagerService } from './region-manager.service';
 import * as uuid from 'uuid';
-import axios from 'axios';
+// import axios from 'axios';
 
 @Injectable()
 export class DataReplicationService {
@@ -143,7 +143,7 @@ export class DataReplicationService {
 
     } catch (error) {
       replication.status = 'failed';
-      replication.error = error.message;
+      replication.error = (error as Error).message;
       replication.retryCount++;
 
       this.updateSyncStatus(replication.targetRegion, 'failed');
@@ -159,7 +159,7 @@ export class DataReplicationService {
     }
   }
 
-  private async simulateReplication(replication: DataReplication): Promise<boolean> {
+  private async simulateReplication(_replication: DataReplication): Promise<boolean> {
     // Simulate network delay and potential failure
     await new Promise(resolve => setTimeout(resolve, Math.random() * 1000));
     
@@ -217,8 +217,7 @@ export class DataReplicationService {
       dataType,
       dataId,
       regions,
-      versions,
-      resolution: undefined
+      versions
     };
 
     this.conflicts.push(conflict);
@@ -246,7 +245,7 @@ export class DataReplicationService {
     };
 
     // Replicate resolved data to all regions
-    for (const region of conflict.regions) {
+    for (const _region of conflict.regions) {
       await this.replicateData(
         conflict.dataType,
         conflict.dataId,

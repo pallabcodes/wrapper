@@ -7,7 +7,6 @@ import {
   ComplianceConfig, 
   ComplianceReport, 
   PersonalData, 
-  AuditLog,
   BreachIncident 
 } from '../interfaces/compliance.interface';
 
@@ -347,7 +346,7 @@ export class ComplianceService {
     return impact.length > 0 ? impact : ['GDPR'];
   }
 
-  private async checkConsent(userId: string, action: string): Promise<boolean> {
+  private async checkConsent(_userId: string, _action: string): Promise<boolean> {
     // Simulate consent check
     return true;
   }

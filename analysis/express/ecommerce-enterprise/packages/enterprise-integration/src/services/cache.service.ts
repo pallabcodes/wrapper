@@ -8,7 +8,7 @@ export class CacheService {
   private readonly logger = new Logger(CacheService.name);
   private redis: Redis | null = null;
   private memoryCache = new Map<string, { value: any; expires: number }>();
-  private options: CacheOptions;
+  private options!: CacheOptions;
 
   constructor(private readonly configService: ConfigService) {
     this.initializeCache();
@@ -38,18 +38,18 @@ export class CacheService {
           maxRetriesPerRequest: 3,
         });
 
-        this.redis.on('error', (error) => {
+        (this.redis as any).on('error', (error: Error) => {
           this.logger.error(`Redis error: ${error.message}`);
         });
 
-        this.redis.on('connect', () => {
+        (this.redis as any).on('connect', () => {
           this.logger.log('Redis connected successfully');
         });
       }
 
       this.logger.log(`Cache initialized with provider: ${this.options.provider}`);
     } catch (error) {
-      this.logger.error(`Cache initialization failed: ${error.message}`, error.stack);
+      this.logger.error(`Cache initialization failed: ${(error as Error).message}`, (error as Error).stack);
     }
   }
 
@@ -72,7 +72,7 @@ export class CacheService {
         return null;
       }
     } catch (error) {
-      this.logger.error(`Cache get failed for key: ${key}`, error.stack);
+      this.logger.error(`Cache get failed for key: ${key}`, (error as Error).stack);
       return null;
     }
   }
@@ -91,7 +91,9 @@ export class CacheService {
         // Memory cache with size limit
         if (this.memoryCache.size >= this.options.maxSize) {
           const firstKey = this.memoryCache.keys().next().value;
-          this.memoryCache.delete(firstKey);
+          if (firstKey) {
+            this.memoryCache.delete(firstKey);
+          }
         }
 
         this.memoryCache.set(key, {
@@ -100,7 +102,7 @@ export class CacheService {
         });
       }
     } catch (error) {
-      this.logger.error(`Cache set failed for key: ${key}`, error.stack);
+      this.logger.error(`Cache set failed for key: ${key}`, (error as Error).stack);
     }
   }
 
@@ -116,7 +118,7 @@ export class CacheService {
         this.memoryCache.delete(key);
       }
     } catch (error) {
-      this.logger.error(`Cache delete failed for key: ${key}`, error.stack);
+      this.logger.error(`Cache delete failed for key: ${key}`, (error as Error).stack);
     }
   }
 
@@ -129,7 +131,7 @@ export class CacheService {
       if (this.redis) {
         const keys = await this.redis.keys(pattern);
         if (keys.length > 0) {
-          await this.redis.del(...keys);
+          await (this.redis as any).del(...keys);
         }
       } else {
         // Memory cache pattern matching
@@ -141,7 +143,7 @@ export class CacheService {
         }
       }
     } catch (error) {
-      this.logger.error(`Cache delete pattern failed for pattern: ${pattern}`, error.stack);
+      this.logger.error(`Cache delete pattern failed for pattern: ${pattern}`, (error as Error).stack);
     }
   }
 
@@ -152,12 +154,12 @@ export class CacheService {
 
     try {
       if (this.redis) {
-        await this.redis.flushdb();
+        await (this.redis as any).flushAll();
       } else {
         this.memoryCache.clear();
       }
     } catch (error) {
-      this.logger.error('Cache clear failed', error.stack);
+      this.logger.error('Cache clear failed', (error as Error).stack);
     }
   }
 
@@ -169,8 +171,8 @@ export class CacheService {
     try {
       if (this.redis) {
         try {
-          const info = await this.redis.info('memory');
-          const dbsize = await this.redis.dbsize();
+          const info = await (this.redis as any).info('memory');
+          const dbsize = await (this.redis as any).dbSize();
           
           return {
             provider: 'redis',
@@ -196,8 +198,8 @@ export class CacheService {
         };
       }
     } catch (error) {
-      this.logger.error('Cache stats failed', error.stack);
-      return { enabled: false, error: error.message };
+      this.logger.error('Cache stats failed', (error as Error).stack);
+      return { enabled: false, error: (error as Error).message };
     }
   }
 
@@ -208,7 +210,9 @@ export class CacheService {
     for (const line of lines) {
       if (line.includes(':')) {
         const [key, value] = line.split(':');
-        result[key] = value;
+        if (key) {
+          result[key] = value;
+        }
       }
     }
 
@@ -222,13 +226,13 @@ export class CacheService {
 
     try {
       if (this.redis) {
-        await this.redis.ping();
+        await (this.redis as any).ping();
         return true;
       } else {
         return true; // Memory cache is always healthy
       }
     } catch (error) {
-      this.logger.error('Cache health check failed', error.stack);
+      this.logger.error('Cache health check failed', (error as Error).stack);
       return false;
     }
   }

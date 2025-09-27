@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { spawn } from 'child_process';
-import * as path from 'path';
 
 export interface TestOptions {
   project?: string;
@@ -51,7 +50,7 @@ export class TestService {
     return this.runTests(e2eOptions);
   }
 
-  private getTestCommand(options: TestOptions): string {
+  private getTestCommand(_options: TestOptions): string {
     return 'npx';
   }
 

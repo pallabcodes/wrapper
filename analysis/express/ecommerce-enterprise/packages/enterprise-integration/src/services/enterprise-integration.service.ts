@@ -14,7 +14,7 @@ import { RetryService } from './retry.service';
 @Injectable()
 export class EnterpriseIntegrationService {
   private readonly logger = new Logger(EnterpriseIntegrationService.name);
-  private options: EnterpriseIntegrationOptions;
+  private options!: EnterpriseIntegrationOptions;
 
   constructor(
     private readonly configService: ConfigService,
@@ -77,7 +77,7 @@ export class EnterpriseIntegrationService {
           result.recordsFailed++;
           result.errors.push({
             recordId: record.id,
-            error: error.message,
+            error: (error as Error).message,
             code: 'SYNC_ERROR',
             timestamp: new Date(),
           });
@@ -95,14 +95,14 @@ export class EnterpriseIntegrationService {
     } catch (error) {
       result.success = false;
       result.duration = Date.now() - startTime;
-      this.logger.error(`Data sync failed: ${error.message}`, error.stack);
+      this.logger.error(`Data sync failed: ${(error as Error).message}`, (error as Error).stack);
       throw error;
     }
   }
 
   private async syncRecord(
     record: EnterpriseData,
-    sourceSystem: string,
+    _sourceSystem: string,
     targetSystem: string,
     conflictResolution?: ConflictResolution
   ): Promise<void> {
@@ -157,7 +157,7 @@ export class EnterpriseIntegrationService {
           return null;
       }
     } catch (error) {
-      this.logger.warn(`Failed to get existing record: ${error.message}`);
+      this.logger.warn(`Failed to get existing record: ${(error as Error).message}`);
       return null;
     }
   }
@@ -232,12 +232,12 @@ export class EnterpriseIntegrationService {
     };
   }
 
-  private evaluateRule(rule: any, sourceRecord: EnterpriseData, targetRecord: EnterpriseData): boolean {
+  private evaluateRule(_rule: any, _sourceRecord: EnterpriseData, _targetRecord: EnterpriseData): boolean {
     // Simple rule evaluation - in a real implementation, this would be more sophisticated
     return true;
   }
 
-  private mergeFieldValues(sourceValue: any, targetValue: any, field: string): any {
+  private mergeFieldValues(sourceValue: any, targetValue: any, _field: string): any {
     // Custom merge logic based on field type
     if (typeof sourceValue === 'string' && typeof targetValue === 'string') {
       return sourceValue.length > targetValue.length ? sourceValue : targetValue;

@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DatabaseQuery, QueryResult, TransactionOptions, TransactionResult } from '../types';
+import { DatabaseQuery, QueryResult, TransactionOptions } from '../types';
 import { DataSource, Repository, EntityManager } from 'typeorm';
-import { MoreThan, LessThan, Like, In, Between } from 'typeorm';
+// import { MoreThan, LessThan, Like, In, Between } from 'typeorm';
 
 @Injectable()
 export class TypeOrmService {
   private readonly logger = new Logger(TypeOrmService.name);
-  private dataSource: DataSource;
+  private dataSource!: DataSource;
   private isConnectedFlag = false;
 
   constructor() {
@@ -17,14 +17,14 @@ export class TypeOrmService {
     try {
       this.dataSource = new DataSource({
         type: 'postgres',
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '5432'),
-        username: process.env.DB_USERNAME || 'postgres',
-        password: process.env.DB_PASSWORD || 'password',
-        database: process.env.DB_DATABASE || 'ecommerce',
+        host: process.env['DB_HOST'] || 'localhost',
+        port: parseInt(process.env['DB_PORT'] || '5432'),
+        username: process.env['DB_USERNAME'] || 'postgres',
+        password: process.env['DB_PASSWORD'] || 'password',
+        database: process.env['DB_DATABASE'] || 'ecommerce',
         entities: [], // In real implementation, load entities
-        synchronize: process.env.NODE_ENV === 'development',
-        logging: process.env.NODE_ENV === 'development'
+        synchronize: process.env['NODE_ENV'] === 'development',
+        logging: process.env['NODE_ENV'] === 'development'
       });
 
       await this.dataSource.initialize();
@@ -90,16 +90,16 @@ export class TypeOrmService {
       };
 
     } catch (error) {
-      this.logger.error(`TypeORM query execution failed: ${error.message}`, error.stack);
+      this.logger.error(`TypeORM query execution failed: ${(error as Error).message}`, (error as Error).stack);
       throw error;
     }
   }
 
   async executeTransaction<T = any>(
     queries: DatabaseQuery[],
-    options?: TransactionOptions
+    _options?: TransactionOptions
   ): Promise<T> {
-    const startTime = Date.now();
+    // const startTime = Date.now();
     
     try {
       const result = await this.dataSource.transaction(async (manager: EntityManager) => {
@@ -116,7 +116,7 @@ export class TypeOrmService {
       return result as T;
 
     } catch (error) {
-      this.logger.error(`TypeORM transaction execution failed: ${error.message}`, error.stack);
+      this.logger.error(`TypeORM transaction execution failed: ${(error as Error).message}`, (error as Error).stack);
       throw error;
     }
   }
@@ -177,7 +177,7 @@ export class TypeOrmService {
     
     const queryBuilder = repository.createQueryBuilder()
       .update(query.table)
-      .set(query.data)
+      .set(query.data || {})
       .where(this.buildWhereClause(query.where || {}));
     
     const result = await queryBuilder.execute();
@@ -235,15 +235,15 @@ export class TypeOrmService {
       
       case 'insert':
         if (Array.isArray(query.data)) {
-          return await repository.save(query.data);
+          return await repository.save(query.data || []);
         } else {
-          return await repository.save(query.data);
+          return await repository.save(query.data || {});
         }
       
       case 'update':
         const updateBuilder = repository.createQueryBuilder()
           .update(query.table)
-          .set(query.data)
+          .set(query.data || {})
           .where(this.buildWhereClause(query.where || {}));
         return await updateBuilder.execute();
       
@@ -269,36 +269,36 @@ export class TypeOrmService {
   }
 
   private applyWhereConditions(queryBuilder: any, where: Record<string, any>): void {
-    Object.entries(where).forEach(([key, value], index) => {
+    Object.entries(where).forEach(([key, _value], index) => {
       const parameterName = `param${index}`;
       
-      if (typeof value === 'object' && value !== null) {
-        Object.entries(value).forEach(([operator, val]) => {
+      if (typeof _value === 'object' && _value !== null) {
+        Object.entries(_value).forEach(([operator, _val]) => {
           switch (operator) {
             case 'gte':
-              queryBuilder.andWhere(`${key} >= :${parameterName}`, { [parameterName]: val });
+              queryBuilder.andWhere(`${key} >= :${parameterName}`, { [parameterName]: _val });
               break;
             case 'lte':
-              queryBuilder.andWhere(`${key} <= :${parameterName}`, { [parameterName]: val });
+              queryBuilder.andWhere(`${key} <= :${parameterName}`, { [parameterName]: _val });
               break;
             case 'gt':
-              queryBuilder.andWhere(`${key} > :${parameterName}`, { [parameterName]: val });
+              queryBuilder.andWhere(`${key} > :${parameterName}`, { [parameterName]: _val });
               break;
             case 'lt':
-              queryBuilder.andWhere(`${key} < :${parameterName}`, { [parameterName]: val });
+              queryBuilder.andWhere(`${key} < :${parameterName}`, { [parameterName]: _val });
               break;
             case 'in':
-              queryBuilder.andWhere(`${key} IN (:...${parameterName})`, { [parameterName]: val });
+              queryBuilder.andWhere(`${key} IN (:...${parameterName})`, { [parameterName]: _val });
               break;
             case 'contains':
-              queryBuilder.andWhere(`${key} ILIKE :${parameterName}`, { [parameterName]: `%${val}%` });
+              queryBuilder.andWhere(`${key} ILIKE :${parameterName}`, { [parameterName]: `%${_val}%` });
               break;
             default:
-              queryBuilder.andWhere(`${key} = :${parameterName}`, { [parameterName]: val });
+              queryBuilder.andWhere(`${key} = :${parameterName}`, { [parameterName]: _val });
           }
         });
       } else {
-        queryBuilder.andWhere(`${key} = :${parameterName}`, { [parameterName]: value });
+        queryBuilder.andWhere(`${key} = :${parameterName}`, { [parameterName]: _value });
       }
     });
   }
@@ -306,11 +306,11 @@ export class TypeOrmService {
   private buildWhereClause(where: Record<string, any>): string {
     const conditions: string[] = [];
     
-    Object.entries(where).forEach(([key, value], index) => {
+    Object.entries(where).forEach(([key, _value], index) => {
       const parameterName = `param${index}`;
       
-      if (typeof value === 'object' && value !== null) {
-        Object.entries(value).forEach(([operator, val]) => {
+      if (typeof _value === 'object' && _value !== null) {
+        Object.entries(_value).forEach(([operator, _val]) => {
           switch (operator) {
             case 'gte':
               conditions.push(`${key} >= :${parameterName}`);

@@ -81,7 +81,7 @@ export class HealthService {
       return {
         status: 'unhealthy',
         details: {
-          error: error.message,
+          error: (error as Error).message,
         },
       };
     }
@@ -102,7 +102,7 @@ export class HealthService {
       return {
         status: 'unhealthy',
         details: {
-          error: error.message,
+          error: (error as Error).message,
         },
       };
     }
@@ -124,7 +124,7 @@ export class HealthService {
       return {
         status: 'unhealthy',
         details: {
-          error: error.message,
+          error: (error as Error).message,
         },
       };
     }

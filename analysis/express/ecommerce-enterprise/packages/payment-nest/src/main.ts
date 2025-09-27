@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
@@ -10,7 +10,7 @@ async function bootstrap() {
   const logger = new Logger('PaymentService');
   
   // Create NestJS application
-  const app = await NestFactory.create<NestFastifyApplication>(
+  const app = await NestFactory.create(
     AppModule,
     new FastifyAdapter({
       logger: true,
@@ -23,7 +23,7 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const port = configService.get('PORT', 3001);
-  const useFastify = configService.get('USE_FASTIFY', 'false') === 'true';
+  // const _useFastify = configService.get('USE_FASTIFY', 'false') === 'true';
 
   // Global validation pipe
   app.useGlobalPipes(

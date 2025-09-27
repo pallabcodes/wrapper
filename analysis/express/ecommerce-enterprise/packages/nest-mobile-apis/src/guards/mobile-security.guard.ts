@@ -22,7 +22,7 @@ export class MobileSecurityGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const handler = context.getHandler();
+    // const handler = context.getHandler();
     
     const options: MobileSecurityOptions = this.reflector.getAllAndOverride<MobileSecurityOptions>(
       MOBILE_SECURITY_METADATA,
@@ -52,8 +52,8 @@ export class MobileSecurityGuard implements CanActivate {
       }
 
       // Check device restrictions
-      if (options.allowedDevices && !options.allowedDevices.includes(deviceInfo.model)) {
-        throw new ForbiddenException(`Device ${deviceInfo.model} not allowed`);
+      if (options.allowedDevices && deviceInfo.model && !options.allowedDevices.includes(deviceInfo.model)) {
+        throw new ForbiddenException(`Device ${deviceInfo.model || 'unknown'} not allowed`);
       }
 
       // Authentication check
@@ -153,7 +153,7 @@ export class MobileSecurityGuard implements CanActivate {
       return {
         latitude: parseFloat(lat),
         longitude: parseFloat(lng),
-        accuracy: accuracy ? parseFloat(accuracy) : undefined,
+        ...(accuracy && { accuracy: parseFloat(accuracy) }),
       };
     }
     

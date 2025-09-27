@@ -6,6 +6,7 @@ import { TestService } from './test.service';
 import { MinimalController } from './minimal.controller';
 import { WorkingController } from './working.controller';
 import { WorkingService } from './working.service';
+import { EnterpriseDemoValidationModule } from './modules/enterprise-demo-validation.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { WorkingService } from './working.service';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    EnterpriseDemoValidationModule,
   ],
   controllers: [EnterpriseDemoController, MinimalController, WorkingController],
   providers: [EnterpriseDemoService, TestService, WorkingService],

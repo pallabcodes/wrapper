@@ -7,20 +7,26 @@
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -w -p tsconfig.build.json",
     "start": "node dist/index.js",
-    "start:dev": "tsx src/index.ts"
+    "start:dev": "tsx src/index.ts",
+    "demo": "ts-node demo/enterprise-demo-zod-integration.ts",
+    "demo:build": "tsc -p tsconfig.build.json && node dist/demo/enterprise-demo-zod-integration.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/config": "^3.0.0",
+    "@nestjs/swagger": "^7.4.0",
     "@ecommerce-enterprise/enterprise-integration": "file:../enterprise-integration/dist",
+    "@ecommerce-enterprise/nest-zod": "workspace:*",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.0"
+    "rxjs": "^7.8.0",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "typescript": "^5.3.3",
-    "tsx": "^4.0.0"
+    "tsx": "^4.0.0",
+    "ts-node": "^10.9.0"
   }
 }

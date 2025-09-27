@@ -2,7 +2,7 @@
  * Shared Schemas
  */
 
-import { z } from 'zod'
+import { z } from 'zod';
 
 // User schemas
 export const userSchema = z.object({

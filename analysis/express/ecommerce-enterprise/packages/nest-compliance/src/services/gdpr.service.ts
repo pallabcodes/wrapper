@@ -8,7 +8,7 @@ import {
   BreachIncident 
 } from '../interfaces/compliance.interface';
 import * as crypto from 'crypto';
-import * as bcrypt from 'bcrypt';
+// import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class GDPRService {
@@ -104,7 +104,7 @@ export class GDPRService {
       this.logger.log(`Successfully processed right to be forgotten for user: ${userId}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to process right to be forgotten for user ${userId}: ${error.message}`);
+      this.logger.error(`Failed to process right to be forgotten for user ${userId}: ${(error as Error).message}`);
       return false;
     }
   }
@@ -186,7 +186,8 @@ export class GDPRService {
 
   private async encryptData(data: Record<string, any>): Promise<Record<string, any>> {
     const key = crypto.randomBytes(32);
-    const iv = crypto.randomBytes(16);
+    // IV not used in createCipher but kept for completeness
+    crypto.randomBytes(16);
     const cipher = crypto.createCipher(this.config.encryption.algorithm, key);
     
     const encrypted: Record<string, any> = {};
@@ -201,7 +202,7 @@ export class GDPRService {
     return encrypted;
   }
 
-  private async collectUserData(userId: string): Promise<Record<string, any>> {
+  private async collectUserData(_userId: string): Promise<Record<string, any>> {
     // Simulate data collection
     return {
       personalInfo: {

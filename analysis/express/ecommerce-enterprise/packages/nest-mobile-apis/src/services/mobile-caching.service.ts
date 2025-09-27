@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+// import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject } from '@nestjs/common';
 import { Cache } from 'cache-manager';
-import { LRUCache } from 'lru-cache';
+const { LRUCache } = require('lru-cache');
 import {
   CacheOptions,
   MobileDeviceInfo,
@@ -13,25 +13,25 @@ import {
 @Injectable()
 export class MobileCachingService {
   private readonly logger = new Logger(MobileCachingService.name);
-  private offlineCache: LRUCache<string, OfflineData>;
-  private memoryCache: LRUCache<string, any>;
+  private offlineCache: any;
+  private memoryCache: any;
 
   constructor(
-    private configService: ConfigService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    // private readonly configService: ConfigService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {
-    this.offlineCache = new LRUCache<string, OfflineData>({
+    this.offlineCache = new LRUCache({
       max: 10000,
       ttl: 1000 * 60 * 60 * 24, // 24 hours
     });
 
-    this.memoryCache = new LRUCache<string, any>({
+    this.memoryCache = new LRUCache({
       max: 1000,
       ttl: 1000 * 60 * 5, // 5 minutes
     });
   }
 
-  async get<T>(key: string, options?: Partial<CacheOptions>): Promise<T | null> {
+  async get<T>(key: string, _options?: Partial<CacheOptions>): Promise<T | null> {
     try {
       // Try memory cache first
       const memoryCached = this.memoryCache.get(key);
@@ -100,11 +100,13 @@ export class MobileCachingService {
     }
   }
 
-  async getOfflineData(userId: string, type?: string): Promise<OfflineData[]> {
-    const pattern = type ? `${userId}:${type}:*` : `${userId}:*`;
-    const keys = Array.from(this.offlineCache.keys()).filter(key => key.startsWith(userId));
+  async getOfflineData(userId: string, _type?: string): Promise<OfflineData[]> {
+    // const pattern = type ? `${userId}:${type}:*` : `${userId}:*`;
+    const keys = Array.from(this.offlineCache.keys()).filter((key: unknown): key is string => 
+      typeof key === 'string' && key.startsWith(userId)
+    );
     
-    return keys.map(key => this.offlineCache.get(key)!).filter(Boolean);
+    return keys.map((key: string) => this.offlineCache.get(key)!).filter(Boolean);
   }
 
   async setOfflineData(data: OfflineData, userId: string): Promise<void> {
@@ -134,9 +136,11 @@ export class MobileCachingService {
 
   async getOfflineDataByType(userId: string, type: string): Promise<OfflineData[]> {
     const pattern = `${userId}:${type}:*`;
-    const keys = Array.from(this.offlineCache.keys()).filter(key => key.startsWith(pattern));
+    const keys = Array.from(this.offlineCache.keys()).filter((key: unknown): key is string => 
+      typeof key === 'string' && key.startsWith(pattern)
+    );
     
-    return keys.map(key => this.offlineCache.get(key)!).filter(Boolean);
+    return keys.map((key: string) => this.offlineCache.get(key)!).filter(Boolean);
   }
 
   async syncOfflineData(userId: string): Promise<{

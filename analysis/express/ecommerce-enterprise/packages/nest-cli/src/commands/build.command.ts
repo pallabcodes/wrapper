@@ -1,10 +1,10 @@
-import { Command } from 'commander';
+import * as commander from 'commander';
 import { BuildService } from '../services/build.service';
 
 export class BuildCommand {
   constructor(private readonly buildService: BuildService) {}
 
-  register(program: Command): void {
+  register(program: commander.Command): void {
     const buildCommand = program
       .command('build')
       .description('Build the NestJS application')

@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 @Injectable()
 export class ConnectionPool {
-  private readonly logger = new Logger(ConnectionPool.name);
+  // private readonly logger = new Logger(ConnectionPool.name);
 
   constructor(private readonly dataSource: DataSource) {}
 

@@ -35,7 +35,7 @@ export class RebacService {
   async add(tuple: RelationTuple, tenant: string = 'default'): Promise<void> {
     const k = this.key(tenant, tuple.object, tuple.relation);
     if (this.client) {
-      await this.client.sadd(k, tuple.subject);
+      await (this.client as any).sadd(k, tuple.subject);
       await this.client.expire(k, this.cacheTtl);
     }
     const s = this.memory.get(k) || new Set<string>();
@@ -46,7 +46,7 @@ export class RebacService {
   async remove(tuple: RelationTuple, tenant: string = 'default'): Promise<void> {
     const k = this.key(tenant, tuple.object, tuple.relation);
     if (this.client) {
-      await this.client.srem(k, tuple.subject);
+      await (this.client as any).srem(k, tuple.subject);
     }
     const s = this.memory.get(k);
     if (s) s.delete(tuple.subject);
@@ -55,7 +55,7 @@ export class RebacService {
   async check(subject: string, relation: string, object: string, tenant: string = 'default'): Promise<boolean> {
     const k = this.key(tenant, object, relation);
     if (this.client) {
-      const exists = await this.client.sismember(k, subject);
+      const exists = await (this.client as any).sismember(k, subject);
       if (exists) return true;
     }
     const s = this.memory.get(k);

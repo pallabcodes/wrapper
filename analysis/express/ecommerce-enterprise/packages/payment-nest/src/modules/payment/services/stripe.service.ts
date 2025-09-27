@@ -32,9 +32,9 @@ export class StripeService {
           paymentId: payment.id,
           tenantId: payment.tenantId,
           userId: payment.userId,
+          customerEmail: payment.customerEmail,
           ...payment.metadata,
         },
-        customer_email: payment.customerEmail,
         automatic_payment_methods: {
           enabled: true,
         },

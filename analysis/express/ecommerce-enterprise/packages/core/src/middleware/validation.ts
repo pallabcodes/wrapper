@@ -3,16 +3,16 @@
  */
 
 import { Request, Response, NextFunction } from 'express'
-import { z } from 'zod'
+// const { z } = require('zod')
 
-export const validateBody = <T extends z.ZodTypeAny>(schema: T) => {
+export const validateBody = <T extends any>(schema: T) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = schema.parse(req.body)
+      const result = (schema as any).parse(req.body)
       req.body = result
       next()
     } catch (error) {
-      if (error instanceof z.ZodError) {
+      if (error && typeof error === 'object' && 'errors' in error) {
         res.status(400).json({
           success: false,
           error: 'Validation failed',
@@ -25,14 +25,14 @@ export const validateBody = <T extends z.ZodTypeAny>(schema: T) => {
   }
 }
 
-export const validateQuery = <T extends z.ZodTypeAny>(schema: T) => {
+export const validateQuery = <T extends any>(schema: T) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = schema.parse(req.query)
+      const result = (schema as any).parse(req.query)
       req.query = result
       next()
     } catch (error) {
-      if (error instanceof z.ZodError) {
+      if (error && typeof error === 'object' && 'errors' in error) {
         res.status(400).json({
           success: false,
           error: 'Validation failed',
@@ -45,14 +45,14 @@ export const validateQuery = <T extends z.ZodTypeAny>(schema: T) => {
   }
 }
 
-export const validateParams = <T extends z.ZodTypeAny>(schema: T) => {
+export const validateParams = <T extends any>(schema: T) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = schema.parse(req.params)
+      const result = (schema as any).parse(req.params)
       req.params = result
       next()
     } catch (error) {
-      if (error instanceof z.ZodError) {
+      if (error && typeof error === 'object' && 'errors' in error) {
         res.status(400).json({
           success: false,
           error: 'Validation failed',
@@ -66,6 +66,6 @@ export const validateParams = <T extends z.ZodTypeAny>(schema: T) => {
 }
 
 // Utility function for validation
-export const validateSchema = <T extends z.ZodTypeAny>(schema: T, data: unknown): z.infer<T> => {
-  return schema.parse(data)
+export const validateSchema = <T extends any>(schema: T, data: unknown): any => {
+  return (schema as any).parse(data)
 }

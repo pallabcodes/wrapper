@@ -10,12 +10,18 @@
     "test": "jest",
     "lint": "eslint src/**/*.ts",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "demo": "ts-node demo/shared-zod-integration.ts",
+    "demo:build": "tsc && node dist/demo/shared-zod-integration.js"
   },
   "dependencies": {
     "@ecommerce-enterprise/core": "workspace:*",
+    "@ecommerce-enterprise/nest-zod": "workspace:*",
+    "@nestjs/common": "^10.4.20",
+    "@nestjs/config": "^3.3.0",
+    "@nestjs/swagger": "^7.4.0",
     "express": "^4.18.2",
-    "zod": "^3.22.4"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
@@ -25,6 +31,7 @@
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.54.0",
     "jest": "^29.7.0",
-    "typescript": "^5.3.2"
+    "typescript": "^5.3.2",
+    "ts-node": "^10.9.2"
   }
 }

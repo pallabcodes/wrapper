@@ -3,18 +3,23 @@ import { Logger } from '@nestjs/common';
 
 export class SalesforceAdapter {
   private readonly logger = new Logger(SalesforceAdapter.name);
-  private connection: any;
+  // private connection: any;
   private isAuthenticated = false;
 
-  constructor(private readonly options: SalesforceOptions) {}
+  constructor(
+    private readonly options: SalesforceOptions
+  ) {
+    // Options are available for future use
+    this.logger.log(`Salesforce adapter initialized with options: ${JSON.stringify(options)}`);
+  }
 
   async connect(): Promise<void> {
     try {
       // Mock Salesforce connection for demo purposes
-      this.logger.log('Salesforce connection initialized (mock)');
+      this.logger.log(`Salesforce connection initialized (mock) with ${this.options.connection.clientId ? 'client ID' : 'no client ID'}`);
       this.isAuthenticated = true;
     } catch (error) {
-      this.logger.error(`Salesforce connection failed: ${error.message}`, error.stack);
+      this.logger.error(`Salesforce connection failed: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined);
       throw error;
     }
   }
@@ -24,7 +29,7 @@ export class SalesforceAdapter {
       // Mock ping for demo purposes
       return this.isAuthenticated;
     } catch (error) {
-      this.logger.error(`Salesforce ping failed: ${error.message}`);
+      this.logger.error(`Salesforce ping failed: ${error instanceof Error ? error.message : String(error)}`);
       return false;
     }
   }
@@ -50,7 +55,7 @@ export class SalesforceAdapter {
           return [];
       }
     } catch (error) {
-      this.logger.error(`SOQL query failed: ${objectType}`, error.stack);
+      this.logger.error(`SOQL query failed: ${objectType}`, error instanceof Error ? error.stack : undefined);
       throw error;
     }
   }
@@ -70,7 +75,7 @@ export class SalesforceAdapter {
 
       return result;
     } catch (error) {
-      this.logger.error(`Create record failed: ${objectType}`, error.stack);
+      this.logger.error(`Create record failed: ${objectType}`, error instanceof Error ? error.stack : undefined);
       throw error;
     }
   }
@@ -89,7 +94,7 @@ export class SalesforceAdapter {
 
       return result;
     } catch (error) {
-      this.logger.error(`Update record failed: ${objectType}`, error.stack);
+      this.logger.error(`Update record failed: ${objectType}`, error instanceof Error ? error.stack : undefined);
       throw error;
     }
   }
@@ -99,7 +104,7 @@ export class SalesforceAdapter {
       // Mock record deletion for demo purposes
       this.logger.log(`Delete record: ${objectType} (${id})`);
     } catch (error) {
-      this.logger.error(`Delete record failed: ${objectType}`, error.stack);
+      this.logger.error(`Delete record failed: ${objectType}`, error instanceof Error ? error.stack : undefined);
       throw error;
     }
   }
@@ -125,7 +130,7 @@ export class SalesforceAdapter {
         totalFailed: 0,
       };
     } catch (error) {
-      this.logger.error(`Bulk upsert failed: ${objectType}`, error.stack);
+      this.logger.error(`Bulk upsert failed: ${objectType}`, error instanceof Error ? error.stack : undefined);
       throw error;
     }
   }
@@ -142,7 +147,7 @@ export class SalesforceAdapter {
         totalFailed: 0,
       };
     } catch (error) {
-      this.logger.error(`Bulk delete failed: ${objectType}`, error.stack);
+      this.logger.error(`Bulk delete failed: ${objectType}`, error instanceof Error ? error.stack : undefined);
       throw error;
     }
   }
@@ -162,12 +167,12 @@ export class SalesforceAdapter {
         childRelationships: [],
       };
     } catch (error) {
-      this.logger.error(`Describe object failed: ${objectType}`, error.stack);
+      this.logger.error(`Describe object failed: ${objectType}`, error instanceof Error ? error.stack : undefined);
       throw error;
     }
   }
 
-  async handleWebhook(payload: any, signature: string): Promise<any> {
+  async handleWebhook(payload: any, _signature: string): Promise<any> {
     try {
       // Mock webhook handling for demo purposes
       this.logger.log(`Webhook received: ${payload.type}`, payload);
@@ -183,7 +188,7 @@ export class SalesforceAdapter {
 
       return result;
     } catch (error) {
-      this.logger.error(`Webhook handling failed: ${error.message}`, error.stack);
+      this.logger.error(`Webhook handling failed: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined);
       throw error;
     }
   }
@@ -194,7 +199,7 @@ export class SalesforceAdapter {
       this.isAuthenticated = false;
       this.logger.log('Salesforce adapter disconnected');
     } catch (error) {
-      this.logger.error(`Salesforce adapter disconnect failed: ${error.message}`);
+      this.logger.error(`Salesforce adapter disconnect failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -342,7 +347,7 @@ export class SalesforceAdapter {
     return this.applyQueryFilters(products, query);
   }
 
-  private applyQueryFilters(data: any[], query: string): any[] {
+  private applyQueryFilters(data: any[], _query: string): any[] {
     // Simple query filtering for demo purposes
     // In a real implementation, this would parse SOQL and apply filters
     return data;

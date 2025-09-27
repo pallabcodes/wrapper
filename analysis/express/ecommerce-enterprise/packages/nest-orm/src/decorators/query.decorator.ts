@@ -5,7 +5,7 @@ import { DatabaseQuery } from '../types';
  * Decorator to extract database query from request
  */
 export const Query = createParamDecorator(
-  (data: string, ctx: ExecutionContext): DatabaseQuery => {
+  (_data: string, ctx: ExecutionContext): DatabaseQuery => {
     const request = ctx.switchToHttp().getRequest();
     return request.query || {};
   }
@@ -15,7 +15,7 @@ export const Query = createParamDecorator(
  * Decorator to extract pagination from request
  */
 export const Pagination = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
+  (_data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     const { page = 1, limit = 10 } = request.query;
     
@@ -31,7 +31,7 @@ export const Pagination = createParamDecorator(
  * Decorator to extract sorting from request
  */
 export const Sort = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
+  (_data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     const { sort, order = 'asc' } = request.query;
     
@@ -57,7 +57,7 @@ export const Sort = createParamDecorator(
  * Decorator to extract filters from request
  */
 export const Filters = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
+  (_data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     const { filters } = request.query;
     

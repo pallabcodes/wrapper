@@ -12,7 +12,7 @@ import {
   MOBILE_OPTIMIZATION_METADATA,
   MobileOptimizationOptions,
 } from '../decorators/mobile-api.decorator';
-import { MobileOptimizationService } from '../services/mobile-optimization.service';
+// import { MobileOptimizationService } from '../services/mobile-optimization.service';
 import { MobileDeviceInfo, MobileApiRequest } from '../interfaces/mobile-api.interface';
 import { Request } from 'express';
 
@@ -21,8 +21,8 @@ export class MobileOptimizationInterceptor implements NestInterceptor {
   private readonly logger = new Logger(MobileOptimizationInterceptor.name);
 
   constructor(
-    private reflector: Reflector,
-    private optimizationService: MobileOptimizationService,
+    private readonly reflector: Reflector,
+    // private readonly optimizationService: MobileOptimizationService,
   ) {}
 
   async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
@@ -97,14 +97,14 @@ export class MobileOptimizationInterceptor implements NestInterceptor {
 
   private buildDeviceInfoFromHeaders(request: Request): MobileDeviceInfo {
     const userAgent = (request.headers['user-agent'] as string | undefined) || '';
-    const rawPlatform = (request.headers['x-device-platform'] as string | undefined) || (this.detectPlatform(userAgent) as any);
-    const platform: 'ios' | 'android' | 'web' | 'unknown' = ['ios', 'android', 'web'].includes(rawPlatform) ? rawPlatform as any : 'unknown';
+    const rawPlatform = (request.headers['x-device-platform'] as string | undefined) || this.detectPlatform(userAgent);
+    const platform: 'ios' | 'android' | 'web' | 'unknown' = ['ios', 'android', 'web'].includes(rawPlatform) ? rawPlatform as 'ios' | 'android' | 'web' : 'unknown';
     const version = (request.headers['x-device-version'] as string | undefined) || this.detectVersion(userAgent);
     const model = (request.headers['x-device-model'] as string | undefined) || 'Unknown';
     const screenHeader = request.headers['x-screen-size'] as string | undefined;
     const screenSize = this.parseScreenSize(screenHeader);
     const rawSpeed = (request.headers['x-connection-speed'] as string | undefined) || 'unknown';
-    const connectionSpeed: 'slow' | 'medium' | 'fast' | 'unknown' = ['slow', 'medium', 'fast'].includes(rawSpeed) ? rawSpeed as any : 'unknown';
+    const connectionSpeed: 'slow' | 'medium' | 'fast' | 'unknown' = ['slow', 'medium', 'fast'].includes(rawSpeed) ? rawSpeed as 'slow' | 'medium' | 'fast' : 'unknown';
     const appVersion = (request.headers['x-app-version'] as string | undefined) || '1.0.0';
     const language = ((request.headers['accept-language'] as string | undefined)?.split(',')[0]) || 'en-US';
     const timezone = (request.headers['x-timezone'] as string | undefined) || 'UTC';
@@ -160,9 +160,9 @@ export class MobileOptimizationInterceptor implements NestInterceptor {
       const parts = screenSizeHeader.split('x');
       if (parts.length === 3) {
         return {
-          width: parseInt(parts[0]),
-          height: parseInt(parts[1]),
-          density: parseFloat(parts[2]),
+          width: parseInt(parts[0] || '375'),
+          height: parseInt(parts[1] || '667'),
+          density: parseFloat(parts[2] || '2'),
         };
       }
     }

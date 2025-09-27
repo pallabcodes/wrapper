@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { spawn } from 'child_process';
-import * as path from 'path';
 
 export interface BuildOptions {
   project?: string;

@@ -2,8 +2,8 @@
  * Shared Validation Middleware
  */
 
-import { Request, Response, NextFunction } from 'express'
-import { z } from 'zod'
+import { Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
 
 export const validateBody = <T extends z.ZodTypeAny>(schema: T) => {
   return (req: Request, res: Response, next: NextFunction) => {

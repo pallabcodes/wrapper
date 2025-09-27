@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit, Inject, Optional } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,7 +19,7 @@ import { RedisService } from './redis.service';
 @Injectable()
 export class EventStreamingService implements EventPublisher, EventSubscriber, OnModuleInit {
   private readonly logger = new Logger(EventStreamingService.name);
-  private provider: EventPublisher & EventSubscriber;
+  private provider!: EventPublisher & EventSubscriber;
   private config: EventStreamingConfig;
   private options: EventStreamingOptions;
 
@@ -104,7 +104,7 @@ export class EventStreamingService implements EventPublisher, EventSubscriber, O
       this.eventEmitter.emit('event.publish.failed', {
         topic,
         message,
-        error: error.message,
+        error: (error as Error).message,
         timestamp: new Date(),
       });
       
@@ -133,7 +133,7 @@ export class EventStreamingService implements EventPublisher, EventSubscriber, O
       this.eventEmitter.emit('event.batch.publish.failed', {
         topic,
         messageCount: messages.length,
-        error: error.message,
+        error: (error as Error).message,
         timestamp: new Date(),
       });
       
@@ -169,7 +169,7 @@ export class EventStreamingService implements EventPublisher, EventSubscriber, O
             this.eventEmitter.emit('event.process.failed', {
               topic,
               message,
-              error: error.message,
+              error: (error as Error).message,
               timestamp: new Date(),
             });
             
@@ -313,7 +313,7 @@ export class EventStreamingService implements EventPublisher, EventSubscriber, O
   }
 
   // Event replay (for debugging and recovery)
-  async replayEvents(topic: string, fromTimestamp: Date, toTimestamp: Date): Promise<EventMessage[]> {
+  async replayEvents(_topic: string, _fromTimestamp: Date, _toTimestamp: Date): Promise<EventMessage[]> {
     // This would be implemented based on the specific provider
     // For now, return empty array as a placeholder
     this.logger.warn('Event replay not implemented for current provider');
@@ -321,7 +321,7 @@ export class EventStreamingService implements EventPublisher, EventSubscriber, O
   }
 
   // Event deduplication
-  async publishWithDeduplication(topic: string, message: EventMessage, ttl: number = 3600): Promise<void> {
+  async publishWithDeduplication(topic: string, message: EventMessage, _ttl: number = 3600): Promise<void> {
     // This would implement deduplication logic
     // For now, just publish normally
     await this.publish(topic, message);

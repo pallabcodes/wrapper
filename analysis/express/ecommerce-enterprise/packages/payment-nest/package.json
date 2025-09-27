@@ -17,7 +17,11 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "demo": "node demo/enterprise-payment-demo.js",
+    "demo:three-phase": "node demo/three-phase-payment-demo.js",
+    "demo:ts": "ts-node demo/enterprise-payment-demo.ts",
+    "demo:build": "tsc && node dist/demo/enterprise-payment-demo.js"
   },
   "dependencies": {
     "@ecommerce-enterprise/authx": "workspace:*",
@@ -56,7 +60,9 @@
     "class-transformer": "^0.5.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
-    "prom-client": "^15.0.0"
+    "prom-client": "^15.0.0",
+    "@ecommerce-enterprise/nest-zod": "workspace:*",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

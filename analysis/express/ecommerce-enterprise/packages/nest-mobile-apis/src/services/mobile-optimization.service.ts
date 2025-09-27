@@ -1,23 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+// import { ConfigService } from '@nestjs/config';
 import sharp from 'sharp';
-import * as Jimp from 'jimp';
-import { LRUCache } from 'lru-cache';
+// import * as Jimp from 'jimp';
+const { LRUCache } = require('lru-cache');
 import {
   MobileDeviceInfo,
   ImageOptimizationOptions,
-  CacheOptions,
+  // CacheOptions,
   MobilePerformanceMetrics,
 } from '../interfaces/mobile-api.interface';
 
 @Injectable()
 export class MobileOptimizationService {
   private readonly logger = new Logger(MobileOptimizationService.name);
-  private imageCache: LRUCache<string, Buffer>;
+  private imageCache: any;
   private performanceMetrics: MobilePerformanceMetrics;
 
-  constructor(private configService: ConfigService) {
-    this.imageCache = new LRUCache<string, Buffer>({
+  constructor(/* private configService: ConfigService */) {
+    this.imageCache = new LRUCache({
       max: 1000,
       ttl: 1000 * 60 * 60, // 1 hour
     });
@@ -115,7 +115,7 @@ export class MobileOptimizationService {
       return optimizedBuffer;
     } catch (error) {
       this.logger.error('Image optimization failed:', error);
-      throw new Error(`Image optimization failed: ${error.message}`);
+      throw new Error(`Image optimization failed: ${(error as Error).message}`);
     }
   }
 
@@ -192,7 +192,7 @@ export class MobileOptimizationService {
     return { width: maxWidth, height: maxHeight };
   }
 
-  private updateImageMetrics(originalSize: number, optimizedSize: number, processingTime: number): void {
+  private updateImageMetrics(originalSize: number, optimizedSize: number, _processingTime: number): void {
     this.performanceMetrics.images.totalProcessed++;
     this.performanceMetrics.images.totalSize += optimizedSize;
     this.performanceMetrics.images.averageSize = 

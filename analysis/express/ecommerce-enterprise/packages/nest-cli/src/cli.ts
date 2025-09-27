@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Command } from 'commander';
+import * as commander from 'commander';
 import { GenerateCommand } from './commands/generate.command';
 import { BuildCommand } from './commands/build.command';
 import { TestCommand } from './commands/test.command';
@@ -8,7 +8,7 @@ import { GenerateService } from './services/generate.service';
 import { BuildService } from './services/build.service';
 import { TestService } from './services/test.service';
 
-const program = new Command();
+const program = new (commander as any).Command();
 
 program
   .name('nest-cli')

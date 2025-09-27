@@ -10,8 +10,7 @@ export interface GenerateOptions {
 
 @Injectable()
 export class GenerateService {
-  private readonly templatesDir = path.join(__dirname, '../templates');
-
+  
   async generateModule(name: string, options: GenerateOptions = {}): Promise<void> {
     const targetPath = options.path || `src/modules/${name}`;
     const moduleName = this.toPascalCase(name);

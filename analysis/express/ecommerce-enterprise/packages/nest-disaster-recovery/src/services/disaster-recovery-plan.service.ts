@@ -1,14 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+// import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import { 
-  DisasterRecoveryPlan, 
-  DRComponent, 
-  DRProcedure, 
-  DRContact,
+  DisasterRecoveryPlan,
   DisasterRecoveryTest,
-  DRTestResult,
-  DRTestIssue
+  DRTestResult
+  // DRComponent, 
+  // DRProcedure, 
+  // DRContact,
+  // DRTestIssue
 } from '../interfaces/disaster-recovery.interface';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class DisasterRecoveryPlanService {
   private drPlans: Map<string, DisasterRecoveryPlan> = new Map();
   private drTests: Map<string, DisasterRecoveryTest> = new Map();
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(/* private readonly configService: ConfigService */) {
     this.initializeDefaultPlans();
   }
 
@@ -273,7 +273,7 @@ export class DisasterRecoveryPlanService {
         severity: 'high',
         componentId: 'test-execution',
         procedureId: 'test-execution',
-        description: `Test execution failed: ${error.message}`,
+        description: `Test execution failed: ${(error as Error).message}`,
         impact: 'Test could not be completed',
         resolution: 'Review test configuration and retry',
         status: 'open'
@@ -418,7 +418,7 @@ export class DisasterRecoveryPlanService {
       averageRTO,
       averageRPO,
       criticalIssues,
-      lastTest: tests.length > 0 ? tests[0].startTime : null
+      lastTest: tests.length > 0 ? tests[0]?.startTime : null
     };
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Kafka, Producer, Consumer, EachMessagePayload, Message } from 'kafkajs';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 import {
   EventStreamingConfig,
   EventMessage,
@@ -15,12 +15,12 @@ import {
 @Injectable()
 export class KafkaService implements EventPublisher, EventSubscriber, OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(KafkaService.name);
-  private kafka: Kafka;
-  private producer: Producer;
-  private consumer: Consumer;
+  private kafka!: Kafka;
+  private producer!: Producer;
+  private consumer!: Consumer;
   private config: EventStreamingConfig;
   private handlers: Map<string, EventHandler[]> = new Map();
-  private metrics: EventStreamingMetrics;
+  private metrics!: EventStreamingMetrics;
   private isConnected = false;
 
   constructor(private configService: ConfigService) {
@@ -56,9 +56,9 @@ export class KafkaService implements EventPublisher, EventSubscriber, OnModuleIn
     this.kafka = new Kafka({
       clientId: this.config.kafka.clientId,
       brokers: this.config.kafka.brokers,
-      ssl: this.config.kafka.ssl,
+      ssl: this.config.kafka.ssl || false,
       sasl: this.config.kafka.sasl as any,
-      retry: this.config.kafka.retry,
+      retry: this.config.kafka.retry || { initialRetryTime: 100, retries: 3 },
     });
 
     this.producer = this.kafka.producer();
@@ -193,7 +193,7 @@ export class KafkaService implements EventPublisher, EventSubscriber, OnModuleIn
   private async handleMessage(payload: EachMessagePayload, topic: string): Promise<void> {
     try {
       const message = JSON.parse(payload.message.value?.toString() || '{}') as EventMessage;
-      const eventType = payload.message.headers?.eventType?.toString();
+      const eventType = payload.message.headers?.['eventType']?.toString();
 
       if (!eventType) {
         this.logger.warn('Received message without event type');
@@ -235,7 +235,7 @@ export class KafkaService implements EventPublisher, EventSubscriber, OnModuleIn
     }
   }
 
-  private async retryHandler(handler: EventHandler, message: EventMessage, error: any): Promise<void> {
+  private async retryHandler(handler: EventHandler, message: EventMessage, _error: any): Promise<void> {
     const maxRetries = handler.options?.maxRetries || 3;
     const retryDelay = handler.options?.retryDelay || 1000;
 

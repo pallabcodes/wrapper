@@ -36,7 +36,7 @@ export class TransactionInterceptor implements NestInterceptor {
 
     return new Observable(subscriber => {
       databaseService.beginTransaction(transactionOptions)
-        .then(transaction => {
+        .then((transaction: any) => {
           request.transaction = transaction;
           
           next.handle()
@@ -47,7 +47,7 @@ export class TransactionInterceptor implements NestInterceptor {
                     subscriber.next(result);
                     subscriber.complete();
                   })
-                  .catch(error => {
+                  .catch((error: any) => {
                     this.logger.error('Transaction commit failed', error);
                     subscriber.error(error);
                   });
@@ -57,7 +57,7 @@ export class TransactionInterceptor implements NestInterceptor {
                   .then(() => {
                     subscriber.error(error);
                   })
-                  .catch(rollbackError => {
+                  .catch((rollbackError: any) => {
                     this.logger.error('Transaction rollback failed', rollbackError);
                     subscriber.error(error);
                   });
@@ -66,7 +66,7 @@ export class TransactionInterceptor implements NestInterceptor {
             )
             .subscribe();
         })
-        .catch(error => {
+        .catch((error: any) => {
           this.logger.error('Failed to begin transaction', error);
           subscriber.error(error);
         });

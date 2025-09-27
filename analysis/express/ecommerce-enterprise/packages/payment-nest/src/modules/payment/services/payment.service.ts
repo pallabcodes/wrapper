@@ -51,7 +51,7 @@ export class PaymentService {
       // Update payment with provider response
       const updatedPayment = await this.paymentRepository.update(payment.id, {
         providerPaymentId: providerResult.providerPaymentId,
-        paymentUrl: providerResult.paymentUrl,
+        ...(providerResult.paymentUrl && { paymentUrl: providerResult.paymentUrl }),
         status: providerResult.status,
       });
 
@@ -234,7 +234,7 @@ export class PaymentService {
 
     const updatedPayment = await this.paymentRepository.update(id, {
       refundAmount: newRefundAmount,
-      refundReason: refundData.reason,
+      ...(refundData.reason && { refundReason: refundData.reason }),
       status,
     });
 
@@ -272,7 +272,7 @@ export class PaymentService {
       method: payment.method,
       description: payment.description,
       customerEmail: payment.customerEmail,
-      metadata: payment.metadata,
+      metadata: payment.metadata || {},
       providerPaymentId: payment.providerPaymentId,
       paymentUrl: payment.paymentUrl,
       refundAmount: payment.refundAmount,

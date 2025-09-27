@@ -5,7 +5,7 @@
  * Following the same pattern as auth module.
  */
 
-import { z } from 'zod'
+const { z } = require('zod')
 
 // ============================================================================
 // PRODUCT SCHEMAS

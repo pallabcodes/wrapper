@@ -34,7 +34,7 @@ export class HealthController {
           errorRate: 1.0,
         },
         timestamp: new Date().toISOString(),
-        error: error.message,
+        error: (error as Error).message,
       };
     }
   }
@@ -57,7 +57,7 @@ export class HealthController {
           errorRate: 1.0,
         },
         timestamp: new Date().toISOString(),
-        error: error.message,
+        error: (error as Error).message,
       };
     }
   }

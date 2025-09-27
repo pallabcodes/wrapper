@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+// import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import { RestoreJob, BackupJob } from '../interfaces/disaster-recovery.interface';
 
@@ -9,7 +9,7 @@ export class RestoreService {
   private activeRestores: Map<string, RestoreJob> = new Map();
   private restoreHistory: RestoreJob[] = [];
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(/* private readonly configService: ConfigService */) {}
 
   async startRestore(
     backupJobId: string,
@@ -26,9 +26,9 @@ export class RestoreService {
       status: 'running',
       startTime: new Date(),
       targetEnvironment,
-      targetDatabase: options.targetDatabase,
-      targetTables: options.targetTables,
-      pointInTime: options.pointInTime,
+      ...(options.targetDatabase && { targetDatabase: options.targetDatabase }),
+      ...(options.targetTables && { targetTables: options.targetTables }),
+      ...(options.pointInTime && { pointInTime: options.pointInTime }),
       progress: {
         current: 0,
         total: 100,
@@ -47,8 +47,8 @@ export class RestoreService {
       restoreJob.status = 'failed';
       restoreJob.endTime = new Date();
       restoreJob.duration = restoreJob.endTime.getTime() - restoreJob.startTime.getTime();
-      restoreJob.error = error.message;
-      this.logger.error(`Restore job failed: ${error.message}`, error.stack);
+      restoreJob.error = (error as Error).message;
+      this.logger.error(`Restore job failed: ${(error as Error).message}`, (error as Error).stack);
     }
 
     this.activeRestores.delete(restoreJob.id);
@@ -81,7 +81,7 @@ export class RestoreService {
     for (let i = 0; i < steps.length; i++) {
       restoreJob.progress.current = i + 1;
       restoreJob.progress.percentage = Math.round(((i + 1) / steps.length) * 100);
-      restoreJob.progress.currentFile = steps[i];
+      restoreJob.progress.currentFile = steps[i] || '';
 
       this.logger.log(`Restore step ${i + 1}/${steps.length}: ${steps[i]}`);
 
@@ -188,11 +188,11 @@ export class RestoreService {
       activeJobs,
       successRate: totalJobs > 0 ? (completedJobs / totalJobs) * 100 : 0,
       averageDuration: averageDuration || 0,
-      lastRestore: this.restoreHistory.length > 0 ? this.restoreHistory[0].startTime : null
+      lastRestore: this.restoreHistory.length > 0 ? this.restoreHistory[0]?.startTime : null
     };
   }
 
-  async getAvailableBackups(environment?: string): Promise<BackupJob[]> {
+  async getAvailableBackups(_environment?: string): Promise<BackupJob[]> {
     // In a real implementation, this would query actual backup storage
     // For demo purposes, return simulated backup jobs
     const mockBackups: BackupJob[] = [
@@ -252,7 +252,7 @@ export class RestoreService {
     return mockBackups;
   }
 
-  async testRestore(backupJobId: string, testEnvironment: string): Promise<{
+  async testRestore(backupJobId: string, _testEnvironment: string): Promise<{
     success: boolean;
     duration: number;
     issues: string[];
@@ -292,7 +292,7 @@ export class RestoreService {
       return {
         success: false,
         duration: Date.now() - startTime,
-        issues: [error.message],
+        issues: [(error as Error).message],
         recommendations: ['Contact technical support for assistance']
       };
     }

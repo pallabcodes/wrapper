@@ -2,8 +2,8 @@
  * Environment Configuration
  */
 
-import { z } from 'zod'
-import dotenv from 'dotenv'
+import { z } from 'zod';
+import dotenv from 'dotenv';
 
 // Load environment variables from .env file
 dotenv.config()

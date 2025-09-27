@@ -8,26 +8,26 @@ import { logger } from '../utils/logger'
 const router = Router()
 
 // Basic health check
-router.get('/', (req: Request, res: Response) => {
+router.get('/', (_req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     service: 'notification-microservice',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env['NODE_ENV'] || 'development'
   })
 })
 
 // Detailed health check
-router.get('/detailed', (req: Request, res: Response) => {
+router.get('/detailed', (_req: Request, res: Response) => {
   const health = {
     status: 'healthy',
     service: 'notification-microservice',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
+    environment: process.env['NODE_ENV'] || 'development',
     checks: {
       database: 'healthy', // TODO: Add actual database health check
       redis: 'healthy',    // TODO: Add actual Redis health check
@@ -45,7 +45,7 @@ router.get('/detailed', (req: Request, res: Response) => {
 })
 
 // Readiness probe
-router.get('/ready', (req: Request, res: Response) => {
+router.get('/ready', (_req: Request, res: Response) => {
   // TODO: Add actual readiness checks (database connections, etc.)
   res.json({
     status: 'ready',
@@ -55,7 +55,7 @@ router.get('/ready', (req: Request, res: Response) => {
 })
 
 // Liveness probe
-router.get('/live', (req: Request, res: Response) => {
+router.get('/live', (_req: Request, res: Response) => {
   res.json({
     status: 'alive',
     service: 'notification-microservice',

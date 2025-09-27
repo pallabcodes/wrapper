@@ -6,7 +6,7 @@ import {
   RegionEvent,
   MultiRegionMetrics 
 } from '../interfaces/multi-region.interface';
-import axios from 'axios';
+// import axios from 'axios';
 import * as uuid from 'uuid';
 
 @Injectable()
@@ -208,7 +208,7 @@ export class RegionManagerService {
       this.healthChecks.set(region.id, health);
 
       // Update region status based on health
-      const previousStatus = region.status;
+      // const previousStatus = region.status;
       if (health.status === 'unhealthy' && region.status === 'active') {
         region.status = 'failed';
         this.emitEvent('region-down', region.id, { health });
@@ -223,7 +223,7 @@ export class RegionManagerService {
       region.latency.average = responseTime;
 
     } catch (error) {
-      this.logger.error(`Health check failed for region ${region.id}: ${error.message}`);
+      this.logger.error(`Health check failed for region ${region.id}: ${(error as Error).message}`);
       
       const health: RegionHealth = {
         regionId: region.id,
@@ -231,7 +231,7 @@ export class RegionManagerService {
         responseTime: -1,
         errorRate: 1,
         lastCheck: new Date(),
-        issues: [`Health check failed: ${error.message}`],
+        issues: [`Health check failed: ${(error as Error).message}`],
         metrics: {
           cpu: 0,
           memory: 0,
@@ -242,11 +242,11 @@ export class RegionManagerService {
 
       this.healthChecks.set(region.id, health);
       region.status = 'failed';
-      this.emitEvent('region-down', region.id, { error: error.message });
+      this.emitEvent('region-down', region.id, { error: (error as Error).message });
     }
   }
 
-  private async simulateHealthCheck(region: RegionConfig): Promise<any> {
+  private async simulateHealthCheck(_region: RegionConfig): Promise<any> {
     // Simulate health check response
     const isHealthy = Math.random() > 0.1; // 90% chance of being healthy
     

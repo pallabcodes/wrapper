@@ -1,0 +1,55 @@
+services:
+  reservations:
+    build:
+      context: .
+      dockerfile: ./apps/reservations/Dockerfile
+      target: development
+    command: sh -c "pnpm prisma migrate deploy --schema apps/reservations/prisma/schema.prisma && pnpm prisma generate --schema apps/reservations/prisma/schema.prisma && pnpm run start:dev reservations"
+    depends_on:
+      - postgres
+    env_file:
+      - ./apps/reservations/.env
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/usr/src/app
+  auth:
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+      target: development
+    command: sh -c "pnpm prisma migrate deploy --schema apps/auth/prisma/schema.prisma && pnpm prisma generate --schema apps/auth/prisma/schema.prisma && pnpm run start:dev auth"
+    depends_on:
+      - postgres
+    env_file:
+      - ./apps/auth/.env
+    ports:
+      - '3001:3001'
+    volumes:
+      - .:/usr/src/app
+  payments:
+    build:
+      context: .
+      dockerfile: ./apps/payments/Dockerfile
+      target: development
+    command: pnpm run start:dev payments
+    env_file:
+      - ./apps/payments/.env
+    volumes:
+      - .:/usr/src/app
+  notifications:
+    build:
+      context: .
+      dockerfile: ./apps/notifications/Dockerfile
+      target: development
+    command: pnpm run start:dev notifications
+    env_file:
+      - ./apps/notifications/.env
+    volumes:
+      - .:/usr/src/app
+  postgres:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: postgres

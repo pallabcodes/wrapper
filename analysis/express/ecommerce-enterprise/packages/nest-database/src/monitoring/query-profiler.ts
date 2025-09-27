@@ -21,8 +21,8 @@ export class QueryProfiler {
       query,
       duration: 0,
       timestamp: new Date(),
-      parameters,
-      stack: new Error().stack,
+      parameters: parameters || [],
+      stack: new Error().stack || '',
     };
     
     this.profiles.set(id, profile);

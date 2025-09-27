@@ -1,4 +1,4 @@
-import { Controller, Get, Post, HttpCode, HttpStatus, Inject } from '@nestjs/common';
+import { Controller, Get, Post, HttpCode, HttpStatus } from '@nestjs/common';
 import { EnterpriseDemoService } from './enterprise-demo.service';
 import { TestService } from './test.service';
 
@@ -24,8 +24,8 @@ export class EnterpriseDemoController {
       return await this.enterpriseDemoService.getSystemHealth();
     } catch (error) {
       return {
-        error: error.message,
-        stack: error.stack
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       };
     }
   }
@@ -52,8 +52,8 @@ export class EnterpriseDemoController {
       return await this.enterpriseDemoService.getIntegrationStats();
     } catch (error) {
       return {
-        error: error.message,
-        stack: error.stack
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       };
     }
   }
@@ -64,8 +64,8 @@ export class EnterpriseDemoController {
       return await this.enterpriseDemoService.demonstrateSAPIntegration();
     } catch (error) {
       return {
-        error: error.message,
-        stack: error.stack
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       };
     }
   }
@@ -76,8 +76,8 @@ export class EnterpriseDemoController {
       return await this.enterpriseDemoService.demonstrateSalesforceIntegration();
     } catch (error) {
       return {
-        error: error.message,
-        stack: error.stack
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       };
     }
   }
@@ -88,8 +88,8 @@ export class EnterpriseDemoController {
       return await this.enterpriseDemoService.demonstrateDataSync();
     } catch (error) {
       return {
-        error: error.message,
-        stack: error.stack
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       };
     }
   }
@@ -100,8 +100,8 @@ export class EnterpriseDemoController {
       return await this.enterpriseDemoService.demonstrateConflictResolution();
     } catch (error) {
       return {
-        error: error.message,
-        stack: error.stack
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       };
     }
   }
@@ -112,8 +112,8 @@ export class EnterpriseDemoController {
       return await this.enterpriseDemoService.demonstrateBulkOperations();
     } catch (error) {
       return {
-        error: error.message,
-        stack: error.stack
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       };
     }
   }
@@ -125,8 +125,8 @@ export class EnterpriseDemoController {
       return await this.enterpriseDemoService.clearCache();
     } catch (error) {
       return {
-        error: error.message,
-        stack: error.stack
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       };
     }
   }
@@ -138,8 +138,8 @@ export class EnterpriseDemoController {
       return await this.enterpriseDemoService.resetCircuitBreakers();
     } catch (error) {
       return {
-        error: error.message,
-        stack: error.stack
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       };
     }
   }

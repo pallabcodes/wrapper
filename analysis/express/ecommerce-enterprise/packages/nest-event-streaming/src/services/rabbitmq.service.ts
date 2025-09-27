@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqplib';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 import {
   EventStreamingConfig,
   EventMessage,
@@ -19,7 +19,7 @@ export class RabbitMQService implements EventPublisher, EventSubscriber, OnModul
   private channel: any = null;
   private config: EventStreamingConfig;
   private handlers: Map<string, EventHandler[]> = new Map();
-  private metrics: EventStreamingMetrics;
+  private metrics!: EventStreamingMetrics;
   private isConnected = false;
 
   constructor(private configService: ConfigService) {
@@ -162,7 +162,7 @@ export class RabbitMQService implements EventPublisher, EventSubscriber, OnModul
       await this.channel.bindQueue(queue.queue, this.config.rabbitmq!.exchange, routingKey);
 
       // Consume messages
-      await this.channel.consume(queue.queue, async (msg) => {
+      await this.channel.consume(queue.queue, async (msg: any) => {
         if (msg) {
           await this.handleMessage(msg, topic, handler);
           this.channel.ack(msg);
@@ -199,10 +199,10 @@ export class RabbitMQService implements EventPublisher, EventSubscriber, OnModul
     return new Map(this.handlers);
   }
 
-  private async handleMessage(msg: amqp.ConsumeMessage, topic: string, handler: EventHandler): Promise<void> {
+  private async handleMessage(msg: amqp.ConsumeMessage, _topic: string, handler: EventHandler): Promise<void> {
     try {
       const message = JSON.parse(msg.content.toString()) as EventMessage;
-      const eventType = msg.properties.headers?.eventType as string;
+      const eventType = msg.properties.headers?.['eventType'] as string;
 
       if (!eventType || eventType !== handler.eventType) {
         this.logger.warn('Received message with mismatched event type');
@@ -233,7 +233,7 @@ export class RabbitMQService implements EventPublisher, EventSubscriber, OnModul
     }
   }
 
-  private async retryHandler(handler: EventHandler, message: EventMessage, error: any): Promise<void> {
+  private async retryHandler(handler: EventHandler, message: EventMessage, _error: any): Promise<void> {
     const maxRetries = handler.options?.maxRetries || 3;
     const retryDelay = handler.options?.retryDelay || 1000;
 

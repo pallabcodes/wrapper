@@ -37,7 +37,7 @@ export class CacheModule {
         useFactory: () => {
           return new MemoryLRUStore({ 
             max: options.memory?.maxSize || 1000, 
-            ttl: options.memory?.ttl 
+            ...(options.memory?.ttl && { ttl: options.memory.ttl })
           });
         },
       });

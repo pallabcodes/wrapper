@@ -11,7 +11,6 @@ export * from './services/performance.service';
 
 // Interfaces and types
 export * from './interfaces/orm-options.interface';
-export * from './types';
 
 // Decorators
 export * from './decorators/query.decorator';

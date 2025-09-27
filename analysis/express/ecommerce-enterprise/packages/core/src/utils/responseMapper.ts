@@ -5,7 +5,7 @@
  * Kept under 200 lines for maintainability.
  */
 
-import { z } from 'zod'
+const { z } = require('zod')
 
 // ============================================================================
 // BASE SCHEMAS AND TYPES
@@ -23,7 +23,7 @@ export const baseResponseSchema = z.object({
   }).optional()
 })
 
-export type BaseResponse = z.infer<typeof baseResponseSchema>
+export type BaseResponse = any
 
 export type ResponseMeta = {
   version?: string

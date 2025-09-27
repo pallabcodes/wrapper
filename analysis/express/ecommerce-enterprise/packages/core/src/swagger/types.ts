@@ -4,7 +4,7 @@
  * Core types for building OpenAPI specifications using functional programming patterns.
  */
 
-import { z } from 'zod'
+// import { z } from 'zod' // Not used in this file
 
 // Core OpenAPI specification types
 export interface OpenAPISpec {
@@ -125,14 +125,14 @@ export interface RouteDefinition {
   tags: string[]
   requestBody?: {
     required: boolean
-    schema: z.ZodTypeAny
+    schema: OpenAPISchema
   }
   responses: Record<string, {
     description: string
-    schema?: z.ZodTypeAny
+    schema?: OpenAPISchema
   }>
   security?: OpenAPISecurityRequirement[]
-  pathParams?: z.ZodTypeAny
+  pathParams?: OpenAPISchema
 }
 
 // Result types for functional programming

@@ -1,5 +1,5 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
-import { CacheStore, CacheEntry } from './interfaces/cache-store.interface';
+import { CacheStore } from './interfaces/cache-store.interface';
 import { CacheOptions } from './interfaces/cache-options.interface';
 import { CacheKeyBuilder } from './utils/cache-key-builder';
 
@@ -17,12 +17,12 @@ export class CacheService {
 
   constructor(
     @Inject('CACHE_STORE') private readonly store: CacheStore,
-    @Inject('CACHE_OPTIONS') private readonly options: CacheOptions,
+    @Inject('CACHE_OPTIONS') private readonly _options: CacheOptions,
   ) {
-    this.keyBuilder = new CacheKeyBuilder(options.redis?.keyPrefix || 'cache');
+    this.keyBuilder = new CacheKeyBuilder(_options.redis?.keyPrefix || 'cache');
   }
 
-  async get<T>(key: string, options?: { ttl?: number }): Promise<T | undefined> {
+  async get<T>(key: string, _options?: { ttl?: number }): Promise<T | undefined> {
     try {
       const fullKey = this.keyBuilder.build(key);
       const entry = await this.store.get<T>(fullKey);
@@ -46,7 +46,7 @@ export class CacheService {
   async set<T>(key: string, value: T, ttl?: number): Promise<void> {
     try {
       const fullKey = this.keyBuilder.build(key);
-      const finalTtl = ttl || this.options.ttl || 3600;
+      const finalTtl = ttl || this._options.ttl || 3600;
       
       await this.store.set(fullKey, value, finalTtl);
       this.metrics.sets++;

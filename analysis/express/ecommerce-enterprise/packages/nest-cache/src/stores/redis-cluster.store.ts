@@ -27,7 +27,7 @@ export class RedisClusterStore implements CacheStore {
       },
     });
 
-    this.redis.on('error', (error) => {
+    (this.redis as any).on('error', (error: Error) => {
       console.error('Redis cluster error:', error);
     });
   }
@@ -59,7 +59,7 @@ export class RedisClusterStore implements CacheStore {
       
       // Update in background
       setImmediate(() => {
-        this.redis.set(fullKey, JSON.stringify(entry), 'EX', entry.ttl || 3600);
+        this.redis.setex(fullKey, entry.ttl || 3600, JSON.stringify(entry));
       });
 
       return entry;
@@ -129,7 +129,7 @@ export class RedisClusterStore implements CacheStore {
       const keys = await this.redis.keys(pattern);
       
       if (keys.length > 0) {
-        await this.redis.del(...keys);
+        await (this.redis as any).del(keys);
       }
     } catch (error) {
       console.error('Redis clear error:', error);
@@ -185,7 +185,9 @@ export class RedisClusterStore implements CacheStore {
           
           // Check TTL
           if (entry.ttl && Date.now() - entry.createdAt > entry.ttl * 1000) {
-            this.del(keys[index]);
+            if (keys[index]) {
+              this.del(keys[index]);
+            }
             return undefined;
           }
           
@@ -202,7 +204,7 @@ export class RedisClusterStore implements CacheStore {
 
   async mset<T>(entries: Array<{ key: string; value: T; ttl?: number }>): Promise<void> {
     try {
-      const pipeline = this.redis.pipeline();
+      const pipeline = (this.redis as any).pipeline();
       
       for (const entry of entries) {
         const fullKey = this.buildKey(entry.key);
@@ -232,7 +234,7 @@ export class RedisClusterStore implements CacheStore {
   async mdel(keys: string[]): Promise<void> {
     try {
       const fullKeys = keys.map(key => this.buildKey(key));
-      await this.redis.del(...fullKeys);
+      await (this.redis as any).del(fullKeys);
     } catch (error) {
       console.error('Redis mdel error:', error);
     }
@@ -241,7 +243,7 @@ export class RedisClusterStore implements CacheStore {
   async increment(key: string, value: number = 1): Promise<number> {
     try {
       const fullKey = this.buildKey(key);
-      return await this.redis.incrby(fullKey, value);
+      return await (this.redis as any).incrby(fullKey, value);
     } catch (error) {
       console.error('Redis increment error:', error);
       return 0;
@@ -251,7 +253,7 @@ export class RedisClusterStore implements CacheStore {
   async decrement(key: string, value: number = 1): Promise<number> {
     try {
       const fullKey = this.buildKey(key);
-      return await this.redis.decrby(fullKey, value);
+      return await (this.redis as any).decrby(fullKey, value);
     } catch (error) {
       console.error('Redis decrement error:', error);
       return 0;
@@ -262,7 +264,7 @@ export class RedisClusterStore implements CacheStore {
   async hget<T>(key: string, field: string): Promise<T | undefined> {
     try {
       const fullKey = this.buildKey(key);
-      const value = await this.redis.hget(fullKey, field);
+      const value = await (this.redis as any).hget(fullKey, field);
       return value ? JSON.parse(value) : undefined;
     } catch (error) {
       console.error('Redis hget error:', error);
@@ -273,7 +275,7 @@ export class RedisClusterStore implements CacheStore {
   async hset<T>(key: string, field: string, value: T): Promise<void> {
     try {
       const fullKey = this.buildKey(key);
-      await this.redis.hset(fullKey, field, JSON.stringify(value));
+      await (this.redis as any).hset(fullKey, field, JSON.stringify(value));
     } catch (error) {
       console.error('Redis hset error:', error);
     }
@@ -282,7 +284,7 @@ export class RedisClusterStore implements CacheStore {
   async hdel(key: string, field: string): Promise<void> {
     try {
       const fullKey = this.buildKey(key);
-      await this.redis.hdel(fullKey, field);
+      await (this.redis as any).hdel(fullKey, field);
     } catch (error) {
       console.error('Redis hdel error:', error);
     }
@@ -291,12 +293,12 @@ export class RedisClusterStore implements CacheStore {
   async hgetall<T>(key: string): Promise<Record<string, T>> {
     try {
       const fullKey = this.buildKey(key);
-      const hash = await this.redis.hgetall(fullKey);
+      const hash = await (this.redis as any).hgetall(fullKey);
       
       const result: Record<string, T> = {};
       for (const [field, value] of Object.entries(hash)) {
         try {
-          result[field] = JSON.parse(value);
+          result[field] = JSON.parse(value as string);
         } catch {
           result[field] = value as T;
         }
@@ -313,7 +315,7 @@ export class RedisClusterStore implements CacheStore {
   async sadd(key: string, ...members: string[]): Promise<number> {
     try {
       const fullKey = this.buildKey(key);
-      return await this.redis.sadd(fullKey, ...members);
+      return await (this.redis as any).sadd(fullKey, ...members);
     } catch (error) {
       console.error('Redis sadd error:', error);
       return 0;
@@ -323,7 +325,7 @@ export class RedisClusterStore implements CacheStore {
   async srem(key: string, ...members: string[]): Promise<number> {
     try {
       const fullKey = this.buildKey(key);
-      return await this.redis.srem(fullKey, ...members);
+      return await (this.redis as any).srem(fullKey, ...members);
     } catch (error) {
       console.error('Redis srem error:', error);
       return 0;
@@ -333,7 +335,7 @@ export class RedisClusterStore implements CacheStore {
   async smembers(key: string): Promise<string[]> {
     try {
       const fullKey = this.buildKey(key);
-      return await this.redis.smembers(fullKey);
+      return await (this.redis as any).smembers(fullKey);
     } catch (error) {
       console.error('Redis smembers error:', error);
       return [];
@@ -343,7 +345,7 @@ export class RedisClusterStore implements CacheStore {
   async sismember(key: string, member: string): Promise<boolean> {
     try {
       const fullKey = this.buildKey(key);
-      const result = await this.redis.sismember(fullKey, member);
+      const result = await (this.redis as any).sismember(fullKey, member);
       return result === 1;
     } catch (error) {
       console.error('Redis sismember error:', error);
@@ -355,7 +357,7 @@ export class RedisClusterStore implements CacheStore {
   async zadd(key: string, score: number, member: string): Promise<number> {
     try {
       const fullKey = this.buildKey(key);
-      return await this.redis.zadd(fullKey, score, member);
+      return await (this.redis as any).zadd(fullKey, score, member);
     } catch (error) {
       console.error('Redis zadd error:', error);
       return 0;
@@ -365,7 +367,7 @@ export class RedisClusterStore implements CacheStore {
   async zrem(key: string, member: string): Promise<number> {
     try {
       const fullKey = this.buildKey(key);
-      return await this.redis.zrem(fullKey, member);
+      return await (this.redis as any).zrem(fullKey, member);
     } catch (error) {
       console.error('Redis zrem error:', error);
       return 0;
@@ -375,7 +377,7 @@ export class RedisClusterStore implements CacheStore {
   async zrange(key: string, start: number, stop: number): Promise<string[]> {
     try {
       const fullKey = this.buildKey(key);
-      return await this.redis.zrange(fullKey, start, stop);
+      return await (this.redis as any).zrange(fullKey, start, stop);
     } catch (error) {
       console.error('Redis zrange error:', error);
       return [];
@@ -385,7 +387,7 @@ export class RedisClusterStore implements CacheStore {
   async zrangebyscore(key: string, min: number, max: number): Promise<string[]> {
     try {
       const fullKey = this.buildKey(key);
-      return await this.redis.zrangebyscore(fullKey, min, max);
+      return await (this.redis as any).zrangebyscore(fullKey, min, max);
     } catch (error) {
       console.error('Redis zrangebyscore error:', error);
       return [];

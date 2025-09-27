@@ -1,5 +1,5 @@
 import { CacheStore, CacheEntry } from '../interfaces/cache-store.interface';
-import { createCipher, createDecipher, randomBytes } from 'crypto';
+import { createCipher, createDecipher } from 'crypto';
 
 export class EncryptedStore implements CacheStore {
   private algorithm = 'aes-256-cbc';
@@ -22,7 +22,7 @@ export class EncryptedStore implements CacheStore {
       const value = JSON.parse(decrypted);
       return {
         value,
-        ttl: encrypted.ttl,
+        ttl: encrypted.ttl || 0,
         createdAt: encrypted.createdAt,
         accessCount: encrypted.accessCount,
         lastAccessed: encrypted.lastAccessed,

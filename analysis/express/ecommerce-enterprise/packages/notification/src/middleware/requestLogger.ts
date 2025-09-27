@@ -38,7 +38,7 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction): 
   next()
 }
 
-export const logRequest = (req: Request, res: Response, next: NextFunction): void => {
+export const logRequest = (req: Request, _res: Response, next: NextFunction): void => {
   logger.debug('Incoming request', {
     method: req.method,
     url: req.url,

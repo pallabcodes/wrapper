@@ -8,6 +8,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { z } from 'zod'
 import { SwaggerManager, RouteDefinition } from './SwaggerBuilder'
+import { zodToOpenAPI } from './zodConverter'
 
 // Functional middleware creator
 export const createSwaggerMiddleware = (
@@ -88,7 +89,7 @@ declare global {
 
 // Functional CRUD route generators
 export const createRouteDefinitions = {
-  list: (path: string, resource: string, schema: z.ZodTypeAny): RouteDefinition => ({
+  list: (path: string, resource: string, schema: z.ZodSchema): RouteDefinition => ({
     path,
     method: 'get',
     summary: `List ${resource}`,
@@ -97,32 +98,44 @@ export const createRouteDefinitions = {
     responses: {
       '200': {
         description: `List of ${resource}`,
-        schema: z.object({
-          data: z.array(schema),
-          pagination: z.object({
-            page: z.number(),
-            limit: z.number(),
-            total: z.number(),
-            pages: z.number()
-          })
-        })
+        schema: {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'array',
+              items: zodToOpenAPI(schema)
+            },
+            pagination: {
+              type: 'object',
+              properties: {
+                page: { type: 'number' },
+                limit: { type: 'number' },
+                total: { type: 'number' },
+                pages: { type: 'number' }
+              }
+            }
+          }
+        }
       }
     }
   }),
 
-  get: (path: string, resource: string, schema: z.ZodTypeAny): RouteDefinition => ({
+  get: (path: string, resource: string, schema: z.ZodSchema): RouteDefinition => ({
     path,
     method: 'get',
     summary: `Get ${resource}`,
     description: `Get a single ${resource} by ID`,
     tags: [resource],
-    pathParams: z.object({
-      id: z.string()
-    }),
+    pathParams: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' }
+      }
+    },
     responses: {
       '200': {
         description: `${resource} found`,
-        schema: schema
+        schema: zodToOpenAPI(schema) as any
       },
       '404': {
         description: `${resource} not found`
@@ -130,7 +143,7 @@ export const createRouteDefinitions = {
     }
   }),
 
-  create: (path: string, resource: string, schema: z.ZodTypeAny): RouteDefinition => ({
+  create: (path: string, resource: string, schema: z.ZodSchema): RouteDefinition => ({
     path,
     method: 'post',
     summary: `Create ${resource}`,
@@ -138,12 +151,12 @@ export const createRouteDefinitions = {
     tags: [resource],
     requestBody: {
       required: true,
-      schema: schema
+      schema: zodToOpenAPI(schema)
     },
     responses: {
       '201': {
         description: `${resource} created successfully`,
-        schema: schema
+        schema: zodToOpenAPI(schema) as any
       },
       '400': {
         description: 'Invalid input'
@@ -151,23 +164,26 @@ export const createRouteDefinitions = {
     }
   }),
 
-  update: (path: string, resource: string, schema: z.ZodTypeAny): RouteDefinition => ({
+  update: (path: string, resource: string, schema: z.ZodSchema): RouteDefinition => ({
     path,
     method: 'put',
     summary: `Update ${resource}`,
     description: `Update an existing ${resource}`,
     tags: [resource],
-    pathParams: z.object({
-      id: z.string()
-    }),
+    pathParams: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' }
+      }
+    },
     requestBody: {
       required: true,
-      schema: schema
+      schema: zodToOpenAPI(schema)
     },
     responses: {
       '200': {
         description: `${resource} updated successfully`,
-        schema: schema
+        schema: zodToOpenAPI(schema) as any
       },
       '404': {
         description: `${resource} not found`
@@ -181,9 +197,12 @@ export const createRouteDefinitions = {
     summary: `Delete ${resource}`,
     description: `Delete a ${resource}`,
     tags: [resource],
-    pathParams: z.object({
-      id: z.string()
-    }),
+    pathParams: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' }
+      }
+    },
     responses: {
       '204': {
         description: `${resource} deleted successfully`

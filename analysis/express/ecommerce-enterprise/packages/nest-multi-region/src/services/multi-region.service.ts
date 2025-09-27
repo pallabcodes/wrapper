@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+// import { ConfigService } from '@nestjs/config';
 import { 
   MultiRegionMetrics,
   RegionConfig,
@@ -17,7 +17,7 @@ export class MultiRegionService {
   private readonly logger = new Logger(MultiRegionService.name);
 
   constructor(
-    private configService: ConfigService,
+    // private configService: ConfigService,
     private regionManager: RegionManagerService,
     private dataReplication: DataReplicationService,
     private loadBalancer: LoadBalancerService
@@ -261,7 +261,7 @@ export class MultiRegionService {
     const healthChecks = this.regionManager.getAllRegionHealth();
 
     const regionPerformance = healthChecks.map(health => {
-      const region = this.regionManager.getRegion(health.regionId);
+      // const region = this.regionManager.getRegion(health.regionId);
       const requestCount = loadBalancerStats.regionStats.find(
         stat => stat.regionId === health.regionId
       )?.requestCount || 0;

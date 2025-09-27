@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DatabaseQuery, QueryResult, TransactionOptions, TransactionResult } from '../types';
-import { drizzle, PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { DatabaseQuery, QueryResult, TransactionOptions } from '../types';
+import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { eq, and, or, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 
 @Injectable()
 export class DrizzleService {
   private readonly logger = new Logger(DrizzleService.name);
-  private db: PostgresJsDatabase;
+  private db!: PostgresJsDatabase<any>;
   private isConnectedFlag = false;
 
   constructor() {
@@ -16,7 +16,7 @@ export class DrizzleService {
 
   async connect(): Promise<void> {
     try {
-      const connectionString = process.env.DATABASE_URL || 'postgresql://localhost:5432/ecommerce';
+      const connectionString = process.env['DATABASE_URL'] || 'postgresql://localhost:5432/ecommerce';
       const client = postgres(connectionString);
       this.db = drizzle(client);
       this.isConnectedFlag = true;
@@ -81,16 +81,16 @@ export class DrizzleService {
       };
 
     } catch (error) {
-      this.logger.error(`Drizzle query execution failed: ${error.message}`, error.stack);
+      this.logger.error(`Drizzle query execution failed: ${(error as Error).message}`, (error as Error).stack);
       throw error;
     }
   }
 
   async executeTransaction<T = any>(
     queries: DatabaseQuery[],
-    options?: TransactionOptions
+    _options?: TransactionOptions
   ): Promise<T> {
-    const startTime = Date.now();
+    // const startTime = Date.now();
     
     try {
       const result = await this.db.transaction(async (tx) => {
@@ -107,7 +107,7 @@ export class DrizzleService {
       return result as T;
 
     } catch (error) {
-      this.logger.error(`Drizzle transaction execution failed: ${error.message}`, error.stack);
+      this.logger.error(`Drizzle transaction execution failed: ${(error as Error).message}`, (error as Error).stack);
       throw error;
     }
   }
@@ -115,7 +115,7 @@ export class DrizzleService {
   private async executeSelect<T>(query: DatabaseQuery<T>): Promise<T[]> {
     const table = this.getTable(query.table);
     
-    let selectQuery = this.db.select().from(table);
+    let selectQuery: any = this.db.select().from(table);
     
     // Apply where conditions
     if (query.where) {
@@ -143,7 +143,7 @@ export class DrizzleService {
     // Apply field selection
     if (query.select) {
       const selectFields = query.select.map(field => sql.identifier(field));
-      selectQuery = this.db.select(...selectFields).from(table);
+      selectQuery = (this.db as any).select(...selectFields).from(table);
     }
     
     return await selectQuery;
@@ -153,10 +153,10 @@ export class DrizzleService {
     const table = this.getTable(query.table);
     
     if (Array.isArray(query.data)) {
-      const result = await this.db.insert(table).values(query.data).returning();
+      const result = await this.db.insert(table).values(query.data || []).returning();
       return result as T;
     } else {
-      const result = await this.db.insert(table).values(query.data).returning();
+      const result = await this.db.insert(table).values(query.data || {}).returning();
       return result[0] as T;
     }
   }
@@ -167,7 +167,7 @@ export class DrizzleService {
     const whereConditions = this.buildWhereConditions(query.where || {});
     const result = await this.db
       .update(table)
-      .set(query.data)
+      .set(query.data || {})
       .where(and(...whereConditions))
       .returning();
     
@@ -191,7 +191,14 @@ export class DrizzleService {
       throw new Error('Raw SQL query requires sql property');
     }
     
-    return await this.db.execute(sql.raw(query.sql, ...(query.params || []))) as T[];
+    const params = query.params || [];
+    if (params.length === 0) {
+      return await (this.db as any).execute(sql.raw(query.sql)) as T[];
+    } else {
+      // Use Function.prototype.apply to avoid spread operator issues
+      const rawQuery = sql.raw as any;
+      return await (this.db as any).execute(rawQuery.apply(sql, [query.sql, ...params])) as T[];
+    }
   }
 
   private async executeWithTransaction(tx: any, query: DatabaseQuery): Promise<any> {
@@ -243,7 +250,14 @@ export class DrizzleService {
         return deleteResult[0];
       
       case 'raw':
-        return await tx.execute(sql.raw(query.sql!, ...(query.params || [])));
+        const params = query.params || [];
+        if (params.length === 0) {
+          return await tx.execute(sql.raw(query.sql!));
+        } else {
+          // Use Function.prototype.apply to avoid spread operator issues
+          const rawQuery = sql.raw as any;
+          return await tx.execute(rawQuery.apply(sql, [query.sql!, ...params]));
+        }
       
       default:
         throw new Error(`Unsupported query type: ${query.type}`);

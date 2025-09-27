@@ -15,7 +15,7 @@ export const errorHandler = (
   error: AppError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void => {
   // Log the error
   logger.error('Error occurred:', {
@@ -33,7 +33,7 @@ export const errorHandler = (
   const code = error.code || 'INTERNAL_ERROR'
 
   // Don't leak error details in production
-  const isDevelopment = process.env.NODE_ENV === 'development'
+  const isDevelopment = process.env['NODE_ENV'] === 'development'
   const errorResponse = {
     error: {
       code,

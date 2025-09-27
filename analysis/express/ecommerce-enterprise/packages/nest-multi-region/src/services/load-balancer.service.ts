@@ -5,7 +5,7 @@ import {
   GlobalLoadBalancer, 
   RegionConfig,
   RoutingRule,
-  FailoverConfig 
+  // FailoverConfig 
 } from '../interfaces/multi-region.interface';
 import { RegionManagerService } from './region-manager.service';
 import * as uuid from 'uuid';
@@ -14,7 +14,7 @@ import * as uuid from 'uuid';
 export class LoadBalancerService {
   private readonly logger = new Logger(LoadBalancerService.name);
   private config: LoadBalancerConfig;
-  private globalLoadBalancer: GlobalLoadBalancer;
+  private globalLoadBalancer!: GlobalLoadBalancer;
   private requestCounts: Map<string, number> = new Map();
   private lastRequestTimes: Map<string, Date> = new Map();
 
@@ -139,13 +139,13 @@ export class LoadBalancerService {
         }
 
       } catch (error) {
-        this.logger.error(`Health check failed for region ${region.id}: ${error.message}`);
+        this.logger.error(`Health check failed for region ${region.id}: ${(error as Error).message}`);
         this.handleRegionFailure(region.id);
       }
     }
   }
 
-  private async checkRegionHealth(region: RegionConfig): Promise<boolean> {
+  private async checkRegionHealth(_region: RegionConfig): Promise<boolean> {
     // Simulate health check (in real implementation, make actual HTTP call)
     await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
     
@@ -178,8 +178,10 @@ export class LoadBalancerService {
       
       if (secondaryRegions.length > 0) {
         const newPrimary = secondaryRegions[0];
-        failoverConfig.primaryRegion = newPrimary.id;
-        this.logger.log(`Failover completed: new primary region is ${newPrimary.id}`);
+        if (newPrimary) {
+          failoverConfig.primaryRegion = newPrimary.id;
+          this.logger.log(`Failover completed: new primary region is ${newPrimary.id}`);
+        }
       }
     }
   }
@@ -289,29 +291,43 @@ export class LoadBalancerService {
         return this.selectGeographic(activeRegions, request.clientLocation);
       
       default:
-        return activeRegions[0];
+        return activeRegions[0] || null;
     }
   }
 
   private selectRoundRobin(regions: RegionConfig[]): RegionConfig {
+    if (regions.length === 0) {
+      throw new Error('No regions available');
+    }
+    
     const regionIds = regions.map(r => r.id);
     const counts = regionIds.map(id => this.requestCounts.get(id) || 0);
     const minCount = Math.min(...counts);
     const minIndex = counts.indexOf(minCount);
     
     const selectedRegion = regions[minIndex];
+    if (!selectedRegion) {
+      throw new Error('No region selected');
+    }
+    
     this.requestCounts.set(selectedRegion.id, (this.requestCounts.get(selectedRegion.id) || 0) + 1);
     
     return selectedRegion;
   }
 
   private selectLeastConnections(regions: RegionConfig[]): RegionConfig {
+    if (regions.length === 0) {
+      throw new Error('No regions available');
+    }
     return regions.reduce((min, region) => 
       region.capacity.currentConnections < min.capacity.currentConnections ? region : min
     );
   }
 
   private selectLatencyBased(regions: RegionConfig[]): RegionConfig {
+    if (regions.length === 0) {
+      throw new Error('No regions available');
+    }
     return regions.reduce((min, region) => 
       region.latency.average < min.latency.average ? region : min
     );
@@ -322,10 +338,11 @@ export class LoadBalancerService {
       return this.selectLatencyBased(regions);
     }
 
-    return this.regionManager.getRegionByLocation(
+    const region = this.regionManager.getRegionByLocation(
       clientLocation.latitude,
       clientLocation.longitude
-    ) || regions[0];
+    );
+    return region || regions[0] || (() => { throw new Error('No regions available'); })();
   }
 
   getLoadBalancerConfig(): LoadBalancerConfig {

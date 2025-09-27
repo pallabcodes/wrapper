@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, Logger, ForbiddenException }
 import { Reflector } from '@nestjs/core';
 import { RBAC_METADATA_KEY } from '../decorators/mobile-api.decorator';
 import { RbacRequirement, RbacContext } from '../interfaces/mobile-api.interface';
+// import { RbacService } from '../services/rbac.service';
 
 function getTracer() {
   try {
@@ -17,7 +18,7 @@ function getTracer() {
 export class RbacGuard implements CanActivate {
   private readonly logger = new Logger(RbacGuard.name);
 
-  constructor(private readonly reflector: Reflector) {}
+  constructor(private readonly reflector: Reflector, /* private readonly rbacService: RbacService */) {}
 
   canActivate(context: ExecutionContext): boolean | Promise<boolean> {
     const tracer = getTracer();
@@ -75,7 +76,12 @@ export class RbacGuard implements CanActivate {
     const permissions: string[] = user.permissions || this.headerList(request.headers['x-permissions']);
     const userId: string | undefined = user.id || request.headers['x-user-id'];
     const tenantId: string | undefined = user.tenantId || request.headers['x-tenant-id'];
-    return { userId, tenantId, roles, permissions };
+    return { 
+      ...(userId && { userId }), 
+      ...(tenantId && { tenantId }), 
+      roles, 
+      permissions 
+    };
   }
 
   private headerList(value: unknown): string[] {

@@ -4,7 +4,7 @@ import Redis from 'ioredis';
 @Injectable()
 export class CacheService {
   private readonly logger = new Logger(CacheService.name);
-  private redis: Redis;
+  private redis!: Redis;
   private isConnectedFlag = false;
 
   constructor() {
@@ -14,19 +14,18 @@ export class CacheService {
   async connect(): Promise<void> {
     try {
       this.redis = new Redis({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        retryDelayOnFailover: 100,
+        host: process.env['REDIS_HOST'] || 'localhost',
+        port: parseInt(process.env['REDIS_PORT'] || '6379'),
         enableReadyCheck: false,
         maxRetriesPerRequest: 3,
-      });
+      } as any);
 
-      this.redis.on('connect', () => {
+      (this.redis as any).on('connect', () => {
         this.isConnectedFlag = true;
         this.logger.log('Redis connected successfully');
       });
 
-      this.redis.on('error', (error) => {
+      (this.redis as any).on('error', (error: any) => {
         this.logger.error('Redis connection error', error);
         this.isConnectedFlag = false;
       });
@@ -121,7 +120,7 @@ export class CacheService {
 
   async flush(): Promise<void> {
     try {
-      await this.redis.flushdb();
+      await (this.redis as any).flushdb();
     } catch (error) {
       this.logger.error('Failed to flush cache', error);
       throw error;
@@ -149,7 +148,7 @@ export class CacheService {
 
   async mset<T>(keyValuePairs: Record<string, T>, ttl?: number): Promise<void> {
     try {
-      const pipeline = this.redis.pipeline();
+      const pipeline = (this.redis as any).pipeline();
       
       Object.entries(keyValuePairs).forEach(([key, value]) => {
         const serialized = JSON.stringify(value);
@@ -174,12 +173,12 @@ export class CacheService {
     hitRate: number;
   }> {
     try {
-      const info = await this.redis.info('memory');
-      const keys = await this.redis.dbsize();
+      const info = await (this.redis as any).info('memory');
+      const keys = await (this.redis as any).dbsize();
       
       // Parse memory info
       const memoryInfo: any = {};
-      info.split('\r\n').forEach(line => {
+      info.split('\r\n').forEach((line: any) => {
         if (line.includes(':')) {
           const [key, value] = line.split(':');
           memoryInfo[key] = value;

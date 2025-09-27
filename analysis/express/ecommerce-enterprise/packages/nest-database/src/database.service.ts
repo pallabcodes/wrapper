@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DataSource, Repository, EntityTarget } from 'typeorm';
+import { DataSource, Repository, EntityTarget, ObjectLiteral } from 'typeorm';
 import { ConnectionPool } from './utils/connection-pool';
 import { QueryCache } from './utils/query-cache';
 import { QueryOptimizer } from './utils/query-optimizer';
@@ -17,7 +17,7 @@ export class DatabaseService {
     private readonly metrics: DatabaseMetrics,
   ) {}
 
-  getRepository<T>(entity: EntityTarget<T>): Repository<T> {
+  getRepository<T extends ObjectLiteral>(entity: EntityTarget<T>): Repository<T> {
     return this.dataSource.getRepository(entity);
   }
 

@@ -111,7 +111,7 @@ export const createPathItem = (routeDef: RouteDefinition): OpenAPIPathItem => {
       required: routeDef.requestBody.required,
       content: {
         'application/json': {
-          schema: zodToOpenAPI(routeDef.requestBody.schema)
+          schema: routeDef.requestBody.schema
         }
       }
     }
@@ -126,7 +126,7 @@ export const createPathItem = (routeDef: RouteDefinition): OpenAPIPathItem => {
     if (response.schema) {
       apiResponse.content = {
         'application/json': {
-          schema: zodToOpenAPI(response.schema)
+          schema: response.schema
         }
       }
     }

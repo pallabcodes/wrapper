@@ -8,7 +8,7 @@ import { logger } from '../utils/logger'
 const router = Router()
 
 // Get all templates
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (_req: Request, res: Response) => {
   try {
     logger.info('Templates list requested')
 
@@ -78,7 +78,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       data: template
     })
   } catch (error) {
-    logger.error('Failed to get template', { error, id: req.params.id })
+    logger.error('Failed to get template', { error, id: req.params['id'] })
     res.status(500).json({
       success: false,
       error: 'Failed to get template'
@@ -136,7 +136,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       message: 'Template updated successfully'
     })
   } catch (error) {
-    logger.error('Failed to update template', { error, id: req.params.id })
+    logger.error('Failed to update template', { error, id: req.params['id'] })
     res.status(500).json({
       success: false,
       error: 'Failed to update template'
@@ -158,7 +158,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       message: 'Template deleted successfully'
     })
   } catch (error) {
-    logger.error('Failed to delete template', { error, id: req.params.id })
+    logger.error('Failed to delete template', { error, id: req.params['id'] })
     res.status(500).json({
       success: false,
       error: 'Failed to delete template'

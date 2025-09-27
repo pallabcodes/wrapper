@@ -12,6 +12,9 @@ import { MobileSecurityGuard } from './guards/mobile-security.guard';
 import { RbacGuard } from './guards/rbac.guard';
 import { MobileApiOptions } from './interfaces/mobile-api.interface';
 import { AuthContextInterceptor } from './interceptors/auth-context.interceptor';
+import { RbacService } from './services/rbac.service';
+import { RedisRbacPolicyProvider } from './services/redis-rbac.provider';
+import { RBAC_POLICY_PROVIDER } from './interfaces/mobile-api.interface';
 
 @Module({})
 export class MobileApiModule {
@@ -26,6 +29,12 @@ export class MobileApiModule {
       MobileOptimizationInterceptor,
       MobileSecurityGuard,
       RbacGuard,
+      RbacService,
+      RedisRbacPolicyProvider,
+      {
+        provide: RBAC_POLICY_PROVIDER,
+        useExisting: RedisRbacPolicyProvider,
+      },
       AuthContextInterceptor,
       {
         provide: 'MOBILE_API_OPTIONS',
@@ -68,6 +77,7 @@ export class MobileApiModule {
         MobileOptimizationInterceptor,
         MobileSecurityGuard,
         RbacGuard,
+        RbacService,
         AuthContextInterceptor,
       ],
       global: true,

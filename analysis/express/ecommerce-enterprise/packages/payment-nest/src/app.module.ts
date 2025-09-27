@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthXModule } from '@ecommerce-enterprise/authx';
 import { PaymentModule } from './modules/payment/payment.module';
 import { WebhookModule } from './modules/webhook/webhook.module';
@@ -29,8 +29,10 @@ import { configSchema } from './shared/config/config.schema';
     AuthXModule.registerAsync({
       useFactory: (configService) => ({
         jwt: {
-          secret: configService.get('JWT_SECRET'),
-          expiresIn: configService.get('JWT_EXPIRES_IN', '1h'),
+          accessTtlSeconds: 3600,
+          refreshTtlSeconds: 86400,
+          issuer: 'ecommerce-enterprise',
+          audience: 'ecommerce-enterprise',
         },
         otp: {
           enabled: configService.get('OTP_ENABLED', 'false') === 'true',

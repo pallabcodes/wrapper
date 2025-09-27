@@ -37,7 +37,7 @@ export class QueryProfileInterceptor implements NestInterceptor {
     this.queryProfiler.startQuery(profileId, methodName);
 
     return next.handle().pipe(
-      tap(result => {
+      tap((_result: any) => {
         const profile = this.queryProfiler.endQuery(profileId);
         if (profile) {
           this.logger.debug(`Query completed: ${profile.duration}ms`, {

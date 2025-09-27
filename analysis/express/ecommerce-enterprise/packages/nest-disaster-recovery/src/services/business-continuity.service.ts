@@ -1,16 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+// import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import { 
-  BusinessContinuityPlan, 
-  CriticalProcess, 
-  RecoveryStrategy,
-  CommunicationPlan,
-  Stakeholder,
-  CommunicationChannel,
-  CommunicationTemplate,
-  EscalationMatrix,
-  TestingSchedule
+  BusinessContinuityPlan
+  // CriticalProcess, 
+  // RecoveryStrategy,
+  // CommunicationPlan,
+  // Stakeholder,
+  // CommunicationChannel,
+  // CommunicationTemplate,
+  // EscalationMatrix,
+  // TestingSchedule
 } from '../interfaces/disaster-recovery.interface';
 
 @Injectable()
@@ -19,7 +19,7 @@ export class BusinessContinuityService {
   private bcPlans: Map<string, BusinessContinuityPlan> = new Map();
   private incidents: Map<string, any> = new Map();
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(/* private readonly configService: ConfigService */) {
     this.initializeDefaultPlans();
   }
 
@@ -314,8 +314,9 @@ export class BusinessContinuityService {
     return true;
   }
 
-  async sendNotification(templateId: string, variables: Record<string, any>, recipients: string[]): Promise<boolean> {
+  async sendNotification(templateId: string, _variables: Record<string, any>, recipients: string[]): Promise<boolean> {
     const plan = Array.from(this.bcPlans.values())[0]; // Get first plan for demo
+    if (!plan) return false;
     const template = plan.communicationPlan.templates.find(t => t.id === templateId);
     if (!template) return false;
 

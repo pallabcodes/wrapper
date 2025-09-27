@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class QueryOptimizer {
-  private readonly logger = new Logger(QueryOptimizer.name);
+  // private readonly logger = new Logger(QueryOptimizer.name);
 
   optimize(sql: string): string {
     // This is a simplified implementation

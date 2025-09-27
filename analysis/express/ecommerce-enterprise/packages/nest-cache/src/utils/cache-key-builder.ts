@@ -54,7 +54,7 @@ export class CacheKeyBuilder {
     const key = this.extractKey(fullKey);
     if (!key) return null;
     const parts = key.split(':');
-    return parts.length > 1 ? parts[0] : null;
+    return parts.length > 1 ? parts[0] || null : null;
   }
 
   extractTags(fullKey: string): string[] {
@@ -65,8 +65,8 @@ export class CacheKeyBuilder {
     // Look for tag pattern: prefix:tag1:tag2:key
     const tagParts: string[] = [];
     for (let i = 0; i < parts.length - 1; i++) {
-      if (parts[i].startsWith('tag:')) {
-        tagParts.push(parts[i].substring(4));
+      if (parts[i]?.startsWith('tag:')) {
+        tagParts.push(parts[i]!.substring(4));
       }
     }
     

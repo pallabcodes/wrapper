@@ -6,11 +6,13 @@ import { RestoreService } from './services/restore.service';
 import { DisasterRecoveryPlanService } from './services/disaster-recovery-plan.service';
 import { BusinessContinuityService } from './services/business-continuity.service';
 import { DisasterRecoveryService } from './services/disaster-recovery.service';
+import { DisasterRecoveryValidationModule } from './modules/disaster-recovery-validation.module';
 
 @Module({
   imports: [
     ConfigModule,
-    ScheduleModule.forRoot()
+    ScheduleModule.forRoot(),
+    DisasterRecoveryValidationModule
   ],
   providers: [
     BackupService,

@@ -8,7 +8,7 @@ import {
   ComplianceReport 
 } from '../interfaces/compliance.interface';
 import * as crypto from 'crypto';
-import * as bcrypt from 'bcrypt';
+// import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class HIPAAService {
@@ -213,7 +213,8 @@ export class HIPAAService {
 
   private async encryptHealthData(data: Record<string, any>): Promise<Record<string, any>> {
     const key = crypto.randomBytes(32);
-    const iv = crypto.randomBytes(16);
+    // IV not used in createCipher but kept for completeness
+    crypto.randomBytes(16);
     const cipher = crypto.createCipher(this.config.encryption.algorithm, key);
     
     const encrypted: Record<string, any> = {};
@@ -262,7 +263,7 @@ export class HIPAAService {
     return value;
   }
 
-  private async checkRoleBasedAccess(userId: string, resourceId: string, action: string): Promise<boolean> {
+  private async checkRoleBasedAccess(userId: string, _resourceId: string, action: string): Promise<boolean> {
     // Simulate role-based access check
     const userRoles = await this.getUserRoles(userId);
     const requiredRoles = this.getRequiredRoles(action);
@@ -270,7 +271,7 @@ export class HIPAAService {
     return requiredRoles.some(role => userRoles.includes(role));
   }
 
-  private async getUserRoles(userId: string): Promise<string[]> {
+  private async getUserRoles(_userId: string): Promise<string[]> {
     // Simulate user role retrieval
     return ['healthcare_provider', 'nurse'];
   }
@@ -286,7 +287,7 @@ export class HIPAAService {
     return roleMap[action] || ['admin'];
   }
 
-  private async verifyMultiFactorAuth(userId: string): Promise<boolean> {
+  private async verifyMultiFactorAuth(_userId: string): Promise<boolean> {
     // Simulate MFA verification
     return true;
   }
@@ -325,11 +326,11 @@ export class HIPAAService {
   }
 
   private calculateComplianceScore(auditLogs: AuditLog[]): number {
-    const totalLogs = auditLogs.length;
+    // const totalLogs = auditLogs.length;
     const criticalIssues = auditLogs.filter(log => log.severity === 'critical').length;
     const highIssues = auditLogs.filter(log => log.severity === 'high').length;
     const accessDenials = auditLogs.filter(log => 
-      log.details?.reason?.includes('denied')
+      log.details?.['reason']?.includes('denied')
     ).length;
     
     const score = Math.max(0, 100 - (criticalIssues * 15) - (highIssues * 10) - (accessDenials * 5));
@@ -345,14 +346,14 @@ export class HIPAAService {
     }
     
     const accessDenials = auditLogs.filter(log => 
-      log.details?.reason?.includes('denied')
+      log.details?.['reason']?.includes('denied')
     ).length;
     if (accessDenials > 0) {
       recommendations.push('Review access control policies and user permissions');
     }
     
     const encryptionIssues = auditLogs.filter(log => 
-      log.details?.encryption === false
+      log.details?.['encryption'] === false
     ).length;
     if (encryptionIssues > 0) {
       recommendations.push('Ensure all health data is properly encrypted');

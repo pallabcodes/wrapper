@@ -3,8 +3,8 @@ import { Logger } from '@nestjs/common';
 
 export class SAPAdapter {
   private readonly logger = new Logger(SAPAdapter.name);
-  private rfcConnection: any;
-  private odataClient: any;
+  // private rfcConnection: any;
+  // private odataClient: any;
 
   constructor(private readonly options: SAPOptions) {}
 
@@ -22,7 +22,7 @@ export class SAPAdapter {
 
       this.logger.log('SAP adapter connected successfully');
     } catch (error) {
-      this.logger.error(`SAP adapter connection failed: ${error.message}`, error.stack);
+      this.logger.error(`SAP adapter connection failed: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined);
       throw error;
     }
   }
@@ -42,7 +42,7 @@ export class SAPAdapter {
       // Mock ping for demo purposes
       return true;
     } catch (error) {
-      this.logger.error(`SAP ping failed: ${error.message}`);
+      this.logger.error(`SAP ping failed: ${(error as Error).message}`);
       return false;
     }
   }
@@ -64,7 +64,7 @@ export class SAPAdapter {
           return { success: true, data: parameters };
       }
     } catch (error) {
-      this.logger.error(`RFC call failed: ${functionName}`, error.stack);
+      this.logger.error(`RFC call failed: ${functionName}`, (error as Error).stack);
       throw error;
     }
   }
@@ -91,7 +91,7 @@ export class SAPAdapter {
           return [];
       }
     } catch (error) {
-      this.logger.error(`OData query failed: ${entitySet}`, error.stack);
+      this.logger.error(`OData query failed: ${entitySet}`, (error as Error).stack);
       throw error;
     }
   }
@@ -109,7 +109,7 @@ export class SAPAdapter {
 
       return result;
     } catch (error) {
-      this.logger.error(`OData create failed: ${entitySet}`, error.stack);
+      this.logger.error(`OData create failed: ${entitySet}`, (error as Error).stack);
       throw error;
     }
   }
@@ -127,7 +127,7 @@ export class SAPAdapter {
 
       return result;
     } catch (error) {
-      this.logger.error(`OData update failed: ${entitySet}`, error.stack);
+      this.logger.error(`OData update failed: ${entitySet}`, (error as Error).stack);
       throw error;
     }
   }
@@ -137,7 +137,7 @@ export class SAPAdapter {
       // Mock OData delete for demo purposes
       this.logger.log(`OData delete: ${entitySet} (${key})`);
     } catch (error) {
-      this.logger.error(`OData delete failed: ${entitySet}`, error.stack);
+      this.logger.error(`OData delete failed: ${entitySet}`, (error as Error).stack);
       throw error;
     }
   }
@@ -150,7 +150,7 @@ export class SAPAdapter {
       const idocId = `IDOC_${messageType}_${Date.now()}`;
       return idocId;
     } catch (error) {
-      this.logger.error(`IDoc send failed: ${messageType}`, error.stack);
+      this.logger.error(`IDoc send failed: ${messageType}`, (error as Error).stack);
       throw error;
     }
   }
@@ -167,7 +167,7 @@ export class SAPAdapter {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      this.logger.error(`IDoc receive failed: ${idocId}`, error.stack);
+      this.logger.error(`IDoc receive failed: ${idocId}`, (error as Error).stack);
       throw error;
     }
   }
@@ -177,7 +177,7 @@ export class SAPAdapter {
       // Mock disconnect for demo purposes
       this.logger.log('SAP adapter disconnected');
     } catch (error) {
-      this.logger.error(`SAP adapter disconnect failed: ${error.message}`);
+      this.logger.error(`SAP adapter disconnect failed: ${(error as Error).message}`);
     }
   }
 
@@ -186,7 +186,7 @@ export class SAPAdapter {
     return {
       success: true,
       customer: {
-        KUNNR: parameters.CUSTOMER_NUMBER || 'CUST001',
+        KUNNR: parameters['CUSTOMER_NUMBER'] || 'CUST001',
         NAME1: 'Demo Customer',
         ORT01: 'Demo City',
         PSTLZ: '12345',
@@ -199,7 +199,7 @@ export class SAPAdapter {
     return {
       success: true,
       material: {
-        MATNR: parameters.MATERIAL || 'MAT001',
+        MATNR: parameters['MATERIAL'] || 'MAT001',
         MAKTX: 'Demo Material',
         MEINS: 'EA',
         PRICE: 100.00,
@@ -213,8 +213,8 @@ export class SAPAdapter {
       order: {
         VBELN: `SO${Date.now()}`,
         ERDAT: new Date().toISOString().split('T')[0],
-        KUNNR: parameters.CUSTOMER_NUMBER || 'CUST001',
-        NETWR: parameters.NET_VALUE || 0,
+        KUNNR: parameters['CUSTOMER_NUMBER'] || 'CUST001',
+        NETWR: parameters['NET_VALUE'] || 0,
       },
     };
   }

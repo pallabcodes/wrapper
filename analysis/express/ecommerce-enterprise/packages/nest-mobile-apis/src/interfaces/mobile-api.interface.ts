@@ -235,3 +235,14 @@ export interface RbacContext {
   roles?: Role[];
   permissions?: Permission[];
 }
+
+export interface RbacGrants {
+  roles: Role[];
+  permissions: Permission[];
+}
+
+export interface RbacPolicyProvider {
+  loadGrants(userId?: string, tenantId?: string): Promise<RbacGrants>;
+}
+
+export const RBAC_POLICY_PROVIDER = 'RBAC_POLICY_PROVIDER';

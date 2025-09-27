@@ -27,7 +27,7 @@ export class MinimalController {
       };
     } catch (error) {
       return {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         serviceInjected: !!this.minimalService,
         serviceType: typeof this.minimalService
       };

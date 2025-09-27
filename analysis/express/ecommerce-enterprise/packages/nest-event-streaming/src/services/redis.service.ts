@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 import {
   EventStreamingConfig,
   EventMessage,
@@ -15,11 +15,11 @@ import {
 @Injectable()
 export class RedisService implements EventPublisher, EventSubscriber, OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
-  private publisher: Redis;
-  private subscriber: Redis;
+  private publisher!: Redis;
+  private subscriber!: Redis;
   private config: EventStreamingConfig;
   private handlers: Map<string, EventHandler[]> = new Map();
-  private metrics: EventStreamingMetrics;
+  private metrics!: EventStreamingMetrics;
   private isConnected = false;
 
   constructor(private configService: ConfigService) {
@@ -69,8 +69,8 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
       });
 
       // Test connection
-      await this.publisher.ping();
-      await this.subscriber.ping();
+      await (this.publisher as any).ping();
+      await (this.subscriber as any).ping();
 
       this.isConnected = true;
       this.logger.log('Redis connected successfully');
@@ -84,10 +84,10 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
   private async disconnect() {
     try {
       if (this.publisher) {
-        await this.publisher.quit();
+        await (this.publisher as any).quit();
       }
       if (this.subscriber) {
-        await this.subscriber.quit();
+        await (this.subscriber as any).quit();
       }
       this.isConnected = false;
       this.logger.log('Redis disconnected');
@@ -101,7 +101,7 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
       const channel = `${topic}:${message.type}`;
       const messageData = JSON.stringify(message);
 
-      await this.publisher.publish(channel, messageData);
+      await (this.publisher as any).publish(channel, messageData);
 
       this.updateMetrics('published');
       this.logger.debug(`Event published to channel ${channel}:`, message.id);
@@ -114,7 +114,7 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
 
   async publishBatch(topic: string, messages: EventMessage[]): Promise<void> {
     try {
-      const pipeline = this.publisher.pipeline();
+      const pipeline = (this.publisher as any).pipeline();
 
       for (const message of messages) {
         const channel = `${topic}:${message.type}`;
@@ -143,9 +143,9 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
 
       const channel = `${topic}:${handler.eventType}`;
 
-      await this.subscriber.subscribe(channel);
+      await (this.subscriber as any).subscribe(channel);
 
-      this.subscriber.on('message', async (receivedChannel, message) => {
+      (this.subscriber as any).on('message', async (receivedChannel: any, message: any) => {
         if (receivedChannel === channel) {
           await this.handleMessage(message, topic, handler);
         }
@@ -167,7 +167,7 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
 
         if (filteredHandlers.length === 0) {
           const channel = `${topic}:${eventType}`;
-          await this.subscriber.unsubscribe(channel);
+          await (this.subscriber as any).unsubscribe(channel);
           this.handlers.delete(topic);
         }
       }
@@ -183,7 +183,7 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
     return new Map(this.handlers);
   }
 
-  private async handleMessage(message: string, topic: string, handler: EventHandler): Promise<void> {
+  private async handleMessage(message: string, _topic: string, handler: EventHandler): Promise<void> {
     try {
       const eventMessage = JSON.parse(message) as EventMessage;
 
@@ -211,7 +211,7 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
     }
   }
 
-  private async retryHandler(handler: EventHandler, message: EventMessage, error: any): Promise<void> {
+  private async retryHandler(handler: EventHandler, message: EventMessage, _error: any): Promise<void> {
     const maxRetries = handler.options?.maxRetries || 3;
     const retryDelay = handler.options?.retryDelay || 1000;
 

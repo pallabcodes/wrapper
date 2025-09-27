@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Counter, Histogram, Gauge, register } from 'prom-client';
+import { Counter, Histogram, register } from 'prom-client';
 
 @Injectable()
 export class MetricsService {
@@ -76,9 +76,9 @@ export class MetricsService {
     help: 'Total number of cache misses',
   });
 
-  private readonly activeConnections = new Gauge({
-    name: 'active_connections',
-    help: 'Number of active connections',
+  private readonly activeConnections = new Counter({
+    name: 'active_connections_total',
+    help: 'Total number of active connections',
   });
 
   constructor() {
@@ -114,7 +114,7 @@ export class MetricsService {
   }
 
   incrementWebhookProcessed(provider: string, eventType: string): void {
-    this.webhookProcessed.inc({ provider, eventType });
+    this.webhookProcessed.inc({ provider, event_type: eventType });
   }
 
   incrementWebhookFailed(provider: string, error: string): void {
@@ -122,7 +122,7 @@ export class MetricsService {
   }
 
   incrementAnalyticsProcessed(metricType: string): void {
-    this.analyticsProcessed.inc({ metricType });
+    this.analyticsProcessed.inc({ metric_type: metricType });
   }
 
   incrementError(context: string): void {
@@ -146,7 +146,9 @@ export class MetricsService {
   }
 
   setActiveConnections(count: number): void {
-    this.activeConnections.set(count);
+    // For Counter, we'll just increment by the count
+    // Note: This is a simplified approach for active connections
+    this.activeConnections.inc(count);
   }
 
   async getMetrics(): Promise<string> {

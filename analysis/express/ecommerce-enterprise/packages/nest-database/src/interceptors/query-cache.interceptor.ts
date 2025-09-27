@@ -5,7 +5,7 @@ import {
   CallHandler,
   Logger,
 } from '@nestjs/common';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
 import { QUERY_CACHE_KEY, QueryCacheOptions } from '../decorators/query-cache.decorator';
@@ -38,7 +38,7 @@ export class QueryCacheInterceptor implements NestInterceptor {
     
     return new Observable(subscriber => {
       queryCache.get(cacheKey)
-        .then(cachedResult => {
+        .then((cachedResult: any) => {
           if (cachedResult && !cacheOptions.refresh) {
             this.logger.debug(`Cache hit for key: ${cacheKey}`);
             subscriber.next(cachedResult);
@@ -53,7 +53,7 @@ export class QueryCacheInterceptor implements NestInterceptor {
                   .then(() => {
                     this.logger.debug(`Cached result for key: ${cacheKey}`);
                   })
-                  .catch(error => {
+                  .catch((error: any) => {
                     this.logger.error('Failed to cache result', error);
                   });
               })
@@ -68,7 +68,7 @@ export class QueryCacheInterceptor implements NestInterceptor {
               }
             });
         })
-        .catch(error => {
+        .catch((error: any) => {
           this.logger.error('Cache lookup failed', error);
           next.handle().subscribe({
             next: result => {

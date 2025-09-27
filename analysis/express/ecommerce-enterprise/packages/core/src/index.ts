@@ -78,6 +78,16 @@ export * from './modules/product/productResponseHandler'
 
 export { validateBody, validateQuery, validateParams, validateSchema } from './middleware/validation'
 
+// Enterprise Zod validation
+export { 
+  EnterpriseValidationService,
+  UserSchema,
+  ProductSchema,
+  OrderSchema,
+  PaymentSchema,
+  InventorySchema
+} from './validation/enterprise-validation.service'
+
 // ============================================================================
 // RATE LIMITING
 // ============================================================================

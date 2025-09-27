@@ -37,7 +37,8 @@
     "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": [
-    "packages/**/*",
+    "packages/**/src/**/*",
+    "packages/**/*.ts",
     "apps/**/*",
     "scripts/**/*",
     "src/types/ambient.d.ts"

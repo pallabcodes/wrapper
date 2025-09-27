@@ -7,3 +7,8 @@ export * from './services/retry.service';
 export * from './adapters/sap.adapter';
 export * from './adapters/salesforce.adapter';
 export * from './interfaces/enterprise-options.interface';
+
+// Validation components
+export * from './modules/enterprise-integration-validation.module';
+export * from './validation/enterprise-integration-validation.service';
+export * from './controllers/enterprise-integration-validation.controller';

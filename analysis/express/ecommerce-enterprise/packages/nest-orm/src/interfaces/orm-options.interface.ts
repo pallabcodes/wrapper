@@ -1,4 +1,4 @@
-import { DatabaseQuery, QueryResult, TransactionOptions } from '../types';
+// Types are defined in this file; avoid circular imports
 
 export interface ORMOptions {
   /** Primary ORM provider to use */
@@ -98,7 +98,7 @@ export interface QueryOptimizationOptions {
   timeout?: number;
 }
 
-export interface DatabaseQuery<T = any> {
+export interface DatabaseQuery<_T = any> {
   /** Query type */
   type: 'select' | 'insert' | 'update' | 'delete' | 'raw';
   

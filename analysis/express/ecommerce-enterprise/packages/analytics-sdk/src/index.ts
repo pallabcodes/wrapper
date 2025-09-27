@@ -1,6 +1,6 @@
-// Minimal typed client using generated OpenAPI types (imported from analytics package output)
-// Consumers should point to their compiled d.ts file; for monorepo, we import relatively.
-import type * as API from '../../analytics/openapi/analytics.d';
+// Minimal typed client; OpenAPI types are optional in this workspace build.
+// Consumers can re-export their own API types; we provide a placeholder here to avoid build coupling.
+type API = unknown;
 
 export interface ClientOptions {
   baseUrl: string;

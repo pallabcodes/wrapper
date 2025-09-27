@@ -4,7 +4,7 @@ import { AuthContextInterceptor } from '../interceptors/auth-context.interceptor
 import { MobileCacheInterceptor } from '../interceptors/mobile-cache.interceptor';
 import { MobileOptimizationInterceptor } from '../interceptors/mobile-optimization.interceptor';
 import { MobileSecurityGuard } from '../guards/mobile-security.guard';
-import { MobileDeviceInfo, MobileApiOptions, RbacRequirement } from '../interfaces/mobile-api.interface';
+import { MobileApiOptions, RbacRequirement } from '../interfaces/mobile-api.interface';
 import { RbacGuard } from '../guards/rbac.guard';
 
 export const MOBILE_API_METADATA = 'mobile_api_metadata';

@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import * as fs from 'fs-extra';
-import * as path from 'path';
-import * as archiver from 'archiver';
-import * as unzipper from 'unzipper';
+// import { ConfigService } from '@nestjs/config';
+import { Cron } from '@nestjs/schedule';
+// import * as fs from 'fs-extra';
+// import * as path from 'path';
+// import * as archiver from 'archiver';
+// import * as unzipper from 'unzipper';
 import { v4 as uuidv4 } from 'uuid';
-import { BackupConfig, BackupJob, BackupDestination, BackupDestinationResult } from '../interfaces/disaster-recovery.interface';
+import { BackupConfig, BackupJob, BackupDestinationResult } from '../interfaces/disaster-recovery.interface';
 
 @Injectable()
 export class BackupService {
@@ -15,7 +15,7 @@ export class BackupService {
   private activeJobs: Map<string, BackupJob> = new Map();
   private jobHistory: BackupJob[] = [];
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(/* private readonly configService: ConfigService */) {
     this.initializeDefaultConfigs();
   }
 
@@ -146,8 +146,8 @@ export class BackupService {
       job.status = 'failed';
       job.endTime = new Date();
       job.duration = job.endTime.getTime() - job.startTime.getTime();
-      job.error = error.message;
-      this.logger.error(`Backup job failed: ${error.message}`, error.stack);
+      job.error = (error as Error).message;
+      this.logger.error(`Backup job failed: ${(error as Error).message}`, (error as Error).stack);
     }
 
     this.activeJobs.delete(job.id);
@@ -181,7 +181,7 @@ export class BackupService {
         destResult.status = 'failed';
         destResult.endTime = new Date();
         destResult.duration = destResult.endTime.getTime() - destResult.startTime.getTime();
-        destResult.error = error.message;
+        destResult.error = (error as Error).message;
         this.logger.error(`Backup destination failed: ${destResult.destinationId}`, error);
       }
     }
@@ -359,7 +359,7 @@ export class BackupService {
       successRate: totalJobs > 0 ? (completedJobs / totalJobs) * 100 : 0,
       totalSize,
       averageDuration: averageDuration || 0,
-      lastBackup: this.jobHistory.length > 0 ? this.jobHistory[0].startTime : null
+      lastBackup: this.jobHistory.length > 0 ? this.jobHistory[0]?.startTime : null
     };
   }
 }

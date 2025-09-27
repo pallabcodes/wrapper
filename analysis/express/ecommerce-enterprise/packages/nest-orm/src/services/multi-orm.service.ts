@@ -86,7 +86,7 @@ export class MultiOrmService {
       };
 
     } catch (error) {
-      this.logger.error(`Query execution failed: ${error.message}`, error.stack);
+      this.logger.error(`Query execution failed: ${(error as Error).message}`, (error as Error).stack);
       this.updatePerformanceMetrics('prisma', Date.now() - startTime, true);
       throw error;
     }
@@ -100,10 +100,10 @@ export class MultiOrmService {
     options?: TransactionOptions
   ): Promise<TransactionResult<T>> {
     const startTime = Date.now();
-    const provider = this.selectOptimalProvider(queries[0]);
+    const provider = this.selectOptimalProvider(queries[0] || (() => { throw new Error('No queries provided'); })());
     
     try {
-      const result = await this.executeTransaction(provider, queries, options);
+      const result = await this.executeTransaction<any>(provider, queries, options);
       
       this.updatePerformanceMetrics(provider, Date.now() - startTime, false);
       
@@ -114,7 +114,7 @@ export class MultiOrmService {
       };
 
     } catch (error) {
-      this.logger.error(`Transaction execution failed: ${error.message}`, error.stack);
+      this.logger.error(`Transaction execution failed: ${(error as Error).message}`, (error as Error).stack);
       this.updatePerformanceMetrics(provider, Date.now() - startTime, true);
       throw error;
     }
@@ -165,7 +165,7 @@ export class MultiOrmService {
       return 'drizzle'; // Drizzle is better for raw SQL
     }
     
-    if (query.type === 'select' && query.include?.length > 0) {
+    if (query.type === 'select' && query.include && query.include.length > 0) {
       return 'prisma'; // Prisma has better relation handling
     }
     
@@ -236,7 +236,7 @@ export class MultiOrmService {
   /**
    * Execute transaction with specific provider
    */
-  private async executeTransaction<T>(
+  private async executeTransaction<T = any>(
     provider: ORMProvider,
     queries: DatabaseQuery[],
     options?: TransactionOptions

@@ -8,7 +8,7 @@ import {
 import { Observable, of } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { MobileApiService } from '../services/mobile-api.service';
+// import { MobileApiService } from '../services/mobile-api.service';
 import { MOBILE_API_METADATA } from '../decorators/mobile-api.decorator';
 import { MobileDeviceInfo, MobileApiOptions } from '../interfaces/mobile-api.interface';
 
@@ -27,7 +27,7 @@ function getTracer() {
 export class MobileApiInterceptor implements NestInterceptor {
   private readonly logger = new Logger(MobileApiInterceptor.name);
 
-  constructor(private mobileApiService: MobileApiService) {}
+  constructor(/* private readonly mobileApiService: MobileApiService */) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
@@ -61,7 +61,7 @@ export class MobileApiInterceptor implements NestInterceptor {
     });
 
     return next.handle().pipe(
-      tap(async (data) => {
+      tap(async (_data) => {
         const responseTime = Date.now() - startTime;
         
         // Apply mobile optimizations
@@ -116,7 +116,7 @@ export class MobileApiInterceptor implements NestInterceptor {
           },
           metadata: {
             timestamp: new Date().toISOString(),
-            requestId: response.getHeader('X-Request-Id') || requestId || `req-${Date.now()}`,
+            requestId: (response.getHeader('X-Request-Id') as string) || (requestId as string) || `req-${Date.now()}`,
             version: (deviceInfo && deviceInfo.appVersion) || '1.0.0',
             deviceInfo,
             performance: {
@@ -186,7 +186,7 @@ export class MobileApiInterceptor implements NestInterceptor {
 
     const androidMatch = userAgent.match(/Android (\d+\.?\d*)/);
     if (androidMatch) {
-      return androidMatch[1];
+      return androidMatch[1] || 'unknown';
     }
 
     return 'unknown';

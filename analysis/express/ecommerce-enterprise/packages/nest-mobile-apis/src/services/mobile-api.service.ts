@@ -22,10 +22,10 @@ export class MobileApiService {
   private analytics: Map<string, MobileAnalytics> = new Map();
 
   constructor(
-    private configService: ConfigService,
-    private optimizationService: MobileOptimizationService,
-    private cachingService: MobileCachingService,
-    private securityService: MobileSecurityService,
+    private readonly configService: ConfigService,
+    private readonly optimizationService: MobileOptimizationService,
+    private readonly cachingService: MobileCachingService,
+    private readonly securityService: MobileSecurityService,
   ) {
     this.config = this.configService.get<MobileApiConfig>('MOBILE_API_CONFIG') || {
       enableCompression: true,
@@ -124,7 +124,7 @@ export class MobileApiService {
 
       return response;
     } catch (error) {
-      this.logger.error('Error creating mobile response:', error);
+      this.logger.error('Error creating mobile response:', error instanceof Error ? error.message : String(error));
       
       const responseTime = Date.now() - startTime;
       this.trackApiCall(request, responseTime, false);
@@ -134,7 +134,7 @@ export class MobileApiService {
         error: {
           code: 'INTERNAL_ERROR',
           message: 'An internal error occurred',
-          details: error.message,
+          details: (error as Error).message,
         },
         metadata: {
           timestamp: new Date().toISOString(),
@@ -213,7 +213,7 @@ export class MobileApiService {
   async sendPushNotification(
     userId: string,
     payload: PushNotificationPayload,
-    deviceInfo: MobileDeviceInfo,
+    _deviceInfo: MobileDeviceInfo,
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     if (!this.config.enablePushNotifications) {
       return {
@@ -233,10 +233,10 @@ export class MobileApiService {
         messageId,
       };
     } catch (error) {
-      this.logger.error('Push notification error:', error);
+      this.logger.error('Push notification error:', error instanceof Error ? error.message : String(error));
       return {
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
