@@ -112,7 +112,7 @@ export class ZodPerformanceGuard implements CanActivate {
   private cleanupOldMetrics(now: number): void {
     const maxAge = 300000; // 5 minutes
     
-    for (const [requestId, metrics] of this.requestMetrics.entries()) {
+    for (const [requestId, metrics] of Array.from(this.requestMetrics.entries())) {
       if (now - metrics.lastRequestTime > maxAge) {
         this.requestMetrics.delete(requestId);
       }

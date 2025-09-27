@@ -293,7 +293,7 @@ export const ErrorMaps = {
 };
 
 // Schema composition utilities
-export const SchemaComposition = {
+export const SchemaCompositionHelpers = {
   /**
    * Merge multiple schemas into one
    */

@@ -173,7 +173,7 @@ export function AdvancedValidation(options: ZodValidationOptions) {
  * }
  * ```
  */
-export function ConditionalValidation(
+export function BasicConditionalValidation(
   optionsFactory: (request: any) => ZodValidationOptions
 ) {
   return SetMetadata(ZOD_VALIDATION_METADATA, { conditional: true, optionsFactory });

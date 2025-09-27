@@ -6,4 +6,7 @@ export * from './guards';
 export * from './services';
 export * from './interfaces';
 export * from './utils';
+export * from './testing';
+export * from './cli';
 export * from './zod.module';
+export * from './types/nest-zod.types';

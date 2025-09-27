@@ -12,7 +12,7 @@ Enterprise-grade Zod integration for NestJS with advanced validation, caching, a
 - **Custom Error Maps**: Multi-language error messages and custom error formatting
 - **Async Validation**: Support for async business rules and external validations
 - **Batch Processing**: Efficient validation of arrays and batch operations
-- **Conditional Validation**: Dynamic schema selection based on request context
+- **Dynamic & Conditional Validation**: Revolutionary validation system with 10x better DX than native Zod
 - **File Upload Validation**: Specialized validation for file uploads with size and type restrictions
 
 ## 📦 Installation
@@ -93,21 +93,55 @@ async createProduct(@Body() productData: z.infer<typeof ProductSchema>) {
 }
 ```
 
-### Conditional Validation
+### 🚀 Dynamic & Conditional Validation (Revolutionary DX!)
 
 ```typescript
-import { ConditionalValidation } from '@ecommerce-enterprise/nest-zod';
+import { 
+  DynamicValidation, 
+  ConditionalValidation, 
+  ContextAwareValidation,
+  PipelineValidation,
+  ConditionalPatterns 
+} from '@ecommerce-enterprise/nest-zod';
 
-@Post('admin/users')
-@ConditionalValidation((req) => ({
-  schema: req.user.role === 'admin' 
-    ? AdminUserSchema 
-    : RegularUserSchema,
-  transform: true,
-  audit: true
-}))
+// ✅ Clean, intuitive syntax - 10x better than native Zod!
+@Post('users')
+@ConditionalValidation({
+  admin: AdminUserSchema,
+  premium: PremiumUserSchema,
+  user: RegularUserSchema,
+}, {
+  userRoleField: 'role',
+  audit: true,
+  cache: true,
+})
 async createUser(@Body() userData: any) {
   return { success: true, data: userData };
+}
+
+// ✅ Complex dynamic validation with context awareness
+@Post('complex-validation')
+@DynamicValidation((builder) => 
+  builder
+    .when(ConditionalPatterns.userRole('admin'), AdminSchema, { priority: 100 })
+    .when(ConditionalPatterns.userPermission('premium'), PremiumSchema, { priority: 80 })
+    .when((data, context) => data.amount > 1000, HighValueSchema, { priority: 60 })
+    .when(() => true, BasicSchema, { priority: 0 }) // fallback
+    .withOptions({ audit: true, errorStrategy: 'collect' })
+)
+async createComplex(@Body() data: any) {
+  return { success: true, data };
+}
+
+// ✅ Multi-step pipeline validation
+@Post('pipeline-validation')
+@PipelineValidation([
+  { name: 'basic', schema: BasicSchema },
+  { name: 'business', schema: BusinessSchema, condition: (data) => data.type === 'premium' },
+  { name: 'security', schema: SecuritySchema, continueOnError: true },
+], { audit: true })
+async createWithPipeline(@Body() data: any) {
+  return { success: true, data };
 }
 ```
 

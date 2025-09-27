@@ -325,8 +325,9 @@ export function RealtimeValidation(
 
 /**
  * A/B testing validation with different schemas
+ * @deprecated Use ABTestValidation from dynamic-validation.decorator.ts instead
  */
-export function ABTestValidation(
+export function EnterpriseABTestValidation(
   schemas: { [variant: string]: z.ZodSchema },
   options?: Partial<ZodValidationOptions> & {
     defaultVariant?: string;

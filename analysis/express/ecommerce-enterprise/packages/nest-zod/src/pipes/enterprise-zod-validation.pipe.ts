@@ -22,7 +22,7 @@ export class EnterpriseZodValidationPipe implements PipeTransform<any> {
 
   constructor(
     private readonly validationService: EnterpriseZodValidationService,
-    @Optional() @Inject('ZOD_VALIDATION_OPTIONS') private globalOptions?: ZodValidationOptions,
+    @Optional() @Inject('ZOD_VALIDATION_OPTIONS') private readonly globalOptions?: ZodValidationOptions,
   ) {}
 
   async transform(value: any, metadata: ArgumentMetadata, context?: any) {
