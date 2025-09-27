@@ -11,15 +11,12 @@ import {
   PermissionValidation,
   ABTestValidation,
   FeatureFlagValidation,
-  SmartValidation
-} from '../../../../nest-zod/src/decorators/dynamic-validation.decorator';
-import { 
-  ConditionalPatterns, 
-  DynamicSchemas, 
-  ValidationHelpers,
-  ValidationContext 
-} from '../../../../nest-zod/src/utils/dynamic-validation';
-import { ValidationPipelineService, CommonPipelines } from '../../../../nest-zod/src/services/validation-pipeline.service';
+  SmartValidation,
+  ValidationPipelineService,
+  CommonPipelines,
+  ConditionalPatterns,
+  ValidationContext
+} from '@ecommerce-enterprise/nest-zod';
 
 // Define schemas for different scenarios
 const BasicPaymentSchema = z.object({

@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { PaymentController } from './controllers/payment.controller';
 import { EnterprisePaymentController } from './controllers/enterprise-payment.controller';
 import { ThreePhasePaymentController } from './controllers/three-phase-payment.controller';
+import { TypeSafeValidationDemoController } from './controllers/type-safe-validation-demo.controller';
+import { DecoratorBasedValidationController } from './controllers/decorator-based-validation.controller';
 import { PaymentService } from './services/payment.service';
 import { EnterprisePaymentService } from './services/enterprise-payment.service';
 import { ThreePhasePaymentService } from './services/three-phase-payment.service';
@@ -20,6 +22,8 @@ import { EnterpriseZodValidationService } from '@ecommerce-enterprise/nest-zod';
     PaymentController,
     EnterprisePaymentController,
     ThreePhasePaymentController,
+    TypeSafeValidationDemoController,
+    DecoratorBasedValidationController,
   ],
   providers: [
     PaymentService,
