@@ -40,8 +40,8 @@ export class AuthController {
     @Auth()
     @Get('me')
     me(@Req() req: Request) {
-        const anyReq = req as Request & { auth?: { sub: string; roles?: string[] } };
-        return { sub: anyReq.auth?.sub, roles: anyReq.auth?.roles ?? [] };
+        const authReq = req as Request & { auth?: { sub: string; roles?: string[] } };
+        return { sub: authReq.auth?.sub, roles: authReq.auth?.roles ?? [] };
     }
 
     @Post('otp/request')

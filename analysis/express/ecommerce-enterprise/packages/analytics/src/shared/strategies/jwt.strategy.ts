@@ -14,6 +14,15 @@ export interface JwtPayload {
   aud?: string;
 }
 
+export interface AuthenticatedUser {
+  id: string;
+  email: string;
+  roles: string[];
+  permissions: string[];
+  iat?: number;
+  exp?: number;
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   private readonly logger = new Logger(JwtStrategy.name);
@@ -28,7 +37,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload): Promise<any> {
+  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
     try {
       // Validate required fields
       if (!payload.sub || !payload.email) {

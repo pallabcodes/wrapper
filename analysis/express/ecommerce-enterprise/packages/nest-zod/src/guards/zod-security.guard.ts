@@ -60,7 +60,7 @@ export class ZodSecurityGuard implements CanActivate {
     }
   }
 
-  private validateRequestDepth(obj: any, maxDepth: number, currentDepth = 0): void {
+  private validateRequestDepth(obj: unknown, maxDepth: number, currentDepth = 0): void {
     if (currentDepth > maxDepth) {
       throw new Error(`Request depth exceeds maximum allowed depth of ${maxDepth}`);
     }
@@ -74,7 +74,7 @@ export class ZodSecurityGuard implements CanActivate {
     }
   }
 
-  private validateStringLengths(obj: any, maxLength: number): void {
+  private validateStringLengths(obj: unknown, maxLength: number): void {
     if (typeof obj === 'string' && obj.length > maxLength) {
       throw new Error(`String length ${obj.length} exceeds maximum allowed length of ${maxLength}`);
     }
@@ -86,7 +86,7 @@ export class ZodSecurityGuard implements CanActivate {
     }
   }
 
-  private validateAllowedTypes(obj: any, allowedTypes: string[]): void {
+  private validateAllowedTypes(obj: unknown, allowedTypes: string[]): void {
     const objType = this.getObjectType(obj);
     
     if (!allowedTypes.includes(objType)) {
@@ -104,7 +104,7 @@ export class ZodSecurityGuard implements CanActivate {
     }
   }
 
-  private getObjectType(obj: any): string {
+  private getObjectType(obj: unknown): string {
     if (obj === null) return 'null';
     if (obj === undefined) return 'undefined';
     if (typeof obj === 'string') return 'string';
@@ -116,7 +116,7 @@ export class ZodSecurityGuard implements CanActivate {
     return 'unknown';
   }
 
-  private validateBlockedPatterns(obj: any, blockedPatterns: RegExp[]): void {
+  private validateBlockedPatterns(obj: unknown, blockedPatterns: RegExp[]): void {
     const objStr = JSON.stringify(obj);
     
     for (const pattern of blockedPatterns) {
@@ -126,7 +126,7 @@ export class ZodSecurityGuard implements CanActivate {
     }
   }
 
-  private detectInjectionAttacks(obj: any): void {
+  private detectInjectionAttacks(obj: unknown): void {
     const objStr = JSON.stringify(obj).toLowerCase();
     
     // SQL injection patterns

@@ -41,21 +41,21 @@ export class ThreePhasePaymentController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async authorizePayment(
-    @Body() request: any,
-    @Request() req: any,
+    @Body() request: Record<string, unknown>,
+    @Request() req: Record<string, unknown>,
   ): Promise<any> {
-    this.logger.log(`Authorizing payment for user ${req.user?.id}`);
+    this.logger.log(`Authorizing payment for user ${(req as any).user?.id}`);
 
     const context = {
-      ipAddress: req.ip || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent'],
-      requestId: req.headers['x-request-id'],
+      ipAddress: (req as any).ip || ((req as any).connection as any)?.remoteAddress,
+      userAgent: ((req as any).headers as any)?.['user-agent'],
+      requestId: ((req as any).headers as any)?.['x-request-id'],
     };
 
     return await this.threePhasePaymentService.authorizePayment(
       request,
-      req.user?.id,
-      req.user?.tenantId,
+      (req as any).user?.id,
+      (req as any).user?.tenantId,
       context,
     );
   }
@@ -69,21 +69,21 @@ export class ThreePhasePaymentController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async capturePayment(
-    @Body() request: any,
-    @Request() req: any,
+    @Body() request: Record<string, unknown>,
+    @Request() req: Record<string, unknown>,
   ): Promise<any> {
-    this.logger.log(`Capturing payment for user ${req.user?.id}`);
+    this.logger.log(`Capturing payment for user ${(req as any).user?.id}`);
 
     const context = {
-      ipAddress: req.ip || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent'],
-      requestId: req.headers['x-request-id'],
+      ipAddress: (req as any).ip || ((req as any).connection as any).remoteAddress,
+      userAgent: ((req as any).headers as any)['user-agent'],
+      requestId: ((req as any).headers as any)['x-request-id'],
     };
 
     return await this.threePhasePaymentService.capturePayment(
       request,
-      req.user?.id,
-      req.user?.tenantId,
+      (req as any).user?.id,
+      (req as any).user?.tenantId,
       context,
     );
   }
@@ -97,21 +97,21 @@ export class ThreePhasePaymentController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async settlePayment(
-    @Body() request: any,
-    @Request() req: any,
+    @Body() request: Record<string, unknown>,
+    @Request() req: Record<string, unknown>,
   ): Promise<any> {
-    this.logger.log(`Settling payment for user ${req.user?.id}`);
+    this.logger.log(`Settling payment for user ${(req as any).user?.id}`);
 
     const context = {
-      ipAddress: req.ip || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent'],
-      requestId: req.headers['x-request-id'],
+      ipAddress: (req as any).ip || ((req as any).connection as any).remoteAddress,
+      userAgent: ((req as any).headers as any)['user-agent'],
+      requestId: ((req as any).headers as any)['x-request-id'],
     };
 
     return await this.threePhasePaymentService.settlePayment(
       request,
-      req.user?.id,
-      req.user?.tenantId,
+      (req as any).user?.id,
+      (req as any).user?.tenantId,
       context,
     );
   }
@@ -124,14 +124,14 @@ export class ThreePhasePaymentController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async getPaymentFlow(
     @Param('authorizationId') authorizationId: string,
-    @Request() req: any,
+    @Request() req: Record<string, unknown>,
   ): Promise<any> {
     this.logger.log(`Getting payment flow for authorization ${authorizationId}`);
 
     return await this.threePhasePaymentService.getPaymentFlow(
       authorizationId,
-      req.user?.id,
-      req.user?.tenantId,
+      (req as any).user?.id,
+      (req as any).user?.tenantId,
     );
   }
 
@@ -144,14 +144,14 @@ export class ThreePhasePaymentController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async cancelAuthorization(
     @Param('authorizationId') authorizationId: string,
-    @Request() req: any,
+    @Request() req: Record<string, unknown>,
   ): Promise<void> {
-    this.logger.log(`Cancelling authorization ${authorizationId} for user ${req.user?.id}`);
+    this.logger.log(`Cancelling authorization ${authorizationId} for user ${(req as any).user?.id}`);
 
     await this.threePhasePaymentService.cancelAuthorization(
       authorizationId,
-      req.user?.id,
-      req.user?.tenantId,
+      (req as any).user?.id,
+      (req as any).user?.tenantId,
     );
   }
 }

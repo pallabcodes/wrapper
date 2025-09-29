@@ -8,6 +8,16 @@ import {
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { Request } from 'express';
+
+interface RequestWithUser extends Request {
+  user?: {
+    sub: string;
+    email: string;
+    roles?: string[];
+    permissions?: string[];
+  };
+}
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -30,7 +40,7 @@ export class JwtAuthGuard implements CanActivate {
       return true; // Allow access to public routes
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
@@ -121,7 +131,7 @@ export class JwtAuthGuard implements CanActivate {
     }
   }
 
-  private extractTokenFromHeader(request: any): string | undefined {
+  private extractTokenFromHeader(request: RequestWithUser): string | undefined {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
     return type === 'Bearer' ? token : undefined;
   }

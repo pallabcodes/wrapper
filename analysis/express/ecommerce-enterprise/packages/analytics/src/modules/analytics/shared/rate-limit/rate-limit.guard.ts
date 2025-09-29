@@ -17,7 +17,7 @@ export class RateLimitGuard implements CanActivate {
 
   constructor(
     private readonly reflector: Reflector,
-    private readonly storage: any,
+    private readonly storage: { increment: (key: string, windowMs: number) => Promise<{ limit: number; remaining: number; resetTime: number }> },
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -30,7 +30,7 @@ export class RateLimitGuard implements CanActivate {
     }
 
     // Skip if condition is met
-    if (options.skip && options.skip(request)) {
+    if (options.skip && options.skip(this.convertRequest(request))) {
       return true;
     }
 
@@ -81,11 +81,20 @@ export class RateLimitGuard implements CanActivate {
 
   private generateKey(request: Request, options: RateLimitOptions): string {
     if (options.keyGenerator) {
-      return options.keyGenerator(request);
+      return options.keyGenerator(this.convertRequest(request));
     }
 
     // Default: IP-based rate limiting
     const ip = request.ip || request.connection.remoteAddress || 'unknown';
     return `rate_limit:${ip}`;
+  }
+
+  private convertRequest(request: Request): { method: string; url: string; ip?: string | undefined; headers: Record<string, string | string[] | undefined> } {
+    return {
+      method: request.method,
+      url: request.url,
+      ip: request.ip,
+      headers: request.headers,
+    };
   }
 }

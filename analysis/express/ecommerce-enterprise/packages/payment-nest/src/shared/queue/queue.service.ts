@@ -10,21 +10,21 @@ export class QueueService {
     @InjectQueue('analytics-processing') private analyticsQueue: Queue,
   ) {}
 
-  async addPaymentJob(data: any, options?: any): Promise<void> {
+  async addPaymentJob(data: Record<string, unknown>, options?: Record<string, unknown>): Promise<void> {
     await this.paymentQueue.add('process-payment', data, {
       priority: 1,
       ...options,
     });
   }
 
-  async addWebhookJob(data: any, options?: any): Promise<void> {
+  async addWebhookJob(data: Record<string, unknown>, options?: Record<string, unknown>): Promise<void> {
     await this.webhookQueue.add('process-webhook', data, {
       priority: 2,
       ...options,
     });
   }
 
-  async addAnalyticsJob(data: any, options?: any): Promise<void> {
+  async addAnalyticsJob(data: Record<string, unknown>, options?: Record<string, unknown>): Promise<void> {
     await this.analyticsQueue.add('process-analytics', data, {
       priority: 3,
       ...options,

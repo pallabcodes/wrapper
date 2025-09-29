@@ -77,7 +77,7 @@ export interface AnalyticsMetrics {
   isRealtime: boolean;
 
   // Custom metrics (extensible)
-  customMetrics?: Record<string, any>;
+  customMetrics?: Record<string, unknown>;
 }
 
 /**
@@ -141,5 +141,5 @@ export interface RealtimeMetricsUpdate {
   userId: string;
   sessionId: string;
   businessValue?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }

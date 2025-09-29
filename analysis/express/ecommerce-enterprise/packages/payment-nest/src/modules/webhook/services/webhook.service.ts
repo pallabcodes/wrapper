@@ -16,9 +16,9 @@ export class WebhookService {
     private readonly paymentRepository: PaymentRepository,
   ) {}
 
-  async handleStripeWebhook(payload: any, signature: string): Promise<void> {
+  async handleStripeWebhook(payload: Record<string, unknown>, signature: string): Promise<void> {
     try {
-      const event = await this.stripeService.handleWebhook(payload, signature);
+      const event = await this.stripeService.handleWebhook(payload as unknown as string, signature);
       
       switch (event.type) {
         case 'payment_intent.succeeded':
@@ -42,9 +42,9 @@ export class WebhookService {
     }
   }
 
-  async handleBraintreeWebhook(payload: any, signature: string): Promise<void> {
+  async handleBraintreeWebhook(payload: Record<string, unknown>, signature: string): Promise<void> {
     try {
-      const event = await this.braintreeService.handleWebhook(payload, signature);
+      const event = await this.braintreeService.handleWebhook(payload as unknown as string, signature);
       
       switch (event.type) {
         case 'transaction_settled':
@@ -65,7 +65,7 @@ export class WebhookService {
     }
   }
 
-  async handlePayPalWebhook(payload: any): Promise<void> {
+  async handlePayPalWebhook(payload: Record<string, unknown>): Promise<void> {
     try {
       const event = await this.paypalService.handleWebhook(payload);
       
@@ -88,8 +88,8 @@ export class WebhookService {
     }
   }
 
-  private async handlePaymentSuccess(data: any): Promise<void> {
-    const paymentId = data.metadata?.paymentId;
+  private async handlePaymentSuccess(data: Record<string, unknown>): Promise<void> {
+    const paymentId = (data.metadata as any)?.paymentId;
     if (!paymentId) {
       this.logger.warn('No payment ID found in Stripe payment success event');
       return;
@@ -103,14 +103,14 @@ export class WebhookService {
 
     await this.paymentRepository.update(paymentId, {
       status: PaymentStatus.COMPLETED,
-      providerPaymentId: data.id,
+      providerPaymentId: data.id as string,
     });
 
     this.logger.log(`Payment ${paymentId} marked as completed`);
   }
 
-  private async handlePaymentFailure(data: any): Promise<void> {
-    const paymentId = data.metadata?.paymentId;
+  private async handlePaymentFailure(data: Record<string, unknown>): Promise<void> {
+    const paymentId = (data.metadata as any)?.paymentId;
     if (!paymentId) {
       this.logger.warn('No payment ID found in Stripe payment failure event');
       return;
@@ -129,8 +129,8 @@ export class WebhookService {
     this.logger.log(`Payment ${paymentId} marked as failed`);
   }
 
-  private async handlePaymentCancellation(data: any): Promise<void> {
-    const paymentId = data.metadata?.paymentId;
+  private async handlePaymentCancellation(data: Record<string, unknown>): Promise<void> {
+    const paymentId = (data.metadata as any)?.paymentId;
     if (!paymentId) {
       this.logger.warn('No payment ID found in Stripe payment cancellation event');
       return;
@@ -149,8 +149,8 @@ export class WebhookService {
     this.logger.log(`Payment ${paymentId} marked as cancelled`);
   }
 
-  private async handleCheckoutSessionCompleted(data: any): Promise<void> {
-    const paymentId = data.metadata?.paymentId;
+  private async handleCheckoutSessionCompleted(data: Record<string, unknown>): Promise<void> {
+    const paymentId = (data.metadata as any)?.paymentId;
     if (!paymentId) {
       this.logger.warn('No payment ID found in Stripe checkout session completed event');
       return;
@@ -164,14 +164,14 @@ export class WebhookService {
 
     await this.paymentRepository.update(paymentId, {
       status: PaymentStatus.COMPLETED,
-      providerPaymentId: data.payment_intent,
+      providerPaymentId: data.payment_intent as string,
     });
 
     this.logger.log(`Payment ${paymentId} marked as completed via checkout session`);
   }
 
-  private async handleTransactionSettled(data: any): Promise<void> {
-    const paymentId = data.transaction?.orderId;
+  private async handleTransactionSettled(data: Record<string, unknown>): Promise<void> {
+    const paymentId = (data.transaction as any)?.orderId;
     if (!paymentId) {
       this.logger.warn('No payment ID found in Braintree transaction settled event');
       return;
@@ -185,14 +185,14 @@ export class WebhookService {
 
     await this.paymentRepository.update(paymentId, {
       status: PaymentStatus.COMPLETED,
-      providerPaymentId: data.transaction.id,
+      providerPaymentId: (data.transaction as any).id,
     });
 
     this.logger.log(`Payment ${paymentId} marked as completed`);
   }
 
-  private async handleTransactionDeclined(data: any): Promise<void> {
-    const paymentId = data.transaction?.orderId;
+  private async handleTransactionDeclined(data: Record<string, unknown>): Promise<void> {
+    const paymentId = (data.transaction as any)?.orderId;
     if (!paymentId) {
       this.logger.warn('No payment ID found in Braintree transaction declined event');
       return;
@@ -211,8 +211,8 @@ export class WebhookService {
     this.logger.log(`Payment ${paymentId} marked as failed`);
   }
 
-  private async handleTransactionVoided(data: any): Promise<void> {
-    const paymentId = data.transaction?.orderId;
+  private async handleTransactionVoided(data: Record<string, unknown>): Promise<void> {
+    const paymentId = (data.transaction as any)?.orderId;
     if (!paymentId) {
       this.logger.warn('No payment ID found in Braintree transaction voided event');
       return;
@@ -231,8 +231,8 @@ export class WebhookService {
     this.logger.log(`Payment ${paymentId} marked as cancelled`);
   }
 
-  private async handlePayPalPaymentCompleted(data: any): Promise<void> {
-    const paymentId = data.resource?.custom;
+  private async handlePayPalPaymentCompleted(data: Record<string, unknown>): Promise<void> {
+    const paymentId = (data.resource as any)?.custom;
     if (!paymentId) {
       this.logger.warn('No payment ID found in PayPal payment completed event');
       return;
@@ -246,14 +246,14 @@ export class WebhookService {
 
     await this.paymentRepository.update(paymentId, {
       status: PaymentStatus.COMPLETED,
-      providerPaymentId: data.resource.parent_payment,
+      providerPaymentId: (data.resource as any).parent_payment,
     });
 
     this.logger.log(`Payment ${paymentId} marked as completed`);
   }
 
-  private async handlePayPalPaymentDenied(data: any): Promise<void> {
-    const paymentId = data.resource?.custom;
+  private async handlePayPalPaymentDenied(data: Record<string, unknown>): Promise<void> {
+    const paymentId = (data.resource as any)?.custom;
     if (!paymentId) {
       this.logger.warn('No payment ID found in PayPal payment denied event');
       return;
@@ -272,8 +272,8 @@ export class WebhookService {
     this.logger.log(`Payment ${paymentId} marked as failed`);
   }
 
-  private async handlePayPalPaymentRefunded(data: any): Promise<void> {
-    const paymentId = data.resource?.custom;
+  private async handlePayPalPaymentRefunded(data: Record<string, unknown>): Promise<void> {
+    const paymentId = (data.resource as any)?.custom;
     if (!paymentId) {
       this.logger.warn('No payment ID found in PayPal payment refunded event');
       return;

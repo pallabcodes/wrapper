@@ -34,7 +34,7 @@ export class PaymentRepository {
     const { page, limit, status, provider } = filters;
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where: Record<string, unknown> = {
       userId,
       tenantId,
     };
@@ -83,7 +83,7 @@ export class PaymentRepository {
     const { page, limit, status, provider } = filters;
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where: Record<string, unknown> = {
       tenantId,
     };
 

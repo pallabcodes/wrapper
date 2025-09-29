@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { z } from 'zod';
 import { AdvancedCachingService } from './advanced-caching.service';
 
-export interface BatchValidationResult<T = any> {
+export interface BatchValidationResult<T = unknown> {
   success: boolean;
   results: Array<{
     index: number;
@@ -29,7 +29,7 @@ export interface ParallelValidationOptions {
   timeout?: number;
 }
 
-export interface ValidationChunk<T = any> {
+export interface ValidationChunk<T = unknown> {
   items: T[];
   startIndex: number;
   endIndex: number;
@@ -238,8 +238,8 @@ export class ParallelValidationService {
         })
       );
       
-      chunkResults.forEach(({ results: chunkResult }) => {
-        results.push(...chunkResult as any);
+      chunkResults.forEach(({ chunk, results: chunkResult }) => {
+        results.push({ chunk, results: chunkResult });
       });
     }
     
@@ -352,12 +352,17 @@ export class ParallelValidationService {
     chunkResults.forEach(({ chunk, results: chunkResults }) => {
       chunkResults.forEach((result, localIndex) => {
         const globalIndex = chunk.startIndex + localIndex;
-        results[globalIndex] = {
+        const entry: { index: number; success: boolean; data?: T; error?: z.ZodError } = {
           index: globalIndex,
           success: result.success,
-          data: result.data,
-          error: result.error
-        } as any;
+        };
+        if (result.data !== undefined) {
+          entry.data = result.data as T;
+        }
+        if (result.error !== undefined) {
+          entry.error = result.error as z.ZodError;
+        }
+        results[globalIndex] = entry;
         
         if (result.success) {
           successful++;

@@ -8,6 +8,7 @@ import fastifyCompress from '@fastify/compress';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyEtag from '@fastify/etag';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { Server } from 'http';
 
 async function bootstrap() {
   const logger = new Logger('AnalyticsService');
@@ -57,7 +58,7 @@ async function bootstrap() {
 
     // Tune keep-alive and headers timeout to mitigate request smuggling and slowloris
     if (!useFastify) {
-      const server: any = app.getHttpServer();
+      const server = app.getHttpServer() as Server;
       // Keep alive slightly less than typical LB idle timeout
       server.keepAliveTimeout = 75_000; // 75s
       server.headersTimeout = 76_000; // keepAliveTimeout + 1s

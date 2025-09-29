@@ -2,6 +2,12 @@ import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
+// Extend Request interface to include custom properties
+interface RequestWithTracking extends Request {
+  requestId?: string;
+  startTime?: bigint;
+}
+
 @Injectable()
 export class RequestTrackerMiddleware implements NestMiddleware {
   private readonly logger = new Logger('RequestTracker');
@@ -9,14 +15,15 @@ export class RequestTrackerMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction): void {
     // Generate unique request ID
     const requestId = uuidv4();
-    (req as any)['requestId'] = requestId;
+    const reqWithTracking = req as RequestWithTracking;
+    reqWithTracking.requestId = requestId;
 
     // Add request ID to response headers
     res.setHeader('X-Request-ID', requestId);
 
     // Track request start time
     const startTime = process.hrtime.bigint();
-    (req as any)['startTime'] = startTime;
+    reqWithTracking.startTime = startTime;
 
     // Log request tracking information
     this.logger.debug('Request tracked', {

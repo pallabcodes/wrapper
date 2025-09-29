@@ -21,9 +21,9 @@ export interface ZodInternalDef {
   error?: z.ZodErrorMap | undefined;
   checks?: Array<{
     kind: string;
-    [key: string]: any;
+    [key: string]: unknown;
   }>;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -31,17 +31,17 @@ export interface ZodInternalDef {
  */
 export interface ZodInternalSchema {
   _def: ZodInternalDef;
-  _cached?: any;
-  _getCached?: () => any;
+  _cached?: unknown;
+  _getCached?: () => unknown;
   shape?: Record<string, z.ZodSchema>;
   strict?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
  * Type guard to check if a schema has internal structure
  */
-export function hasInternalStructure(schema: any): schema is ZodInternalSchema {
+export function hasInternalStructure(schema: unknown): schema is ZodInternalSchema {
   return schema && typeof schema === 'object' && '_def' in schema;
 }
 
@@ -59,14 +59,14 @@ export interface ZodIssueInternal {
   minimum?: number;
   maximum?: number;
   type?: string;
-  context?: Record<string, any>;
-  data?: any;
+  context?: Record<string, unknown>;
+  data?: unknown;
 }
 
 /**
  * Type guard for Zod error issues
  */
-export function isZodIssueInternal(issue: any): issue is ZodIssueInternal {
+export function isZodIssueInternal(issue: unknown): issue is ZodIssueInternal {
   return issue && typeof issue === 'object' && 'code' in issue && 'path' in issue;
 }
 
@@ -77,7 +77,7 @@ export function isZodIssueInternal(issue: any): issue is ZodIssueInternal {
 /**
  * Safe schema transformation result
  */
-export type SafeSchemaTransform<T extends z.ZodSchema> = T extends z.ZodEffects<infer U, any, any>
+export type SafeSchemaTransform<T extends z.ZodSchema> = T extends z.ZodEffects<infer U, unknown, unknown>
   ? U
   : T;
 
@@ -88,7 +88,7 @@ export interface SafeCompositionOptions {
   name?: string;
   description?: string;
   errorMap?: z.ZodErrorMap;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -113,7 +113,7 @@ export interface SafeErrorContext {
   minimum?: number | undefined;
   maximum?: number | undefined;
   type?: string | undefined;
-  context?: Record<string, any> | undefined;
+  context?: Record<string, unknown> | undefined;
 }
 
 /**
@@ -137,13 +137,13 @@ export interface SafeValidationContext {
   userId?: string;
   traceId?: string;
   spanId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
  * Safe validation result
  */
-export interface SafeValidationResult<T = any> {
+export interface SafeValidationResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: SafeErrorMessage;
@@ -187,16 +187,14 @@ export interface SafeSchemaDefinition<T extends z.ZodSchema = z.ZodSchema> {
 /**
  * Safe property access helper
  */
-export type SafePropertyAccess<T, K extends string> = K extends keyof T
-  ? T[K]
-  : T extends Record<string, any>
-  ? T[K]
+export type SafePropertyAccess<T, K extends string> = T extends Record<string, unknown>
+  ? (K extends keyof T ? T[K] : never)
   : never;
 
 /**
  * Safe object key iteration
  */
-export type SafeObjectKeys<T> = T extends Record<string, any>
+export type SafeObjectKeys<T> = T extends Record<string, unknown>
   ? Array<keyof T>
   : never;
 
@@ -214,35 +212,35 @@ export type SafeSchemaInfer<T> = T extends z.ZodSchema<infer U>
 /**
  * Check if value is a Zod schema
  */
-export function isZodSchema(value: any): value is z.ZodSchema {
+export function isZodSchema(value: unknown): value is z.ZodSchema {
   return value && typeof value === 'object' && '_def' in value && 'parse' in value;
 }
 
 /**
  * Check if value is a Zod object schema
  */
-export function isZodObjectSchema(value: any): value is z.ZodObject<any> {
+export function isZodObjectSchema(value: unknown): value is z.ZodObject<z.ZodRawShape> {
   return isZodSchema(value) && hasInternalStructure(value) && value._def.type === 'object';
 }
 
 /**
  * Check if value is a Zod array schema
  */
-export function isZodArraySchema(value: any): value is z.ZodArray<any> {
+export function isZodArraySchema(value: unknown): value is z.ZodArray<z.ZodTypeAny> {
   return isZodSchema(value) && hasInternalStructure(value) && value._def.type === 'array';
 }
 
 /**
  * Check if value is a Zod union schema
  */
-export function isZodUnionSchema(value: any): value is z.ZodUnion<any> {
+export function isZodUnionSchema(value: unknown): value is z.ZodUnion<z.ZodUnionOptions> {
   return isZodSchema(value) && hasInternalStructure(value) && value._def.type === 'union';
 }
 
 /**
  * Check if value is a Zod effects schema
  */
-export function isZodEffectsSchema(value: any): value is z.ZodEffects<any, any, any> {
+export function isZodEffectsSchema(value: unknown): value is z.ZodEffects<z.ZodTypeAny, unknown, unknown> {
   return isZodSchema(value) && hasInternalStructure(value) && value._def.type === 'transform';
 }
 

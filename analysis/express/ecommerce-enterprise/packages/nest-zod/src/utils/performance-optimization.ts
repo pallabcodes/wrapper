@@ -22,7 +22,7 @@ export interface OptimizationResult {
 export class SchemaPerformanceOptimizer {
   private static readonly CACHE_SIZE = 1000;
   private static readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-  private static validationCache = new Map<string, { result: any; timestamp: number }>();
+  private static validationCache = new Map<string, { result: unknown; timestamp: number }>();
   private static metrics: OptimizationPerformanceMetrics[] = [];
 
   /**
@@ -392,7 +392,7 @@ export class SchemaPerformanceOptimizer {
   /**
    * Generate test data for performance testing
    */
-  private static generateTestData(_schema: z.ZodSchema): any {
+  private static generateTestData(_schema: z.ZodSchema): Record<string, unknown> {
     // This would generate appropriate test data based on schema
     // For now, return a simple object
     return { test: 'data' };

@@ -4,7 +4,7 @@ import { Controller, Get, Post, Body, Logger } from '@nestjs/common';
 import { AnalyticsService } from '../services/analytics.service';
 
 // Types
-// import { EventType } from '../types/event-type.enum'; // Temporarily commented out
+import { CreateAnalyticsEventDto } from '../dto/create-analytics-event.dto';
 
 @Controller('events')
 export class AnalyticsController {
@@ -13,7 +13,7 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Post()
-  async trackEvent(@Body() dto: any) {
+  async trackEvent(@Body() dto: CreateAnalyticsEventDto) {
     this.logger.debug('Tracking analytics event', { eventType: dto.eventType });
 
     const result = await this.analyticsService.trackEvent(dto);
@@ -29,7 +29,7 @@ export class AnalyticsController {
   async getEvents() {
     this.logger.debug('Getting analytics events');
 
-    const result = await this.analyticsService.queryAnalytics({} as any);
+    const result = await this.analyticsService.queryAnalytics({} as Record<string, unknown>);
 
     this.logger.log('Events retrieved successfully');
 

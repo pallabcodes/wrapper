@@ -13,7 +13,7 @@ import { throwError } from 'rxjs';
 export class AnalyticsResponseInterceptor implements NestInterceptor {
   private readonly logger = new Logger('AnalyticsResponse');
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse();
     const startTime = Date.now();

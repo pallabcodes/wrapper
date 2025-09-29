@@ -6,13 +6,13 @@ export interface AlertRule {
   id: string;
   name: string;
   description: string;
-  condition: (metrics: any) => boolean;
+  condition: (metrics: Record<string, unknown>) => boolean;
   severity: 'low' | 'medium' | 'high' | 'critical';
   enabled: boolean;
   cooldown: number; // milliseconds
   channels: string[];
   tags?: string[] | undefined;
-  metadata?: Record<string, any> | undefined;
+  metadata?: Record<string, unknown> | undefined;
 }
 
 export interface Alert {
@@ -23,7 +23,7 @@ export interface Alert {
   timestamp: Date;
   resolvedAt?: Date | undefined;
   status: 'active' | 'resolved' | 'acknowledged';
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   channels: string[];
   tags?: string[] | undefined;
 }
@@ -32,7 +32,7 @@ export interface AlertChannel {
   id: string;
   name: string;
   type: 'email' | 'slack' | 'webhook' | 'discord' | 'teams' | 'pagerduty';
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   enabled: boolean;
   rateLimit?: {
     maxAlerts: number;
@@ -289,7 +289,7 @@ export class AlertingService implements OnModuleInit {
   /**
    * Trigger an alert
    */
-  private async triggerAlert(rule: AlertRule, metrics: any): Promise<void> {
+  private async triggerAlert(rule: AlertRule, metrics: Record<string, unknown>): Promise<void> {
     const now = Date.now();
     const lastAlertTime = this.lastAlertTimes.get(rule.id) || 0;
     
@@ -414,7 +414,7 @@ export class AlertingService implements OnModuleInit {
   /**
    * Format alert message for different channels
    */
-  private formatAlertMessage(alert: Alert, channelType: string): string | any {
+  private formatAlertMessage(alert: Alert, channelType: string): string | Record<string, unknown> {
     const severityEmoji = {
       low: '🟡',
       medium: '🟠',
@@ -506,7 +506,7 @@ export class AlertingService implements OnModuleInit {
   /**
    * Generate alert message
    */
-  private generateAlertMessage(rule: AlertRule, _metrics: any): string {
+  private generateAlertMessage(rule: AlertRule, _metrics: Record<string, unknown>): string {
     return `${rule.name}: ${rule.description}`;
   }
 
@@ -526,7 +526,10 @@ export class AlertingService implements OnModuleInit {
       id: 'high_error_rate',
       name: 'High Error Rate',
       description: 'Validation error rate is above threshold',
-      condition: (metrics) => metrics.performance.errorRate > 0.1,
+      condition: (metrics) => {
+        const perf = (metrics['performance'] as { errorRate?: number }) || {};
+        return (perf.errorRate ?? 0) > 0.1;
+      },
       severity: 'high',
       enabled: true,
       cooldown: 5 * 60 * 1000,
@@ -539,7 +542,10 @@ export class AlertingService implements OnModuleInit {
       id: 'slow_validation',
       name: 'Slow Validation',
       description: 'Average validation time is above threshold',
-      condition: (metrics) => metrics.performance.averageValidationTime > 1000,
+      condition: (metrics) => {
+        const perf = (metrics['performance'] as { averageValidationTime?: number }) || {};
+        return (perf.averageValidationTime ?? 0) > 1000;
+      },
       severity: 'medium',
       enabled: true,
       cooldown: 10 * 60 * 1000,
@@ -552,7 +558,10 @@ export class AlertingService implements OnModuleInit {
       id: 'high_memory_usage',
       name: 'High Memory Usage',
       description: 'Memory usage is above threshold',
-      condition: (metrics) => metrics.performance.memoryUsage > 0.8,
+      condition: (metrics) => {
+        const perf = (metrics['performance'] as { memoryUsage?: number }) || {};
+        return (perf.memoryUsage ?? 0) > 0.8;
+      },
       severity: 'high',
       enabled: true,
       cooldown: 5 * 60 * 1000,
@@ -565,7 +574,10 @@ export class AlertingService implements OnModuleInit {
       id: 'low_cache_hit_rate',
       name: 'Low Cache Hit Rate',
       description: 'Cache hit rate is below threshold',
-      condition: (metrics) => metrics.performance.cacheHitRate < 0.5,
+      condition: (metrics) => {
+        const perf = (metrics['performance'] as { cacheHitRate?: number }) || {};
+        return (perf.cacheHitRate ?? 1) < 0.5;
+      },
       severity: 'medium',
       enabled: true,
       cooldown: 15 * 60 * 1000,
@@ -577,32 +589,32 @@ export class AlertingService implements OnModuleInit {
   /**
    * Placeholder methods for different channel types
    */
-  private async sendEmailAlert(_channel: AlertChannel, message: any): Promise<void> {
+  private async sendEmailAlert(_channel: AlertChannel, message: string | Record<string, unknown>): Promise<void> {
     // Implement email sending
     this.logger.log(`Email alert sent: ${message}`);
   }
 
-  private async sendSlackAlert(_channel: AlertChannel, message: any): Promise<void> {
+  private async sendSlackAlert(_channel: AlertChannel, message: string | Record<string, unknown>): Promise<void> {
     // Implement Slack webhook
     this.logger.log(`Slack alert sent: ${message}`);
   }
 
-  private async sendWebhookAlert(_channel: AlertChannel, message: any): Promise<void> {
+  private async sendWebhookAlert(_channel: AlertChannel, message: string | Record<string, unknown>): Promise<void> {
     // Implement webhook sending
     this.logger.log(`Webhook alert sent: ${message}`);
   }
 
-  private async sendDiscordAlert(_channel: AlertChannel, message: any): Promise<void> {
+  private async sendDiscordAlert(_channel: AlertChannel, message: string | Record<string, unknown>): Promise<void> {
     // Implement Discord webhook
     this.logger.log(`Discord alert sent: ${message}`);
   }
 
-  private async sendTeamsAlert(_channel: AlertChannel, message: any): Promise<void> {
+  private async sendTeamsAlert(_channel: AlertChannel, message: string | Record<string, unknown>): Promise<void> {
     // Implement Teams webhook
     this.logger.log(`Teams alert sent: ${message}`);
   }
 
-  private async sendPagerDutyAlert(_channel: AlertChannel, message: any): Promise<void> {
+  private async sendPagerDutyAlert(_channel: AlertChannel, message: string | Record<string, unknown>): Promise<void> {
     // Implement PagerDuty API
     this.logger.log(`PagerDuty alert sent: ${message}`);
   }

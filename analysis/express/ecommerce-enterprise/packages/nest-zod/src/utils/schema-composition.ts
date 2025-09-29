@@ -4,7 +4,7 @@ export interface SchemaCompositionOptions {
   name?: string;
   description?: string;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface SchemaTransformation {
@@ -92,7 +92,7 @@ export class SchemaComposer<T extends z.ZodSchema = z.ZodSchema> {
     const sortedTransformations = this.transformations.sort((a, b) => (b.priority || 0) - (a.priority || 0));
     for (const transformation of sortedTransformations) {
       if (!transformation.condition || transformation.condition(currentSchema)) {
-        currentSchema = transformation.transform(currentSchema) as any;
+        currentSchema = transformation.transform(currentSchema) as z.ZodSchema;
       }
     }
 
@@ -100,7 +100,7 @@ export class SchemaComposer<T extends z.ZodSchema = z.ZodSchema> {
     const sortedValidations = this.validations.sort((a, b) => (b.priority || 0) - (a.priority || 0));
     for (const validation of sortedValidations) {
       if (!validation.condition || validation.condition(currentSchema)) {
-        currentSchema = validation.validation(currentSchema) as any;
+        currentSchema = validation.validation(currentSchema) as z.ZodSchema;
       }
     }
 
@@ -149,35 +149,37 @@ export class SchemaCompositionHelper {
   /**
    * Pick specific fields from a schema
    */
-  static pick<T extends z.ZodObject<any>, K extends keyof T['shape']>(
+  static pick<T extends z.ZodObject<z.ZodRawShape>, K extends keyof T['shape']>(
     schema: T,
     keys: K[]
-  ): z.ZodObject<any> {
-    return schema.pick(keys.reduce((acc, key) => ({ ...acc, [key]: true }), {} as any)) as any;
+  ): z.ZodObject<Pick<T['shape'], K>> {
+    const shape = keys.reduce((acc, key) => ({ ...acc, [String(key)]: true }), {} as Record<string, true>);
+    return schema.pick(shape as Record<K, true>);
   }
 
   /**
    * Omit specific fields from a schema
    */
-  static omit<T extends z.ZodObject<any>, K extends keyof T['shape']>(
+  static omit<T extends z.ZodObject<z.ZodRawShape>, K extends keyof T['shape']>(
     schema: T,
     keys: K[]
-  ): z.ZodObject<any> {
-    return schema.omit(keys.reduce((acc, key) => ({ ...acc, [key]: true }), {} as any)) as any;
+  ): z.ZodObject<Omit<T['shape'], K>> {
+    const shape = keys.reduce((acc, key) => ({ ...acc, [String(key)]: true }), {} as Record<string, true>);
+    return schema.omit(shape as Record<K, true>);
   }
 
   /**
    * Create a partial schema
    */
-  static partial<T extends z.ZodObject<any>>(schema: T): z.ZodObject<any> {
-    return schema.partial() as any;
+  static partial<T extends z.ZodObject<z.ZodRawShape>>(schema: T): z.ZodObject<Partial<T['shape']>> {
+    return schema.partial();
   }
 
   /**
    * Create a required schema
    */
-  static required<T extends z.ZodObject<any>>(schema: T): z.ZodObject<any> {
-    return schema.required() as any;
+  static required<T extends z.ZodObject<z.ZodRawShape>>(schema: T): z.ZodObject<Required<T['shape']>> {
+    return schema.required();
   }
 
   /**
@@ -192,9 +194,9 @@ export class SchemaCompositionHelper {
     return schema.refine((data) => {
       const conditionalData = condition(data) ? trueSchema : falseSchema;
       return Object.keys(conditionalData).every(key => 
-        (conditionalData as any)[key] === (data as any)[key]
+        (conditionalData as Record<string, unknown>)[key] === (data as Record<string, unknown>)[key]
       );
-    }) as any;
+    });
   }
 
   /**
@@ -206,7 +208,7 @@ export class SchemaCompositionHelper {
   ): z.ZodSchema {
     return schema.refine((data) => {
       for (const [field, schemaFactory] of Object.entries(dependencies)) {
-        if ((data as any)[field] !== undefined) {
+        if ((data as Record<string, unknown>)[field] !== undefined) {
           const dependentSchema = schemaFactory(data);
           try {
             dependentSchema.parse(data);
@@ -216,7 +218,7 @@ export class SchemaCompositionHelper {
         }
       }
       return true;
-    }) as any;
+    });
   }
 
   /**
@@ -237,7 +239,7 @@ export class SchemaCompositionHelper {
         }
       }
       return true;
-    }) as any;
+    });
   }
 
   /**
@@ -250,7 +252,7 @@ export class SchemaCompositionHelper {
       validator: (items: z.infer<T>[]) => boolean;
       message: string;
     }>
-  ): z.ZodArray<any> {
+  ): z.ZodArray<T> {
     return z.array(schema).refine((items) => {
       for (const { validator } of validators) {
         if (!validator(items)) {
@@ -258,7 +260,7 @@ export class SchemaCompositionHelper {
         }
       }
       return true;
-    }) as any;
+    });
   }
 
   /**
@@ -279,7 +281,7 @@ export class SchemaCompositionHelper {
         }
       }
       return true;
-    }) as any;
+    });
   }
 
   /**
@@ -288,8 +290,8 @@ export class SchemaCompositionHelper {
   static transform<T extends z.ZodSchema, U>(
     schema: T,
     transform: (data: z.infer<T>) => U
-  ): z.ZodSchema<any, any, U> {
-    return schema.transform(transform) as any;
+  ): z.ZodSchema<z.infer<T>, z.ZodTypeDef, U> {
+    return schema.transform(transform);
   }
 
   /**
@@ -298,8 +300,8 @@ export class SchemaCompositionHelper {
   static preprocess<T extends z.ZodSchema>(
     schema: T,
     preprocess: (data: unknown) => unknown
-  ): z.ZodSchema<any, any, z.infer<T>> {
-    return z.preprocess(preprocess, schema) as any;
+  ): z.ZodSchema<z.infer<T>, z.ZodTypeDef, z.infer<T>> {
+    return z.preprocess(preprocess, schema);
   }
 
   /**
@@ -318,14 +320,14 @@ export class SchemaCompositionHelper {
             const key = `${issue.code}_${issue.path.map(p => String(p)).join('.')}`;
             const message = messages[key] || messages[issue.code] || issue.message;
             ctx.addIssue({
-              code: issue.code as any,
+              code: issue.code,
               message,
               path: issue.path,
-            } as any);
+            });
           }
         }
       }
-    }) as any;
+    });
   }
 
   /**
@@ -336,7 +338,7 @@ export class SchemaCompositionHelper {
     asyncValidator: (data: z.infer<T>) => Promise<boolean>,
     errorMessage?: string
   ): z.ZodSchema {
-    return schema.refine(asyncValidator, errorMessage) as any;
+    return schema.refine(asyncValidator, errorMessage);
   }
 
   /**
@@ -360,7 +362,7 @@ export class SchemaCompositionHelper {
       const result = schema.parse(data);
       cache.set(key, { result, timestamp: Date.now() });
       return result;
-    }) as any;
+    });
   }
 
   /**
@@ -373,7 +375,7 @@ export class SchemaCompositionHelper {
     const originalParse = schema.parse.bind(schema);
     const originalParseAsync = schema.parseAsync?.bind(schema);
 
-    (schema as any).parse = (data: unknown) => {
+    (schema as unknown as { parse: (data: unknown) => unknown }).parse = (data: unknown) => {
       const startTime = performance.now();
       try {
         const result = originalParse(data);
@@ -386,7 +388,7 @@ export class SchemaCompositionHelper {
     };
 
     if (originalParseAsync) {
-      (schema as any).parseAsync = async (data: unknown) => {
+      (schema as unknown as { parseAsync: (data: unknown) => Promise<unknown> }).parseAsync = async (data: unknown) => {
         const startTime = performance.now();
         try {
           const result = await originalParseAsync(data);
@@ -399,7 +401,7 @@ export class SchemaCompositionHelper {
       };
     }
 
-    return schema as any;
+    return schema;
   }
 }
 

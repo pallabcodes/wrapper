@@ -127,8 +127,8 @@ export class FraudDetectionService {
       amount: number;
       currency: string;
       customerEmail: string;
-      billingAddress?: any;
-      metadata?: any;
+      billingAddress?: Record<string, unknown>;
+      metadata?: Record<string, unknown>;
     },
     context: {
       userId: string;
@@ -341,7 +341,7 @@ export class FraudDetectionService {
   /**
    * Assess geographic risk
    */
-  private async assessGeographicRisk(ipAddress: string, billingAddress?: any): Promise<{
+  private async assessGeographicRisk(ipAddress: string, billingAddress?: Record<string, unknown>): Promise<{
     factor: string;
     weight: number;
     description: string;
@@ -434,7 +434,7 @@ export class FraudDetectionService {
   /**
    * Assess behavioral risk
    */
-  private async assessBehavioralRisk(userId: string, paymentData: any) {
+  private async assessBehavioralRisk(userId: string, paymentData: Record<string, unknown>) {
     const pattern = this.behavioralPatterns.get(userId);
     
     if (!pattern) {
@@ -502,7 +502,7 @@ export class FraudDetectionService {
   /**
    * Assess machine learning risk
    */
-  private async assessMachineLearningRisk(paymentData: any, context: any) {
+  private async assessMachineLearningRisk(paymentData: Record<string, unknown>, context: Record<string, unknown>) {
     // Mock ML risk assessment
     // In production, this would call a trained ML model
     const features = this.extractMLFeatures(paymentData, context);
@@ -520,13 +520,13 @@ export class FraudDetectionService {
   /**
    * Assess custom rules
    */
-  private async assessCustomRules(paymentData: any, context: any, customRules: string[]) {
+  private async assessCustomRules(paymentData: Record<string, unknown>, context: Record<string, unknown>, customRules: string[]) {
     let score = 0;
     let description = '';
 
     // Mock custom rules evaluation
     for (const rule of customRules) {
-      if (rule === 'weekend_high_amount' && this.isWeekend() && paymentData.amount > 5000) {
+      if (rule === 'weekend_high_amount' && this.isWeekend() && (paymentData.amount as number) > 5000) {
         score = Math.max(score, 0.6);
         description = 'High amount transaction on weekend';
       }
@@ -595,17 +595,17 @@ export class FraudDetectionService {
     return suspiciousPatterns.some(pattern => pattern.test(email));
   }
 
-  private extractMLFeatures(paymentData: any, context: any): any[] {
+  private extractMLFeatures(paymentData: Record<string, unknown>, context: Record<string, unknown>): number[] {
     // Extract features for ML model
     return [
-      paymentData.amount,
+      paymentData.amount as number,
       paymentData.currency === 'USD' ? 1 : 0,
-      context.userAgent ? context.userAgent.length : 0,
+      context.userAgent ? (context.userAgent as string).length : 0,
       // Add more features as needed
     ];
   }
 
-  private async predictFraudRisk(features: any[]): Promise<number> {
+  private async predictFraudRisk(features: number[]): Promise<number> {
     // Mock ML prediction - in production, this would call a trained model
     return Math.random() * 0.3; // Return a low risk score for demo
   }

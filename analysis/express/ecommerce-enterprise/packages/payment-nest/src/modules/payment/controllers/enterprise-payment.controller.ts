@@ -140,10 +140,10 @@ export class EnterprisePaymentController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async createEnterprisePayment(
-    @Body() createPaymentDto: any,
-    @Request() req: any,
+    @Body() createPaymentDto: Record<string, unknown>,
+    @Request() req: Record<string, unknown>,
   ): Promise<PaymentResponseDto> {
-    this.logger.log(`Creating enterprise payment for user ${req.user?.id}`);
+    this.logger.log(`Creating enterprise payment for user ${(req as any).user?.id}`);
 
     // Validate request data
     const validationResult = EnterpriseCreatePaymentDto.safeParse(createPaymentDto);
@@ -152,9 +152,9 @@ export class EnterprisePaymentController {
     }
 
     const context = {
-      ipAddress: req.ip || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent'],
-      requestId: req.headers['x-request-id'],
+      ipAddress: (req as any).ip || (req as any).connection?.remoteAddress,
+      userAgent: (req as any).headers?.['user-agent'],
+      requestId: (req as any).headers?.['x-request-id'],
     };
 
     return await this.enterprisePaymentService.createEnterprisePayment(
@@ -166,10 +166,10 @@ export class EnterprisePaymentController {
         description: validationResult.data.description || '',
         customerEmail: validationResult.data.customerEmail || '',
         metadata: validationResult.data.metadata || {},
-        tenantId: req.user?.tenantId,
+        tenantId: (req as any).user?.tenantId,
       },
-      req.user?.id,
-      req.user?.tenantId,
+      (req as any).user?.id,
+      (req as any).user?.tenantId,
       context,
     );
   }
@@ -187,26 +187,26 @@ export class EnterprisePaymentController {
   @ApiQuery({ name: 'maxAmount', required: false, type: Number, description: 'Maximum amount filter' })
   @ApiQuery({ name: 'fraudDetected', required: false, type: Boolean, description: 'Filter by fraud detection' })
   async getPayments(
-    @Query() query: any,
-    @Request() req: any,
+    @Query() query: Record<string, unknown>,
+    @Request() req: Record<string, unknown>,
   ): Promise<PaymentListResponseDto> {
-    this.logger.log(`Getting payments for user ${req.user?.id} with filters: ${JSON.stringify(query)}`);
+    this.logger.log(`Getting payments for user ${(req as any).user?.id} with filters: ${JSON.stringify(query)}`);
 
     const filters = {
-      page: parseInt(query.page) || 1,
-      limit: parseInt(query.limit) || 20,
-      status: query.status,
-      provider: query.provider,
-      startDate: query.startDate ? new Date(query.startDate) : undefined,
-      endDate: query.endDate ? new Date(query.endDate) : undefined,
-      minAmount: query.minAmount ? parseFloat(query.minAmount) : undefined,
-      maxAmount: query.maxAmount ? parseFloat(query.maxAmount) : undefined,
-      fraudDetected: query.fraudDetected === 'true',
+      page: parseInt((query as any).page) || 1,
+      limit: parseInt((query as any).limit) || 20,
+      status: (query as any).status,
+      provider: (query as any).provider,
+      startDate: (query as any).startDate ? new Date((query as any).startDate) : undefined,
+      endDate: (query as any).endDate ? new Date((query as any).endDate) : undefined,
+      minAmount: (query as any).minAmount ? parseFloat((query as any).minAmount) : undefined,
+      maxAmount: (query as any).maxAmount ? parseFloat((query as any).maxAmount) : undefined,
+      fraudDetected: (query as any).fraudDetected === 'true',
     };
 
     return await this.enterprisePaymentService.getPayments(
-      req.user?.id,
-      req.user?.tenantId,
+      (req as any).user?.id,
+      (req as any).user?.tenantId,
       filters,
     );
   }
@@ -217,14 +217,14 @@ export class EnterprisePaymentController {
   @ApiResponse({ status: 404, description: 'Payment not found' })
   async getPayment(
     @Param('id') id: string,
-    @Request() req: any,
+    @Request() req: Record<string, unknown>,
   ): Promise<PaymentResponseDto> {
-    this.logger.log(`Getting payment ${id} for user ${req.user?.id}`);
+    this.logger.log(`Getting payment ${id} for user ${(req as any).user?.id}`);
 
     return await this.enterprisePaymentService.getPayment(
       id,
-      req.user?.id,
-      req.user?.tenantId,
+      (req as any).user?.id,
+      (req as any).user?.tenantId,
     );
   }
 
@@ -236,15 +236,15 @@ export class EnterprisePaymentController {
   async updatePayment(
     @Param('id') id: string,
     @Body() updatePaymentDto: UpdatePaymentDto,
-    @Request() req: any,
-  ): Promise<PaymentResponseDto> {
-    this.logger.log(`Updating payment ${id} for user ${req.user?.id}`);
+    @Request() req: Record<string, unknown>,
+  ): Promise<any> {
+    this.logger.log(`Updating payment ${id} for user ${(req as any).user?.id}`);
 
     return await this.enterprisePaymentService.updatePayment(
       id,
-      updatePaymentDto,
-      req.user?.id,
-      req.user?.tenantId,
+      updatePaymentDto as any,
+      (req as any).user?.id,
+      (req as any).user?.tenantId,
     );
   }
 
@@ -256,14 +256,14 @@ export class EnterprisePaymentController {
   @ApiResponse({ status: 400, description: 'Bad request - cannot cancel payment' })
   async cancelPayment(
     @Param('id') id: string,
-    @Request() req: any,
+    @Request() req: Record<string, unknown>,
   ): Promise<void> {
-    this.logger.log(`Cancelling payment ${id} for user ${req.user?.id}`);
+    this.logger.log(`Cancelling payment ${id} for user ${(req as any).user?.id}`);
 
     await this.enterprisePaymentService.cancelPayment(
       id,
-      req.user?.id,
-      req.user?.tenantId,
+      (req as any).user?.id,
+      (req as any).user?.tenantId,
     );
   }
 
@@ -275,15 +275,15 @@ export class EnterprisePaymentController {
   async refundPayment(
     @Param('id') id: string,
     @Body() refundData: { amount?: number; reason?: string },
-    @Request() req: any,
+    @Request() req: Record<string, unknown>,
   ): Promise<PaymentResponseDto> {
-    this.logger.log(`Refunding payment ${id} for user ${req.user?.id}`);
+    this.logger.log(`Refunding payment ${id} for user ${(req as any).user?.id}`);
 
     return await this.enterprisePaymentService.refundPayment(
       id,
       refundData,
-      req.user?.id,
-      req.user?.tenantId,
+      (req as any).user?.id,
+      (req as any).user?.tenantId,
     );
   }
 
@@ -293,10 +293,10 @@ export class EnterprisePaymentController {
   @ApiResponse({ status: 200, description: 'Fraud risk assessment completed' })
   @ApiResponse({ status: 400, description: 'Bad request - invalid data' })
   async assessFraudRisk(
-    @Body() requestData: any,
-    @Request() req: any,
+    @Body() requestData: Record<string, unknown>,
+    @Request() req: Record<string, unknown>,
   ): Promise<any> {
-    this.logger.log(`Assessing fraud risk for user ${req.user?.id}`);
+    this.logger.log(`Assessing fraud risk for user ${(req as any).user?.id}`);
 
     // Validate request data
     const validationResult = FraudDetectionRequestDto.safeParse(requestData);
@@ -313,12 +313,12 @@ export class EnterprisePaymentController {
         metadata: validationResult.data.paymentData.metadata,
       },
       {
-        userId: validationResult.data.context.userId || req.user?.id || '',
-        ipAddress: validationResult.data.context.ipAddress || req.ip || '127.0.0.1',
+        userId: validationResult.data.context.userId || (req as any).user?.id || '',
+        ipAddress: validationResult.data.context.ipAddress || (req as any).ip || '127.0.0.1',
         ...(validationResult.data.context.userAgent && { userAgent: validationResult.data.context.userAgent }),
         ...(validationResult.data.context.deviceFingerprint && {
           deviceFingerprint: {
-            userAgent: validationResult.data.context.deviceFingerprint.userAgent || req.headers['user-agent'] || '',
+            userAgent: validationResult.data.context.deviceFingerprint.userAgent || (req as any).headers?.['user-agent'] || '',
             screenResolution: validationResult.data.context.deviceFingerprint.screenResolution || '',
             timezone: validationResult.data.context.deviceFingerprint.timezone || '',
             language: validationResult.data.context.deviceFingerprint.language || '',
@@ -340,10 +340,10 @@ export class EnterprisePaymentController {
   @ApiResponse({ status: 200, description: 'Compliance audit completed' })
   @ApiResponse({ status: 400, description: 'Bad request - invalid data' })
   async performComplianceAudit(
-    @Body() requestData: any,
-    @Request() req: any,
+    @Body() requestData: Record<string, unknown>,
+    @Request() req: Record<string, unknown>,
   ): Promise<any> {
-    this.logger.log(`Performing compliance audit for tenant ${req.user?.tenantId}`);
+    this.logger.log(`Performing compliance audit for tenant ${(req as any).user?.tenantId}`);
 
     // Validate request data
     const validationResult = ComplianceAuditRequestDto.safeParse(requestData);
@@ -353,7 +353,7 @@ export class EnterprisePaymentController {
 
     return await this.paymentComplianceService.performComplianceAudit(
       validationResult.data.complianceType,
-      req.user?.tenantId,
+      (req as any).user?.tenantId,
       validationResult.data.auditor,
     );
   }
@@ -362,11 +362,11 @@ export class EnterprisePaymentController {
   @ApiOperation({ summary: 'Get compliance status' })
   @ApiResponse({ status: 200, description: 'Compliance status retrieved' })
   async getComplianceStatus(
-    @Request() req: any,
+    @Request() req: Record<string, unknown>,
   ): Promise<any> {
-    this.logger.log(`Getting compliance status for tenant ${req.user?.tenantId}`);
+    this.logger.log(`Getting compliance status for tenant ${(req as any).user?.tenantId}`);
 
-    return await this.paymentComplianceService.getComplianceStatus(req.user?.tenantId);
+    return await this.paymentComplianceService.getComplianceStatus((req as any).user?.tenantId);
   }
 
   @Get('monitoring/dashboard')
@@ -377,12 +377,12 @@ export class EnterprisePaymentController {
   @ApiQuery({ name: 'includeAlerts', required: false, type: Boolean, description: 'Include active alerts' })
   @ApiQuery({ name: 'includeTrends', required: false, type: Boolean, description: 'Include trend data' })
   async getMonitoringDashboard(
-    @Query() query: any,
-    @Request() req: any,
+    @Query() query: Record<string, unknown>,
+    @Request() req: Record<string, unknown>,
   ): Promise<any> {
-    this.logger.log(`Getting monitoring dashboard for tenant ${req.user?.tenantId}`);
+    this.logger.log(`Getting monitoring dashboard for tenant ${(req as any).user?.tenantId}`);
 
-    return await this.paymentMonitoringService.getMonitoringDashboard(req.user?.tenantId);
+    return await this.paymentMonitoringService.getMonitoringDashboard((req as any).user?.tenantId);
   }
 
   @Get('monitoring/metrics')
@@ -392,17 +392,17 @@ export class EnterprisePaymentController {
   @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (ISO string)' })
   @ApiQuery({ name: 'granularity', required: false, type: String, description: 'Data granularity' })
   async getPaymentMetrics(
-    @Query() query: any,
-    @Request() req: any,
+    @Query() query: Record<string, unknown>,
+    @Request() req: Record<string, unknown>,
   ): Promise<any> {
-    this.logger.log(`Getting payment metrics for tenant ${req.user?.tenantId}`);
+    this.logger.log(`Getting payment metrics for tenant ${(req as any).user?.tenantId}`);
 
-    const startDate = new Date(query.startDate);
-    const endDate = new Date(query.endDate);
-    const granularity = query.granularity || 'hourly';
+    const startDate = new Date((query as any).startDate);
+    const endDate = new Date((query as any).endDate);
+    const granularity = (query as any).granularity || 'hourly';
 
     return await this.paymentMonitoringService.getPaymentMetrics(
-      req.user?.tenantId,
+      (req as any).user?.tenantId,
       startDate,
       endDate,
       granularity as 'hourly' | 'daily' | 'weekly' | 'monthly',
@@ -415,12 +415,12 @@ export class EnterprisePaymentController {
   @ApiResponse({ status: 200, description: 'Alert configuration updated' })
   @ApiResponse({ status: 400, description: 'Bad request - invalid configuration' })
   async configureAlerts(
-    @Body() config: any,
-    @Request() req: any,
+    @Body() config: Record<string, unknown>,
+    @Request() req: Record<string, unknown>,
   ): Promise<void> {
-    this.logger.log(`Configuring alerts for tenant ${req.user?.tenantId}`);
+    this.logger.log(`Configuring alerts for tenant ${(req as any).user?.tenantId}`);
 
-    await this.paymentMonitoringService.configureAlerts(req.user?.tenantId, config);
+    await this.paymentMonitoringService.configureAlerts((req as any).user?.tenantId, config);
   }
 
   @Get('analytics/summary')
@@ -428,12 +428,12 @@ export class EnterprisePaymentController {
   @ApiResponse({ status: 200, description: 'Analytics summary retrieved' })
   @ApiQuery({ name: 'period', required: false, type: String, description: 'Analysis period' })
   async getAnalyticsSummary(
-    @Query() query: any,
-    @Request() req: any,
+    @Query() query: Record<string, unknown>,
+    @Request() req: Record<string, unknown>,
   ): Promise<any> {
-    this.logger.log(`Getting analytics summary for tenant ${req.user?.tenantId}`);
+    this.logger.log(`Getting analytics summary for tenant ${(req as any).user?.tenantId}`);
 
-    const period = query.period || '30d';
+    const period = (query as any).period || '30d';
     const endDate = new Date();
     const startDate = new Date();
     
@@ -455,7 +455,7 @@ export class EnterprisePaymentController {
     }
 
     return await this.enterprisePaymentService.getPaymentMetrics(
-      req.user?.tenantId,
+      (req as any).user?.tenantId,
       { start: startDate, end: endDate }
     );
   }

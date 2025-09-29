@@ -31,7 +31,7 @@ export interface PipelineDefinition {
 
 export interface PipelineExecutionResult {
   success: boolean;
-  data: any;
+  data: unknown;
   errors: z.ZodError[];
   executionTime: number;
   stepsExecuted: string[];
@@ -47,7 +47,7 @@ export interface PipelineExecutionResult {
 export class ValidationPipelineService {
   private readonly logger = new Logger(ValidationPipelineService.name);
   private readonly pipelines = new Map<string, PipelineDefinition>();
-  private readonly executionCache = new Map<string, any>();
+  private readonly executionCache = new Map<string, PipelineExecutionResult>();
 
   /**
    * Register a validation pipeline
@@ -62,7 +62,7 @@ export class ValidationPipelineService {
    */
   async executePipeline(
     pipelineName: string,
-    data: any,
+    data: unknown,
     context?: ValidationContext
   ): Promise<PipelineExecutionResult> {
     const startTime = performance.now();
@@ -201,7 +201,7 @@ export class ValidationPipelineService {
     builder: DynamicValidationBuilder,
     options?: Partial<PipelineDefinition>
   ): PipelineDefinition {
-    const steps = (builder as any).steps || [];
+    const steps = (builder as unknown as { steps?: ValidationStep[] }).steps || [];
     
     return {
       name,
@@ -273,20 +273,20 @@ export class ValidationPipelineService {
     return `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private generateCacheKey(pipelineName: string, data: any, context?: ValidationContext): string {
+  private generateCacheKey(pipelineName: string, data: unknown, context?: ValidationContext): string {
     const dataHash = this.hashObject(data);
     const contextHash = context ? this.hashObject(context) : 'no-context';
     return `${pipelineName}:${dataHash}:${contextHash}`;
   }
 
-  private hashObject(obj: any): string {
+  private hashObject(obj: unknown): string {
     return JSON.stringify(obj).split('').reduce((hash, char) => {
       const code = char.charCodeAt(0);
       return ((hash << 5) - hash) + code;
     }, 0).toString(36);
   }
 
-  private isCacheValid(cached: any, ttl?: number): boolean {
+  private isCacheValid(cached: { metadata: { timestamp: Date } }, ttl?: number): boolean {
     if (!ttl) return true;
     return Date.now() - cached.metadata.timestamp.getTime() < ttl;
   }

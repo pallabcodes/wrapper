@@ -448,10 +448,10 @@ export class TypeSafeValidationDemoController {
    * Demonstrates complex validation scenarios with type safety.
    */
   @Post('complex-payment')
-  async createComplexPayment(@Body() data: unknown, @Request() req: any) {
+  async createComplexPayment(@Body() data: unknown, @Request() req: Record<string, unknown>) {
     try {
       // Determine schema based on user role (simulated)
-      const userRole = req.user?.role || 'user';
+      const userRole = ((req as any).user as any)?.role || 'user';
       
       let schema;
       switch (userRole) {

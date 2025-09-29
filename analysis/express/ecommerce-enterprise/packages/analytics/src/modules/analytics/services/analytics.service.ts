@@ -36,7 +36,7 @@ export class AnalyticsService {
    * Track an analytics event with validation
    * Enterprise-grade event tracking with comprehensive logging
    */
-  async trackEvent(dto: CreateAnalyticsEventDto): Promise<any> {
+  async trackEvent(dto: CreateAnalyticsEventDto): Promise<{ success: boolean; data: unknown; timestamp: Date }> {
     this.logger.debug('Tracking analytics event', { eventType: dto.eventType });
 
     // Validate input
@@ -83,7 +83,7 @@ export class AnalyticsService {
    * Query analytics data with advanced filtering
    * Enterprise-grade querying with comprehensive logging
    */
-  async queryAnalytics(query: AnalyticsQueryDto): Promise<any> {
+  async queryAnalytics(query: AnalyticsQueryDto): Promise<{ success: boolean; data: { events: unknown[]; aggregations: Record<string, unknown>; total: number; page: number; limit: number }; timestamp: Date }> {
     this.logger.debug('Querying analytics data', { query });
 
     // Build where conditions
@@ -133,7 +133,7 @@ export class AnalyticsService {
     const aggregations = {
       totalEvents: total,
       uniqueUsers: new Set(events.map(e => e.userId)).size,
-      eventTypes: events.reduce((acc: any, event) => {
+      eventTypes: events.reduce((acc: Record<string, number>, event) => {
         const eventType = event.eventType as string;
         acc[eventType] = (acc[eventType] || 0) + 1;
         return acc;
@@ -157,7 +157,7 @@ export class AnalyticsService {
    * Get real-time metrics
    * Enterprise-grade metrics calculation
    */
-  async getRealtimeMetrics(timeRange: string = '1h'): Promise<any> {
+  async getRealtimeMetrics(timeRange: string = '1h'): Promise<{ success: boolean; data: AnalyticsMetrics; timestamp: Date }> {
     const timeWindow = this.parseTimeRange(timeRange);
     
     // Example: batch by eventType to reduce duplicate queries in a tick
@@ -207,7 +207,7 @@ export class AnalyticsService {
   // HELPER METHODS
   // ============================================================================
 
-  private toPlainObject(event: any): any {
+  private toPlainObject(event: Record<string, unknown>): Record<string, unknown> {
     return {
       ...event,
       metadata: event.metadata ? JSON.parse(event.metadata) : null,
@@ -270,7 +270,7 @@ export class AnalyticsService {
   async aggregateEvents(
     eventType: EventType,
     timeWindow: { start: Date; end: Date },
-  ): Promise<any[]> {
+  ): Promise<Record<string, unknown>[]> {
     return await db.select()
       .from(analyticsEvents)
       .where(
@@ -282,7 +282,7 @@ export class AnalyticsService {
       );
   }
 
-  async getEventSummary(eventType: EventType): Promise<any> {
+  async getEventSummary(eventType: EventType): Promise<{ eventType: EventType; totalCount: number; uniqueUsers: number; dateRange: { earliest: Date | null; latest: Date | null } }> {
     const events = await db.select()
       .from(analyticsEvents)
       .where(eq(analyticsEvents.eventType, eventType));

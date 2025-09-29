@@ -14,7 +14,7 @@ export class TimeoutInterceptor implements NestInterceptor {
   private readonly logger = new Logger('TimeoutInterceptor');
   private readonly defaultTimeout = 30000; // 30 seconds
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest();
 
     // Allow custom timeout via header or use default

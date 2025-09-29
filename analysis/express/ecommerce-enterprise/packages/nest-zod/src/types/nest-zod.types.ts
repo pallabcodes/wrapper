@@ -9,60 +9,60 @@ import { z } from 'zod';
 // Enhanced Alert Types (fixes exactOptionalPropertyTypes issues)
 // ============================================================================
 
-export interface NestZodAlert {
-  id: string;
-  ruleId: string;
-  message: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  timestamp: Date;
-  status: 'active' | 'resolved' | 'acknowledged';
-  data: any;
-  channels: string[];
-  tags?: string[]; // Optional with proper undefined handling
+export interface NestZodAlert<TData = Record<string, unknown>> {
+	id: string;
+	ruleId: string;
+	message: string;
+	severity: 'low' | 'medium' | 'high' | 'critical';
+	timestamp: Date;
+	status: 'active' | 'resolved' | 'acknowledged';
+	data: TData;
+	channels: string[];
+	tags?: string[]; // Optional with proper undefined handling
 }
 
-export interface NestZodAlertRule {
-  id: string;
-  name: string;
-  condition: (data: any) => boolean;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  channels: string[];
-  enabled: boolean;
-  cooldown?: number; // Optional with proper undefined handling
-  tags?: string[]; // Optional with proper undefined handling
+export interface NestZodAlertRule<TInput = Record<string, unknown>> {
+	id: string;
+	name: string;
+	condition: (data: TInput) => boolean;
+	severity: 'low' | 'medium' | 'high' | 'critical';
+	channels: string[];
+	enabled: boolean;
+	cooldown?: number; // Optional with proper undefined handling
+	tags?: string[]; // Optional with proper undefined handling
 }
 
 // ============================================================================
 // Enhanced Tracing Types (fixes exactOptionalPropertyTypes issues)
 // ============================================================================
 
-export interface NestZodValidationSpan {
-  spanId: string;
-  traceId: string;
-  parentSpanId?: string; // Optional with proper undefined handling
-  operationName: string;
-  startTime: number;
-  endTime?: number; // Optional with proper undefined handling
-  tags: Record<string, string>;
-  logs: Array<{
-    timestamp: number;
-    message: string;
-    level: 'debug' | 'info' | 'warn' | 'error';
-    data?: any; // Optional with proper undefined handling
-  }>;
-  status: 'started' | 'finished' | 'error';
-  error?: {
-    message: string;
-    stack?: string; // Optional with proper undefined handling
-    type: string;
-  };
+export interface NestZodValidationSpan<TLogData = Record<string, unknown>> {
+	spanId: string;
+	traceId: string;
+	parentSpanId?: string; // Optional with proper undefined handling
+	operationName: string;
+	startTime: number;
+	endTime?: number; // Optional with proper undefined handling
+	tags: Record<string, string>;
+	logs: Array<{
+		timestamp: number;
+		message: string;
+		level: 'debug' | 'info' | 'warn' | 'error';
+		data?: TLogData; // Optional with proper undefined handling
+	}>;
+	status: 'started' | 'finished' | 'error';
+	error?: {
+		message: string;
+		stack?: string; // Optional with proper undefined handling
+		type: string;
+	};
 }
 
 export interface NestZodTraceContext {
-  spanId: string;
-  traceId: string;
-  parentSpanId?: string; // Optional with proper undefined handling
-  baggage: Record<string, string>;
+	spanId: string;
+	traceId: string;
+	parentSpanId?: string; // Optional with proper undefined handling
+	baggage: Record<string, string>;
 }
 
 // ============================================================================
@@ -70,23 +70,23 @@ export interface NestZodTraceContext {
 // ============================================================================
 
 export interface NestZodValidationError extends Error {
-  name: 'NestZodValidationError';
-  issues: z.ZodIssue[];
-  path: (string | number)[];
-  code: 'validation_error';
-  context?: {
-    schemaName?: string;
-    fieldPath?: string;
-    userMessage?: string;
-  };
+	name: 'NestZodValidationError';
+	issues: z.ZodIssue[];
+	path: (string | number)[];
+	code: 'validation_error';
+	context?: {
+		schemaName?: string;
+		fieldPath?: string;
+		userMessage?: string;
+	};
 }
 
-export interface NestZodErrorContext {
-  schema: z.ZodSchema;
-  data: unknown;
-  path?: (string | number)[];
-  userMessage?: string;
-  metadata?: Record<string, any>;
+export interface NestZodErrorContext<T = Record<string, unknown>> {
+	schema: z.ZodSchema;
+	data: T;
+	path?: (string | number)[];
+	userMessage?: string;
+	metadata?: Record<string, unknown>;
 }
 
 // ============================================================================
@@ -94,40 +94,40 @@ export interface NestZodErrorContext {
 // ============================================================================
 
 export interface NestZodPerformanceMetrics {
-  validationTime: number;
-  memoryUsage: number;
-  cacheHitRate: number;
-  schemaComplexity: number;
-  validationCount: number;
-  errorRate: number;
-  averageValidationTime: number;
-  totalValidations: number;
-  cpuUsage?: number; // Optional with proper undefined handling
+	validationTime: number;
+	memoryUsage: number;
+	cacheHitRate: number;
+	schemaComplexity: number;
+	validationCount: number;
+	errorRate: number;
+	averageValidationTime: number;
+	totalValidations: number;
+	cpuUsage?: number; // Optional with proper undefined handling
 }
 
 // ============================================================================
 // Enhanced Cache Types (improves caching)
 // ============================================================================
 
-export interface NestZodCacheEntry<T = any> {
-  data: T;
-  timestamp: number;
-  ttl: number;
-  metadata?: {
-    schemaName?: string;
-    complexity?: number;
-    dependencies?: string[];
-  };
+export interface NestZodCacheEntry<T = Record<string, unknown>> {
+	data: T;
+	timestamp: number;
+	ttl: number;
+	metadata?: {
+		schemaName?: string;
+		complexity?: number;
+		dependencies?: string[];
+	};
 }
 
 export interface NestZodCacheMetrics {
-  hits: number;
-  misses: number;
-  hitRate: number;
-  size: number;
-  maxSize: number;
-  evictions: number;
-  memoryUsage: number;
+	hits: number;
+	misses: number;
+	hitRate: number;
+	size: number;
+	maxSize: number;
+	evictions: number;
+	memoryUsage: number;
 }
 
 // ============================================================================
@@ -135,80 +135,80 @@ export interface NestZodCacheMetrics {
 // ============================================================================
 
 export interface NestZodSchemaMetadata {
-  name: string;
-  version: string;
-  description?: string;
-  complexity: number;
-  dependencies: string[];
-  usageCount: number;
-  lastUsed?: Date;
-  tags?: string[];
-  createdAt: Date;
-  updatedAt: Date;
+	name: string;
+	version: string;
+	description?: string;
+	complexity: number;
+	dependencies: string[];
+	usageCount: number;
+	lastUsed?: Date;
+	tags?: string[];
+	createdAt: Date;
+	updatedAt: Date;
 }
 
 export interface NestZodSchemaDefinition<T extends z.ZodSchema = z.ZodSchema> {
-  name: string;
-  schema: T;
-  version: string;
-  description?: string;
-  tags?: string[];
-  metadata?: Record<string, any>;
-  createdAt: Date;
-  updatedAt: Date;
-  isActive: boolean;
-  usageCount: number;
-  lastUsed?: Date;
+	name: string;
+	schema: T;
+	version: string;
+	description?: string;
+	tags?: string[];
+	metadata?: Record<string, unknown>;
+	createdAt: Date;
+	updatedAt: Date;
+	isActive: boolean;
+	usageCount: number;
+	lastUsed?: Date;
 }
 
 // ============================================================================
 // Enhanced Validation Types (improves validation pipeline)
 // ============================================================================
 
-export interface NestZodValidationResult<T = any> {
-  success: boolean;
-  data?: T;
-  error?: NestZodValidationError;
-  metadata?: {
-    validationTime: number;
-    cacheHit: boolean;
-    schemaName?: string;
-  };
+export interface NestZodValidationResult<T = unknown> {
+	success: boolean;
+	data?: T;
+	error?: NestZodValidationError;
+	metadata?: {
+		validationTime: number;
+		cacheHit: boolean;
+		schemaName?: string;
+	};
 }
 
 export interface NestZodValidationOptions {
-  strict?: boolean;
-  abortEarly?: boolean;
-  errorMap?: z.ZodErrorMap;
-  cache?: boolean;
-  cacheTtl?: number;
-  context?: Record<string, any>;
+	strict?: boolean;
+	abortEarly?: boolean;
+	errorMap?: z.ZodErrorMap;
+	cache?: boolean;
+	cacheTtl?: number;
+	context?: Record<string, unknown>;
 }
 
 // ============================================================================
 // Enhanced Pipeline Types (improves validation pipeline)
 // ============================================================================
 
-export interface NestZodPipelineStep {
-  name: string;
-  execute: (data: any, context: any) => Promise<any>;
-  condition?: (data: any, context: any) => boolean;
-  priority?: number;
+export interface NestZodPipelineStep<TInput = Record<string, unknown>, TContext = Record<string, unknown>, TOutput = unknown> {
+	name: string;
+	execute: (data: TInput, context: TContext) => Promise<TOutput>;
+	condition?: (data: TInput, context: TContext) => boolean;
+	priority?: number;
 }
 
-export interface NestZodPipelineResult {
-  success: boolean;
-  data?: any;
-  errors: Array<{
-    step: string;
-    error: Error;
-    message: string;
-  }>;
-  metadata: {
-    executionTime: number;
-    stepsExecuted: string[];
-    cacheHits: number;
-  };
+export interface NestZodPipelineResult<T = Record<string, unknown>> {
+	success: boolean;
+	data?: T;
+	errors: Array<{
+		step: string;
+		error: Error;
+		message: string;
+	}>;
+	metadata: {
+		executionTime: number;
+		stepsExecuted: string[];
+		cacheHits: number;
+	};
 }
 
 // ============================================================================
@@ -216,50 +216,50 @@ export interface NestZodPipelineResult {
 // ============================================================================
 
 export interface NestZodDiscoveredSchema {
-  name: string;
-  schema: z.ZodSchema;
-  filePath: string;
-  lineNumber: number;
-  metadata: NestZodSchemaMetadata;
+	name: string;
+	schema: z.ZodSchema;
+	filePath: string;
+	lineNumber: number;
+	metadata: NestZodSchemaMetadata;
 }
 
 export interface NestZodSchemaUsage {
-  schemaName: string;
-  usedIn: {
-    decorators: string[];
-    controllers: string[];
-    services: string[];
-  };
-  usageCount: number;
-  lastUsed: Date;
+	schemaName: string;
+	usedIn: {
+		decorators: string[];
+		controllers: string[];
+		services: string[];
+	};
+	usageCount: number;
+	lastUsed: Date;
 }
 
 // ============================================================================
 // Enhanced Testing Types (improves testing utilities)
 // ============================================================================
 
-export interface NestZodTestCase<T = any> {
-  name: string;
-  data: T;
-  expected: 'valid' | 'invalid';
-  expectedErrors?: string[];
-  description?: string;
+export interface NestZodTestCase<T = Record<string, unknown>> {
+	name: string;
+	data: T;
+	expected: 'valid' | 'invalid';
+	expectedErrors?: string[];
+	description?: string;
 }
 
-export interface NestZodTestSuite<T = any> {
-  schema: z.ZodSchema<T>;
-  name: string;
-  description: string;
-  testCases: NestZodTestCase<T>[];
-  setup?: () => void | Promise<void>;
-  teardown?: () => void | Promise<void>;
+export interface NestZodTestSuite<T = Record<string, unknown>> {
+	schema: z.ZodSchema<T>;
+	name: string;
+	description: string;
+	testCases: NestZodTestCase<T>[];
+	setup?: () => void | Promise<void>;
+	teardown?: () => void | Promise<void>;
 }
 
 export interface NestZodTestResult {
-  testName: string;
-  passed: boolean;
-  error?: string;
-  duration: number;
+	testName: string;
+	passed: boolean;
+	error?: string;
+	duration: number;
 }
 
 // ============================================================================
@@ -267,41 +267,45 @@ export interface NestZodTestResult {
 // ============================================================================
 
 export function isNestZodValidationError(error: unknown): error is NestZodValidationError {
-  return (
-    error instanceof Error &&
-    error.name === 'NestZodValidationError' &&
-    'issues' in error &&
-    'path' in error &&
-    'code' in error
-  );
+	return (
+		error instanceof Error &&
+		error.name === 'NestZodValidationError' &&
+		'issues' in error &&
+		'path' in error &&
+		'code' in error
+	);
 }
 
-export function isNestZodAlert(obj: any): obj is NestZodAlert {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    typeof obj.id === 'string' &&
-    typeof obj.ruleId === 'string' &&
-    typeof obj.message === 'string' &&
-    ['low', 'medium', 'high', 'critical'].includes(obj.severity) &&
-    obj.timestamp instanceof Date &&
-    ['active', 'resolved', 'acknowledged'].includes(obj.status) &&
-    Array.isArray(obj.channels)
-  );
+export function isNestZodAlert(obj: unknown): obj is NestZodAlert {
+	// Narrow unknown object via runtime checks
+	const o = obj as Record<string, unknown>;
+	return (
+		typeof obj === 'object' &&
+		obj !== null &&
+		typeof o["id"] === 'string' &&
+		typeof o["ruleId"] === 'string' &&
+		typeof o["message"] === 'string' &&
+		['low', 'medium', 'high', 'critical'].includes(o["severity"] as string) &&
+		o["timestamp"] instanceof Date &&
+		['active', 'resolved', 'acknowledged'].includes(o["status"] as string) &&
+		Array.isArray(o["channels"]) 
+	);
 }
 
-export function isNestZodValidationSpan(obj: any): obj is NestZodValidationSpan {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    typeof obj.spanId === 'string' &&
-    typeof obj.traceId === 'string' &&
-    typeof obj.operationName === 'string' &&
-    typeof obj.startTime === 'number' &&
-    typeof obj.tags === 'object' &&
-    Array.isArray(obj.logs) &&
-    ['started', 'finished', 'error'].includes(obj.status)
-  );
+export function isNestZodValidationSpan(obj: unknown): obj is NestZodValidationSpan {
+	// Narrow unknown object via runtime checks
+	const o = obj as Record<string, unknown>;
+	return (
+		typeof obj === 'object' &&
+		obj !== null &&
+		typeof o["spanId"] === 'string' &&
+		typeof o["traceId"] === 'string' &&
+		typeof o["operationName"] === 'string' &&
+		typeof o["startTime"] === 'number' &&
+		typeof o["tags"] === 'object' &&
+		Array.isArray(o["logs"]) &&
+		['started', 'finished', 'error'].includes(o["status"] as string)
+	);
 }
 
 // ============================================================================
@@ -315,7 +319,7 @@ export type NestZodOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T,
 export type NestZodRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
 
 export type NestZodPartial<T> = {
-  [P in keyof T]?: T[P] | undefined;
+	[P in keyof T]?: T[P] | undefined;
 };
 
 // ============================================================================
@@ -323,46 +327,46 @@ export type NestZodPartial<T> = {
 // ============================================================================
 
 export interface NestZodConfig {
-  validation: {
-    strict: boolean;
-    abortEarly: boolean;
-    cache: boolean;
-    cacheTtl: number;
-  };
-  performance: {
-    monitoring: boolean;
-    metrics: boolean;
-    optimization: boolean;
-  };
-  discovery: {
-    autoDiscover: boolean;
-    watchFiles: boolean;
-    generateTypes: boolean;
-  };
-  testing: {
-    generateTests: boolean;
-    runBenchmarks: boolean;
-    coverage: boolean;
-  };
+	validation: {
+		strict: boolean;
+		abortEarly: boolean;
+		cache: boolean;
+		cacheTtl: number;
+	};
+	performance: {
+		monitoring: boolean;
+		metrics: boolean;
+		optimization: boolean;
+	};
+	discovery: {
+		autoDiscover: boolean;
+		watchFiles: boolean;
+		generateTypes: boolean;
+	};
+	testing: {
+		generateTests: boolean;
+		runBenchmarks: boolean;
+		coverage: boolean;
+	};
 }
 
 // ============================================================================
 // Enhanced Parallel Validation Types (fixes exactOptionalPropertyTypes issues)
 // ============================================================================
 
-export interface NestZodValidationResult<T = any> {
-  index: number;
-  success: boolean;
-  data?: T | undefined;
-  error?: NestZodValidationError | undefined;
+export interface NestZodValidationResult<T = unknown> {
+	index: number;
+	success: boolean;
+	data?: T | undefined;
+	error?: NestZodValidationError | undefined;
 }
 
 export interface NestZodBatchValidationOptions {
-  concurrency?: number;
-  timeout?: number;
-  retries?: number;
-  cache?: boolean;
-  cacheTtl?: number;
+	concurrency?: number;
+	timeout?: number;
+	retries?: number;
+	cache?: boolean;
+	cacheTtl?: number;
 }
 
 // ============================================================================
@@ -370,20 +374,20 @@ export interface NestZodBatchValidationOptions {
 // ============================================================================
 
 export interface NestZodPerformanceConfig {
-  enableMonitoring: boolean;
-  enableMetrics: boolean;
-  enableOptimization: boolean;
-  sampleRate: number;
-  maxMetrics: number;
-  cleanupInterval: number;
+	enableMonitoring: boolean;
+	enableMetrics: boolean;
+	enableOptimization: boolean;
+	sampleRate: number;
+	maxMetrics: number;
+	cleanupInterval: number;
 }
 
 export interface NestZodMetricsConfig {
-  enableMetrics: boolean;
-  enableDashboard: boolean;
-  enableWebSocket: boolean;
-  updateInterval: number;
-  maxDataPoints: number;
+	enableMetrics: boolean;
+	enableDashboard: boolean;
+	enableWebSocket: boolean;
+	updateInterval: number;
+	maxDataPoints: number;
 }
 
 // ============================================================================
@@ -391,45 +395,43 @@ export interface NestZodMetricsConfig {
 // ============================================================================
 
 export interface NestZodDashboardConfig {
-  enableWebSocket: boolean;
-  updateInterval: number;
-  maxDataPoints: number;
-  enableRealTime: boolean;
-  refreshRate: number;
+	enableWebSocket: boolean;
+	updateInterval: number;
+	maxDataPoints: number;
+	enableRealTime: boolean;
+	refreshRate: number;
 }
 
 export interface NestZodWebSocketConfig {
-  namespace: string;
-  cors: boolean | object;
-  transports: string[];
+	namespace: string;
+	cors: boolean | object;
+	transports: string[];
 }
 
 // ============================================================================
 // Type Guards for Better Type Safety
 // ============================================================================
 
-export function isNestZodValidationResult<T>(obj: any): obj is NestZodValidationResult<T> {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    typeof obj.index === 'number' &&
-    typeof obj.success === 'boolean' &&
-    (obj.data === undefined || true) &&
-    (obj.error === undefined || obj.error instanceof Error)
-  );
+export function isNestZodValidationResult<T>(obj: unknown): obj is NestZodValidationResult<T> {
+	return (
+		typeof obj === 'object' &&
+		obj !== null &&
+		typeof (obj as Record<string, unknown>)["index"] === 'number' &&
+		typeof (obj as Record<string, unknown>)["success"] === 'boolean'
+	);
 }
 
-export function isNestZodPerformanceConfig(obj: any): obj is NestZodPerformanceConfig {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    typeof obj.enableMonitoring === 'boolean' &&
-    typeof obj.enableMetrics === 'boolean' &&
-    typeof obj.enableOptimization === 'boolean' &&
-    typeof obj.sampleRate === 'number' &&
-    typeof obj.maxMetrics === 'number' &&
-    typeof obj.cleanupInterval === 'number'
-  );
+export function isNestZodPerformanceConfig(obj: unknown): obj is NestZodPerformanceConfig {
+	return (
+		typeof obj === 'object' &&
+		obj !== null &&
+		typeof (obj as Record<string, unknown>)["enableMonitoring"] === 'boolean' &&
+		typeof (obj as Record<string, unknown>)["enableMetrics"] === 'boolean' &&
+		typeof (obj as Record<string, unknown>)["enableOptimization"] === 'boolean' &&
+		typeof (obj as Record<string, unknown>)["sampleRate"] === 'number' &&
+		typeof (obj as Record<string, unknown>)["maxMetrics"] === 'number' &&
+		typeof (obj as Record<string, unknown>)["cleanupInterval"] === 'number'
+	);
 }
 
 // ============================================================================
@@ -439,7 +441,7 @@ export function isNestZodPerformanceConfig(obj: any): obj is NestZodPerformanceC
 // These types are already defined above, removing duplicates
 
 export type NestZodNonNullable<T> = {
-  [P in keyof T]-?: NonNullable<T[P]>;
+	[P in keyof T]-?: NonNullable<T[P]>;
 };
 
 // ============================================================================
@@ -447,10 +449,10 @@ export type NestZodNonNullable<T> = {
 // ============================================================================
 
 export type {
-  // Re-export Zod types for convenience
-  z,
-  ZodSchema,
-  ZodType,
-  ZodError,
-  ZodIssue,
+	// Re-export Zod types for convenience
+	z,
+	ZodSchema,
+	ZodType,
+	ZodError,
+	ZodIssue,
 } from 'zod';

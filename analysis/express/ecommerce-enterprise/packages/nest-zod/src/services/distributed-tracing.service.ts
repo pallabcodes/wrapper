@@ -21,7 +21,7 @@ export interface ValidationSpan {
     timestamp: number;
     level: 'info' | 'warn' | 'error' | 'debug';
     message: string;
-    data?: any | undefined;
+    data?: unknown | undefined;
   }>;
   status: 'started' | 'completed' | 'error';
   error?: {
@@ -208,7 +208,7 @@ export class DistributedTracingService implements OnModuleInit {
     spanId: string,
     level: 'info' | 'warn' | 'error' | 'debug',
     message: string,
-    data?: any
+    data?: unknown
   ): void {
     if (!this.config.enableLogs) return;
 
@@ -464,7 +464,7 @@ export class DistributedTracingService implements OnModuleInit {
   /**
    * Convert to Jaeger format
    */
-  private convertToJaegerFormat(data: any): string {
+  private convertToJaegerFormat(data: { traces: ValidationSpan[] }): string {
     // Simplified Jaeger format conversion
     const jaegerSpans = data.traces.map((span: ValidationSpan) => ({
       traceID: span.traceId,
@@ -493,7 +493,7 @@ export class DistributedTracingService implements OnModuleInit {
   /**
    * Convert to Zipkin format
    */
-  private convertToZipkinFormat(data: any): string {
+  private convertToZipkinFormat(data: { traces: ValidationSpan[] }): string {
     // Simplified Zipkin format conversion
     const zipkinSpans = data.traces.map((span: ValidationSpan) => ({
       traceId: span.traceId,

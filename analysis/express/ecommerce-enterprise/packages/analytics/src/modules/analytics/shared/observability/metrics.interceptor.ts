@@ -5,11 +5,11 @@ import { HTTP_REQUESTS_TOTAL, HTTP_REQUEST_DURATION } from './metrics.module';
 @Injectable()
 export class MetricsInterceptor implements NestInterceptor {
   constructor(
-    @Inject(HTTP_REQUESTS_TOTAL) private readonly reqTotal: any,
-    @Inject(HTTP_REQUEST_DURATION) private readonly reqDuration: any,
+    @Inject(HTTP_REQUESTS_TOTAL) private readonly reqTotal: { labels: (method: string, route: string, status: string) => { inc: () => void } },
+    @Inject(HTTP_REQUEST_DURATION) private readonly reqDuration: { labels: (method: string, route: string, status: string) => { observe: (value: number) => void } },
   ) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest();
     const res = context.switchToHttp().getResponse();
     const start = Date.now();

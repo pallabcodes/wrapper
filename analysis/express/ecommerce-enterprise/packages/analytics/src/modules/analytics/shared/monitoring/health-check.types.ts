@@ -2,7 +2,7 @@ export interface HealthCheckResult {
   name: string;
   status: 'healthy' | 'unhealthy' | 'degraded';
   message?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   timestamp: string;
   duration?: number;
 }
@@ -78,5 +78,5 @@ export interface Alert {
   timestamp: string;
   resolved: boolean;
   resolvedAt?: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }

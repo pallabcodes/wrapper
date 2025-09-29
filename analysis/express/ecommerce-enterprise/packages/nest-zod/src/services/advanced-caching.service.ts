@@ -22,7 +22,7 @@ export interface CacheMetrics {
   averageAccessTime: number;
 }
 
-export interface ValidationCacheEntry<T = any> {
+export interface ValidationCacheEntry<T = unknown> {
   data: T;
   timestamp: Date;
   ttl: number;
@@ -177,7 +177,7 @@ export class AdvancedCachingService implements OnModuleInit {
       { name: 'uuid', schema: z.string().uuid() },
       { name: 'url', schema: z.string().url() },
       { name: 'date', schema: z.date() },
-      { name: 'array', schema: z.array(z.any()) },
+      { name: 'array', schema: z.array(z.unknown()) },
       { name: 'object', schema: z.object({}) },
     ];
 
@@ -349,7 +349,7 @@ export class AdvancedCachingService implements OnModuleInit {
    */
   private calculateSchemaComplexity(schema: z.ZodSchema): number {
     // Simplified complexity calculation
-    const def = schema._def as any;
+    const def = schema._def as { typeName?: string; shape?: Record<string, unknown>; options?: unknown[] };
     let complexity = 1;
     
     if (def.typeName === 'ZodObject') {
@@ -369,12 +369,17 @@ export class AdvancedCachingService implements OnModuleInit {
   private extractDependencies(schema: z.ZodSchema): string[] {
     // Simplified dependency extraction
     const dependencies: string[] = [];
-    const def = schema._def as any;
+    const def = schema._def as { typeName?: string; shape?: Record<string, { _def?: { typeName?: string } } > };
     
     if (def.typeName === 'ZodObject') {
-      Object.values(def.shape || {}).forEach((field: any) => {
-        if (field._def?.typeName) {
-          dependencies.push(field._def.typeName);
+      Object.values(def.shape || {}).forEach((field) => {
+        if (field && typeof field === 'object' && '._def' in field ? false : true) {
+          // noop guard
+        }
+        // best-effort narrow
+        const inner = (field as { _def?: { typeName?: string } })._def;
+        if (inner?.typeName) {
+          dependencies.push(inner.typeName);
         }
       });
     }

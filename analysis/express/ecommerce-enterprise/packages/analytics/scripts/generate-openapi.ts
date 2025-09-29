@@ -5,7 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AnalyticsModule } from '../src/modules/analytics/analytics.module';
 
 async function main() {
-  const app = await NestFactory.create(AnalyticsModule, { logger: false as any });
+  const app = await NestFactory.create(AnalyticsModule, { logger: false });
   const config = new DocumentBuilder()
     .setTitle('Analytics API')
     .setVersion('1.0.0')

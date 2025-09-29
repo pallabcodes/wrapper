@@ -180,7 +180,7 @@ export class EnterprisePaymentService {
       const validatedData = validationResult.data;
 
       // Fraud detection
-      const fraudResult = await this.performFraudDetection(validatedData, context);
+      const fraudResult = await this.performFraudDetection(validatedData as Record<string, unknown>, context);
       
       if (fraudResult.recommendation === 'DECLINE') {
         await this.logComplianceAudit({
@@ -281,7 +281,7 @@ export class EnterprisePaymentService {
    * Advanced fraud detection using multiple risk factors
    */
   private async performFraudDetection(
-    paymentData: any,
+    paymentData: Record<string, unknown>,
     context: { ipAddress: string; userAgent?: string; requestId?: string }
   ): Promise<FraudDetectionResult> {
     const cacheKey = `${paymentData.customerEmail}-${context.ipAddress}`;
@@ -295,7 +295,7 @@ export class EnterprisePaymentService {
     let totalRiskScore = 0;
 
     // Amount-based risk assessment
-    if (paymentData.amount > 10000) {
+    if ((paymentData.amount as number) > 10000) {
       riskFactors.push({
         factor: 'HIGH_AMOUNT',
         weight: 0.3,
@@ -305,7 +305,7 @@ export class EnterprisePaymentService {
     }
 
     // Velocity-based risk assessment
-    const recentPayments = await this.getRecentPaymentsByEmail(paymentData.customerEmail, 24);
+    const recentPayments = await this.getRecentPaymentsByEmail(paymentData.customerEmail as string, 24);
     if (recentPayments.length > 5) {
       riskFactors.push({
         factor: 'HIGH_VELOCITY',
@@ -316,7 +316,7 @@ export class EnterprisePaymentService {
     }
 
     // Geographic risk assessment
-    const geoRisk = await this.assessGeographicRisk(context.ipAddress, paymentData.billingAddress?.country);
+    const geoRisk = await this.assessGeographicRisk(context.ipAddress, (paymentData.billingAddress as any)?.country);
     if (geoRisk > 0.5) {
       riskFactors.push({
         factor: 'GEOGRAPHIC_RISK',
@@ -338,7 +338,7 @@ export class EnterprisePaymentService {
     }
 
     // Email domain risk
-    const emailRisk = this.assessEmailRisk(paymentData.customerEmail);
+    const emailRisk = this.assessEmailRisk(paymentData.customerEmail as string);
     if (emailRisk > 0.2) {
       riskFactors.push({
         factor: 'EMAIL_RISK',
@@ -597,7 +597,7 @@ export class EnterprisePaymentService {
 
   async updatePayment(
     id: string,
-    updatePaymentDto: any,
+    updatePaymentDto: Record<string, unknown>,
     userId: string,
     tenantId: string,
   ): Promise<any> {

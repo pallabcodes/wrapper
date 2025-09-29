@@ -88,9 +88,12 @@ export class TypeSafeErrorAnalyzer {
   /**
    * Safely get property from object
    */
-  private static safeGetProperty<T>(obj: any, key: string): T | undefined {
+  private static safeGetProperty<T>(obj: unknown, key: string): T | undefined {
     try {
-      return obj && typeof obj === 'object' && key in obj ? obj[key] : undefined;
+      if (obj && typeof obj === 'object' && key in (obj as Record<string, unknown>)) {
+        return (obj as Record<string, unknown>)[key] as T;
+      }
+      return undefined;
     } catch {
       return undefined;
     }
@@ -237,7 +240,7 @@ export class TypeSafeErrorFormatter {
   } = {}): {
     message: string;
     severity: string;
-    context: Record<string, any>;
+    context: Record<string, unknown>;
     issues: Array<{
       code: string;
       path: string[];
@@ -286,7 +289,12 @@ export class TypeSafeErrorFormatter {
   } {
     const analysis = TypeSafeErrorAnalyzer.analyzeError(error);
     
-    const response: any = {
+    const response: {
+      error: string;
+      message: string;
+      details?: Array<{ field: string; code: string; message: string; expected?: string; received?: string }>;
+      suggestions?: string[];
+    } = {
       error: 'ValidationError',
       message: `Validation failed with ${analysis.summary.totalIssues} error(s)`,
     };
@@ -354,8 +362,9 @@ export class TypeSafeErrorRecovery {
   /**
    * Fix common validation issues
    */
-  private static fixCommonIssues(data: any, error: z.ZodError): any {
-    let fixedData = { ...data };
+  private static fixCommonIssues(data: unknown, error: z.ZodError): unknown {
+    const base = (typeof data === 'object' && data !== null) ? { ...(data as Record<string, unknown>) } : {} as Record<string, unknown>;
+    let fixedData: unknown = base;
     
     for (const issue of error.issues) {
       if (issue.code === 'invalid_type') {
@@ -373,15 +382,15 @@ export class TypeSafeErrorRecovery {
   /**
    * Fix type-related issues
    */
-  private static fixTypeIssues(data: any, issue: z.ZodIssue): any {
+  private static fixTypeIssues(data: unknown, issue: z.ZodIssue): unknown {
     const path = issue.path;
     if (path.length === 0) return data;
     
-    let current = data;
+    let current: unknown = data;
     for (let i = 0; i < path.length - 1; i++) {
       const pathKey = path[i];
       if (current && typeof current === 'object' && pathKey !== undefined) {
-        current = current[pathKey];
+        current = (current as Record<string, unknown>)[pathKey as keyof Record<string, unknown>];
       } else {
         return data;
       }
@@ -390,18 +399,18 @@ export class TypeSafeErrorRecovery {
     if (current && typeof current === 'object') {
       const lastKey = path[path.length - 1];
       if (lastKey !== undefined) {
-        const value = current[lastKey];
+        const value = (current as Record<string, unknown>)[lastKey as keyof Record<string, unknown>];
         
         // Try to convert types
         if (issue.message.includes('expected string')) {
-          current[lastKey] = String(value);
+          (current as Record<string, unknown>)[lastKey as keyof Record<string, unknown>] = String(value);
         } else if (issue.message.includes('expected number')) {
           const num = Number(value);
           if (!isNaN(num)) {
-            current[lastKey] = num;
+            (current as Record<string, unknown>)[lastKey as keyof Record<string, unknown>] = num;
           }
         } else if (issue.message.includes('expected boolean')) {
-          current[lastKey] = Boolean(value);
+          (current as Record<string, unknown>)[lastKey as keyof Record<string, unknown>] = Boolean(value);
         }
       }
     }
@@ -412,7 +421,7 @@ export class TypeSafeErrorRecovery {
   /**
    * Fix size-related issues
    */
-  private static fixSizeIssues(data: any, _issue: z.ZodIssue): any {
+  private static fixSizeIssues(data: unknown, _issue: z.ZodIssue): unknown {
     // Size issues are harder to fix automatically
     // Return original data for now
     return data;
@@ -421,15 +430,15 @@ export class TypeSafeErrorRecovery {
   /**
    * Fix string-related issues
    */
-  private static fixStringIssues(data: any, issue: z.ZodIssue): any {
+  private static fixStringIssues(data: unknown, issue: z.ZodIssue): unknown {
     const path = issue.path;
     if (path.length === 0) return data;
     
-    let current = data;
+    let current: unknown = data;
     for (let i = 0; i < path.length - 1; i++) {
       const pathKey = path[i];
       if (current && typeof current === 'object' && pathKey !== undefined) {
-        current = current[pathKey];
+        current = (current as Record<string, unknown>)[pathKey as keyof Record<string, unknown>];
       } else {
         return data;
       }
@@ -438,17 +447,17 @@ export class TypeSafeErrorRecovery {
     if (current && typeof current === 'object') {
       const lastKey = path[path.length - 1];
       if (lastKey !== undefined) {
-        const value = current[lastKey];
+        const value = (current as Record<string, unknown>)[lastKey as keyof Record<string, unknown>];
         
         if (typeof value === 'string') {
           // Try to fix common string issues
           if (issue.message.includes('email')) {
             // Basic email validation fix
-            current[lastKey] = value.toLowerCase().trim();
+            (current as Record<string, unknown>)[lastKey as keyof Record<string, unknown>] = value.toLowerCase().trim();
           } else if (issue.message.includes('url')) {
             // Basic URL validation fix
             if (!value.startsWith('http://') && !value.startsWith('https://')) {
-              current[lastKey] = `https://${value}`;
+              (current as Record<string, unknown>)[lastKey as keyof Record<string, unknown>] = `https://${value}`;
             }
           }
         }

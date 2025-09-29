@@ -1,6 +1,7 @@
 import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { Request } from 'express';
 
 type Stat = { count: number; totalMs: number; samples: number[] };
 
@@ -9,8 +10,8 @@ export class TimingInterceptor implements NestInterceptor {
   private readonly logger = new Logger('Timing');
   private readonly routeToStats = new Map<string, Stat>();
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const req: any = context.switchToHttp().getRequest();
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    const req = context.switchToHttp().getRequest<Request>();
     const route = `${req.method} ${req.originalUrl || req.url}`;
     const start = Date.now();
     return next.handle().pipe(

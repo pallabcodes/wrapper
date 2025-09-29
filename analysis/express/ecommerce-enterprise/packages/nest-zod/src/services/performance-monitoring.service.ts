@@ -481,7 +481,7 @@ export class PerformanceMonitoringService implements OnModuleInit {
   /**
    * Convert data to CSV format
    */
-  private convertToCSV(_data: any): string {
+  private convertToCSV(_data: { metrics?: ValidationMetric[]; [key: string]: unknown } | unknown): string {
     // Simplified CSV conversion
     const headers = ['timestamp', 'schemaName', 'duration', 'success', 'dataSize', 'errorType', 'cacheHit'];
     const rows = this.metrics.map(m => [

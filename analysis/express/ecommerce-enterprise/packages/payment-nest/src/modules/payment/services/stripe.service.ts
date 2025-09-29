@@ -148,7 +148,7 @@ export class StripeService {
 
   async handleWebhook(payload: string, signature: string): Promise<{
     type: string;
-    data: any;
+    data: Record<string, unknown>;
   }> {
     const webhookSecret = this.configService.get('STRIPE_WEBHOOK_SECRET');
     if (!webhookSecret) {
@@ -159,7 +159,7 @@ export class StripeService {
       const event = this.stripe.webhooks.constructEvent(payload, signature, webhookSecret);
       return {
         type: event.type,
-        data: event.data.object,
+        data: event.data.object as Record<string, unknown>,
       };
     } catch (error) {
       throw new BadRequestException(`Stripe webhook verification failed: ${error.message}`);

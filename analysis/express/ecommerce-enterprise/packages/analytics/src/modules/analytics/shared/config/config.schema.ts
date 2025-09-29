@@ -16,7 +16,7 @@ export const validatedConfigSchema = Joi.object({
   const hasHmac = !!value.JWT_SECRET;
   const hasRsa = !!value.JWT_PRIVATE_KEY_PEM && !!value.JWT_PUBLIC_KEY_PEM;
   if (!hasHmac && !hasRsa) {
-    return helpers.error('any.custom', {
+    return helpers.error('custom', {
       message: 'Provide either JWT_SECRET or both JWT_PRIVATE_KEY_PEM and JWT_PUBLIC_KEY_PEM',
     });
   }

@@ -66,7 +66,7 @@ export interface ZodValidationOptions {
   };
 }
 
-export interface ZodValidationResult<T = any> {
+export interface ZodValidationResult<T = unknown> {
   success: boolean;
   data?: T;
   errors?: z.ZodError | undefined;
@@ -120,7 +120,7 @@ export interface ZodAuditLog {
   success: boolean;
   validationTime: number;
   errors?: ZodCustomError[] | undefined;
-  context?: Record<string, any> | undefined;
+  context?: Record<string, unknown> | undefined;
   userId?: string | undefined;
   tenantId?: string | undefined;
   requestId?: string | undefined;

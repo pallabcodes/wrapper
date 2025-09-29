@@ -9,7 +9,7 @@ export class TracingInterceptor implements NestInterceptor {
   private tracer = trace.getTracer('analytics-http');
   constructor(private readonly ctx: ContextService) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest();
     const res = context.switchToHttp().getResponse();
     const name = `${req.method} ${req.route?.path || req.url}`;
@@ -33,7 +33,7 @@ export class TracingInterceptor implements NestInterceptor {
           span.end();
         },
         error: (err) => {
-          span.recordException(err as any);
+          span.recordException(err as Error);
           span.setAttribute('http.status_code', res.statusCode);
           span.end();
         },

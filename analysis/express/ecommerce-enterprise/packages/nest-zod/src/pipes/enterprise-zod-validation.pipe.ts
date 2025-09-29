@@ -17,7 +17,7 @@ import {
 import { ENTERPRISE_ZOD_METADATA } from '../decorators/enterprise-zod.decorator';
 
 @Injectable()
-export class EnterpriseZodValidationPipe implements PipeTransform<any> {
+export class EnterpriseZodValidationPipe implements PipeTransform<unknown> {
   private readonly logger = new Logger(EnterpriseZodValidationPipe.name);
 
   constructor(
@@ -25,7 +25,7 @@ export class EnterpriseZodValidationPipe implements PipeTransform<any> {
     @Optional() @Inject('ZOD_VALIDATION_OPTIONS') private readonly globalOptions?: ZodValidationOptions,
   ) {}
 
-  async transform(value: any, metadata: ArgumentMetadata, context?: any) {
+  async transform(value: unknown, metadata: ArgumentMetadata, context?: unknown) {
     // Get validation options from metadata
     const options = this.extractValidationOptions(metadata, context);
     
@@ -67,15 +67,16 @@ export class EnterpriseZodValidationPipe implements PipeTransform<any> {
     }
   }
 
-  private extractValidationOptions(metadata: ArgumentMetadata, context?: any): ZodValidationOptions | null {
+  private extractValidationOptions(metadata: ArgumentMetadata, context?: unknown): ZodValidationOptions | null {
     // Try to get options from metadata first
     if (metadata.metatype && Reflect.hasMetadata(ENTERPRISE_ZOD_METADATA, metadata.metatype)) {
       return Reflect.getMetadata(ENTERPRISE_ZOD_METADATA, metadata.metatype);
     }
 
     // Try to get from context
-    if (context && context.getHandler) {
-      const handler = context.getHandler();
+    const ctx = context as { getHandler?: () => unknown } | undefined;
+    if (ctx && ctx.getHandler) {
+      const handler = ctx.getHandler() as object;
       if (Reflect.hasMetadata(ENTERPRISE_ZOD_METADATA, handler)) {
         return Reflect.getMetadata(ENTERPRISE_ZOD_METADATA, handler);
       }
@@ -85,7 +86,7 @@ export class EnterpriseZodValidationPipe implements PipeTransform<any> {
     return this.globalOptions || null;
   }
 
-  private createValidationException(errors: any, options: ZodValidationOptions): BadRequestException {
+  private createValidationException(errors: unknown, options: ZodValidationOptions): BadRequestException {
     if (errors instanceof ZodError) {
       const formattedErrors = this.formatZodErrors(errors, options);
       
@@ -122,15 +123,15 @@ export class EnterpriseZodValidationPipe implements PipeTransform<any> {
         path: issue.path,
         severity: this.determineSeverity(issue.code),
         context: {
-          expected: (issue as any).expected,
-          received: (issue as any).received,
-          ...(issue as any).context,
+          expected: (issue as { expected?: unknown }).expected as string | undefined,
+          received: (issue as { received?: unknown }).received as string | undefined,
+          ...((issue as { context?: Record<string, unknown> }).context || {}),
         },
       };
 
       // Apply custom error mapping if provided
       if (options.customErrorMap) {
-        const mappedError = options.customErrorMap(issue, { data: (issue as any).data, defaultError: issue.message });
+        const mappedError = options.customErrorMap(issue, { data: (issue as { data?: unknown }).data, defaultError: issue.message });
         customError.message = mappedError.message;
       }
 

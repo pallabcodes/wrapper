@@ -31,8 +31,15 @@ export class EnterpriseZodValidationInterceptor implements NestInterceptor {
     private readonly validationService: EnterpriseZodValidationService,
   ) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
-    const request = context.switchToHttp().getRequest();
+  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
+    const request = context.switchToHttp().getRequest<{
+      body?: unknown;
+      file?: { size?: number; mimetype?: string; type?: string };
+      files?: { length?: number; size?: number; mimetype?: string; type?: string };
+      user?: Record<string, unknown>;
+      headers: Record<string, string | string[] | undefined>;
+      [key: string]: unknown;
+    }>();
     const handler = context.getHandler();
 
     // Get validation options from metadata
@@ -130,9 +137,12 @@ export class EnterpriseZodValidationInterceptor implements NestInterceptor {
     );
   }
 
-  private determineABTestVariant(request: any, abTestConfig: any): string | null {
+  private determineABTestVariant(
+    request: Record<string, unknown>,
+    abTestConfig: { userSegmentField?: string; defaultVariant?: string; schemas: Record<string, unknown> }
+  ): string | null {
     const userSegmentField = abTestConfig.userSegmentField || 'userId';
-    const userValue = request[userSegmentField] || request.user?.[userSegmentField];
+    const userValue = (request as Record<string, unknown>)[userSegmentField] || (request.user as Record<string, unknown> | undefined)?.[userSegmentField as keyof Record<string, unknown>];
     
     if (!userValue) {
       return abTestConfig.defaultVariant || null;
@@ -193,13 +203,13 @@ export class EnterpriseZodValidationInterceptor implements NestInterceptor {
   }
 
   private async handleParallelBatchValidation(
-    request: any,
+    request: { body: unknown[] },
     options: ZodValidationOptions,
     context: ZodValidationContext,
     next: CallHandler
-  ): Promise<Observable<any>> {
+  ): Promise<Observable<unknown>> {
     const items = request.body;
-    const validationPromises = items.map((item: any) => 
+    const validationPromises = items.map((item: unknown) => 
       this.validationService.validate(item, options, context)
     );
 
@@ -217,7 +227,7 @@ export class EnterpriseZodValidationInterceptor implements NestInterceptor {
       }
 
       // Replace request body with validated data
-      request.body = results.map(result => result.data);
+      request.body = results.map(result => result.data as unknown);
       
       return next.handle();
     } catch (error) {
@@ -225,12 +235,15 @@ export class EnterpriseZodValidationInterceptor implements NestInterceptor {
     }
   }
 
-  private async validateFileUpload(request: any, options: ZodValidationOptions): Promise<void> {
+  private async validateFileUpload(
+    request: { file?: { size?: number; mimetype?: string; type?: string }; files?: { length?: number; size?: number; mimetype?: string; type?: string } },
+    options: ZodValidationOptions
+  ): Promise<void> {
     if (!options.fileUpload) return;
 
-    const file = request.file || request.files;
-    const fileSize = file.size || file.length;
-    const fileType = file.mimetype || file.type;
+    const file = (request.file ?? request.files) as { size?: number; length?: number; mimetype?: string; type?: string };
+    const fileSize = file.size ?? file.length ?? 0;
+    const fileType = file.mimetype ?? file.type ?? '';
 
     // Check file size
     if (fileSize > options.fileUpload.maxFileSize!) {
@@ -269,7 +282,7 @@ export class EnterpriseZodValidationInterceptor implements NestInterceptor {
     });
   }
 
-  private async scanFileForViruses(_file: any): Promise<void> {
+  private async scanFileForViruses(_file: unknown): Promise<void> {
     // Placeholder for virus scanning integration
     this.logger.debug('Virus scanning not implemented yet');
   }
@@ -287,7 +300,14 @@ export class EnterpriseZodValidationInterceptor implements NestInterceptor {
     );
   }
 
-  private async loadValidationPipeline(pipelineName: string): Promise<any> {
+  private async loadValidationPipeline(pipelineName: string): Promise<{
+    name: string;
+    steps: unknown[];
+    errorHandling: { strategy: string };
+    performance: { enableCaching: boolean };
+    security: { enableSanitization: boolean };
+    monitoring: { enableMetrics: boolean };
+  }> {
     // This would typically load from a configuration service
     return {
       name: pipelineName,
@@ -303,7 +323,7 @@ export class EnterpriseZodValidationInterceptor implements NestInterceptor {
     options: ZodValidationOptions, 
     success: boolean, 
     _duration: number, 
-    error?: any
+    error?: unknown
   ): void {
     const schemaName = options.schema.description || 'unknown';
     const endpoint = options.context?.['endpoint'] || 'unknown';

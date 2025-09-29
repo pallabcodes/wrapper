@@ -13,12 +13,12 @@ export interface ValidationContext {
     permissions: string[];
     tenantId?: string;
   };
-  request?: any;
-  data?: any;
-  metadata?: Record<string, any>;
+  request?: unknown;
+  data?: unknown;
+  metadata?: Record<string, unknown>;
 }
 
-export interface ConditionalRule<T = any> {
+export interface ConditionalRule<T = unknown> {
   condition: (data: T, context?: ValidationContext) => boolean;
   schema: z.ZodSchema;
   priority?: number;
@@ -27,10 +27,10 @@ export interface ConditionalRule<T = any> {
 
 export interface ValidationStep {
   name: string;
-  condition?: (data: any, context?: ValidationContext) => boolean;
+  condition?: (data: unknown, context?: ValidationContext) => boolean;
   schema: z.ZodSchema;
-  transform?: (data: any) => any;
-  onError?: (error: z.ZodError, data: any, context?: ValidationContext) => any;
+  transform?: (data: unknown) => unknown;
+  onError?: (error: z.ZodError, data: unknown, context?: ValidationContext) => unknown;
   continueOnError?: boolean;
 }
 
@@ -46,7 +46,7 @@ export interface DynamicValidationOptions {
 /**
  * Dynamic Validation Builder - Much better DX than native Zod
  */
-export class DynamicValidationBuilder<T = any> {
+export class DynamicValidationBuilder<T = unknown> {
   private rules: ConditionalRule<T>[] = [];
   private steps: ValidationStep[] = [];
   private options: DynamicValidationOptions = {};
@@ -77,9 +77,9 @@ export class DynamicValidationBuilder<T = any> {
    * Add a validation step for complex pipelines
    */
   step(name: string, schema: z.ZodSchema, options?: {
-    condition?: (data: any, context?: ValidationContext) => boolean;
-    transform?: (data: any) => any;
-    onError?: (error: z.ZodError, data: any, context?: ValidationContext) => any;
+    condition?: (data: unknown, context?: ValidationContext) => boolean;
+    transform?: (data: unknown) => unknown;
+    onError?: (error: z.ZodError, data: unknown, context?: ValidationContext) => unknown;
     continueOnError?: boolean;
   }): this {
     this.steps.push({
@@ -198,7 +198,7 @@ export class DynamicValidationBuilder<T = any> {
 /**
  * Factory function for creating dynamic validation builders
  */
-export function createDynamicValidation<T = any>(baseSchema?: z.ZodSchema): DynamicValidationBuilder<T> {
+export function createDynamicValidation<T = unknown>(baseSchema?: z.ZodSchema): DynamicValidationBuilder<T> {
   return new DynamicValidationBuilder<T>(baseSchema);
 }
 
@@ -209,37 +209,37 @@ export const ConditionalPatterns = {
   /**
    * User role-based validation
    */
-  userRole: (role: string) => (_data: any, context?: ValidationContext) => 
+  userRole: (role: string) => (_data: unknown, context?: ValidationContext) => 
     context?.user?.role === role,
 
   /**
    * User permission-based validation
    */
-  userPermission: (permission: string) => (_data: any, context?: ValidationContext) => 
+  userPermission: (permission: string) => (_data: unknown, context?: ValidationContext) => 
     context?.user?.permissions?.includes(permission) || false,
 
   /**
    * Tenant-based validation
    */
-  tenant: (tenantId: string) => (_data: any, context?: ValidationContext) => 
+  tenant: (tenantId: string) => (_data: unknown, context?: ValidationContext) => 
     context?.user?.tenantId === tenantId,
 
   /**
    * Field value-based validation
    */
-  fieldEquals: (field: string, value: any) => (data: any) => 
+  fieldEquals: (field: string, value: unknown) => (data: Record<string, unknown>) => 
     data?.[field] === value,
 
   /**
    * Field exists validation
    */
-  fieldExists: (field: string) => (data: any) => 
+  fieldExists: (field: string) => (data: Record<string, unknown>) => 
     data?.[field] !== undefined && data?.[field] !== null,
 
   /**
    * Array length validation
    */
-  arrayLength: (min: number, max?: number) => (data: any) => {
+  arrayLength: (min: number, max?: number) => (data: unknown) => {
     if (!Array.isArray(data)) return false;
     return data.length >= min && (max === undefined || data.length <= max);
   },
@@ -247,7 +247,7 @@ export const ConditionalPatterns = {
   /**
    * Object property count validation
    */
-  propertyCount: (min: number, max?: number) => (data: any) => {
+  propertyCount: (min: number, max?: number) => (data: unknown) => {
     if (typeof data !== 'object' || data === null) return false;
     const count = Object.keys(data).length;
     return count >= min && (max === undefined || count <= max);
@@ -256,22 +256,22 @@ export const ConditionalPatterns = {
   /**
    * Custom condition with multiple checks
    */
-  and: (...conditions: Array<(data: any, context?: ValidationContext) => boolean>) => 
-    (data: any, context?: ValidationContext) => 
+  and: (...conditions: Array<(data: unknown, context?: ValidationContext) => boolean>) => 
+    (data: unknown, context?: ValidationContext) => 
       conditions.every(condition => condition(data, context)),
 
   /**
    * Custom condition with any check
    */
-  or: (...conditions: Array<(data: any, context?: ValidationContext) => boolean>) => 
-    (data: any, context?: ValidationContext) => 
+  or: (...conditions: Array<(data: unknown, context?: ValidationContext) => boolean>) => 
+    (data: unknown, context?: ValidationContext) => 
       conditions.some(condition => condition(data, context)),
 
   /**
    * Negate a condition
    */
-  not: (condition: (data: any, context?: ValidationContext) => boolean) => 
-    (data: any, context?: ValidationContext) => 
+  not: (condition: (data: unknown, context?: ValidationContext) => boolean) => 
+    (data: unknown, context?: ValidationContext) => 
       !condition(data, context),
 };
 
@@ -306,10 +306,11 @@ export const DynamicSchemas = {
   /**
    * Conditional required fields
    */
-  conditionalRequired: (baseSchema: z.ZodSchema, requiredFields: Record<string, (data: any) => boolean>) => {
+  conditionalRequired: (baseSchema: z.ZodSchema, requiredFields: Record<string, (data: Record<string, unknown>) => boolean>) => {
     return baseSchema.refine((data) => {
       for (const [field, condition] of Object.entries(requiredFields)) {
-        if (condition(data) && (data[field] === undefined || data[field] === null)) {
+        const obj = data as Record<string, unknown>;
+        if (condition(obj) && (obj[field] === undefined || obj[field] === null)) {
           return false;
         }
       }
@@ -436,13 +437,13 @@ export const ValidationHelpers = {
    */
   withCaching: <T extends z.ZodSchema>(
     schema: T,
-    cacheKey?: (data: any) => string,
+    cacheKey?: (data: z.infer<T>) => string,
     ttl = 60000 // 1 minute default
   ) => {
-    const cache = new Map<string, { result: any; timestamp: number }>();
+    const cache = new Map<string, { result: z.infer<T>; timestamp: number }>();
     
     return schema.transform((data) => {
-      const key = cacheKey ? cacheKey(data) : JSON.stringify(data);
+      const key = cacheKey ? cacheKey(data) : JSON.stringify(data as unknown);
       const cached = cache.get(key);
       
       if (cached && Date.now() - cached.timestamp < ttl) {

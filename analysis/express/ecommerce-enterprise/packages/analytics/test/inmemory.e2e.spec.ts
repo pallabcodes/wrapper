@@ -9,7 +9,7 @@ describe('AuthX in-memory e2e', () => {
 
   beforeAll(async () => {
     process.env['JWT_SECRET'] = process.env['JWT_SECRET'] || 'testsecret';
-    app = await NestFactory.create(AnalyticsModule, { logger: false as any });
+    app = await NestFactory.create(AnalyticsModule, { logger: false });
     app.setGlobalPrefix('api/v1/analytics');
     await app.init();
   });

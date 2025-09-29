@@ -18,7 +18,7 @@ function tryConnect(host: string, port: number, timeoutMs = 1500): Promise<boole
 
 @Controller()
 export class HealthController {
-    constructor(private readonly jwt: JwtServiceX, @Inject(METRICS_REGISTRY) private readonly registry: any) {}
+    constructor(private readonly jwt: JwtServiceX, @Inject(METRICS_REGISTRY) private readonly registry: { metrics: () => Promise<Record<string, unknown>> }) {}
 
     @Get('live')
     live() {
@@ -51,7 +51,7 @@ export class HealthController {
 
     @Get('metrics')
     async metrics() {
-        return (await this.registry.metrics()) as any;
+        return await this.registry.metrics();
     }
 }
 

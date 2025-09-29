@@ -44,7 +44,7 @@ export interface ServiceHealth {
   status: 'healthy' | 'degraded' | 'unhealthy';
   message?: string;
   lastCheck: Date;
-  metrics?: Record<string, any>;
+  metrics?: Record<string, unknown>;
 }
 
 export interface HealthCheckOptions {
@@ -320,7 +320,7 @@ export class HealthMonitoringController {
    * Update health configuration
    */
   @Post('config')
-  async updateHealthConfig(@Body() _config: any) {
+  async updateHealthConfig(@Body() _config: Record<string, unknown>) {
     // Configuration updates would be implemented here
     // For now, just return success
     return { message: 'Health configuration updated' };

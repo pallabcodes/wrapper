@@ -60,7 +60,7 @@ import { bootstrapPolicies } from './shared/auth/policy.bootstrap';
       imports: [ValidatedConfigModule],
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => {
-        const jwtCfg: any = {
+        const jwtCfg: { accessTtlSeconds: number; refreshTtlSeconds: number; issuer: string; audience: string; privateKeyPem?: string; publicKeyPem?: string } = {
           accessTtlSeconds: 900,
           refreshTtlSeconds: 60 * 60 * 24 * 30,
           issuer: 'ecommerce-enterprise',

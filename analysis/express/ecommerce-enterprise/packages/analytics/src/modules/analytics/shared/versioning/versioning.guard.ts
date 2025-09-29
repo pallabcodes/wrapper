@@ -23,7 +23,7 @@ export class VersioningGuard implements CanActivate {
     const versionInfo = this.versioningService.extractVersion(request);
     
     // Add version info to request for use in controllers
-    (request as any).versionInfo = versionInfo;
+    (request as Request & { versionInfo: unknown }).versionInfo = versionInfo;
 
     // Set version headers in response
     response.setHeader('API-Version', versionInfo.version);

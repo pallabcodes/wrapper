@@ -66,7 +66,7 @@ export class HealthService {
     };
   }
 
-  private async checkDatabaseHealth(): Promise<{ status: string; details?: any }> {
+  private async checkDatabaseHealth(): Promise<{ status: string; details?: Record<string, unknown> }> {
     try {
       // This would typically involve a database ping
       // For now, we'll simulate a healthy database
@@ -87,7 +87,7 @@ export class HealthService {
     }
   }
 
-  private async checkRedisHealth(): Promise<{ status: string; details?: any }> {
+  private async checkRedisHealth(): Promise<{ status: string; details?: Record<string, unknown> }> {
     try {
       // This would typically involve a Redis ping
       // For now, we'll simulate a healthy Redis
@@ -108,7 +108,7 @@ export class HealthService {
     }
   }
 
-  private async checkPaymentProvidersHealth(): Promise<{ status: string; details?: any }> {
+  private async checkPaymentProvidersHealth(): Promise<{ status: string; details?: Record<string, unknown> }> {
     try {
       // This would typically involve checking payment provider APIs
       // For now, we'll simulate healthy providers

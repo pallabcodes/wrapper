@@ -104,6 +104,8 @@ public
 # Temporary folders
 tmp/
 temp/
+node/
+nest-source/
 
 # Editor directories and files
 .vscode/

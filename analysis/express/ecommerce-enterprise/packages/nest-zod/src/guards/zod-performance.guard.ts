@@ -52,10 +52,12 @@ export class ZodPerformanceGuard implements CanActivate {
     return true;
   }
 
-  private getRequestId(request: any): string {
-    return request.headers['x-request-id'] || 
-           request.headers['x-correlation-id'] || 
-           `${request.ip}-${Date.now()}`;
+  private getRequestId(request: { headers: Record<string, string | string[] | undefined>; ip?: string }): string {
+    const rid = request.headers['x-request-id'];
+    const cid = request.headers['x-correlation-id'];
+    const first = Array.isArray(rid) ? rid[0] : rid;
+    const second = Array.isArray(cid) ? cid[0] : cid;
+    return first || second || `${request.ip}-${Date.now()}`;
   }
 
   private checkConcurrentValidationLimit(maxConcurrent: number): boolean {
@@ -119,7 +121,7 @@ export class ZodPerformanceGuard implements CanActivate {
     }
   }
 
-  private applyPerformanceOptimizations(request: any, options: ZodPerformanceOptions): void {
+  private applyPerformanceOptimizations(request: { res?: { getHeader: (name: string) => unknown; setHeader: (name: string, value: string) => void }; body?: unknown }, options: ZodPerformanceOptions): void {
     // Enable compression if supported
     if (options.enableCompression) {
       this.enableCompression(request);
@@ -136,7 +138,7 @@ export class ZodPerformanceGuard implements CanActivate {
     }
   }
 
-  private enableCompression(request: any): void {
+  private enableCompression(request: { res?: { getHeader: (name: string) => unknown; setHeader: (name: string, value: string) => void } }): void {
     // Set compression headers
     const response = request.res;
     if (response && !response.getHeader('content-encoding')) {
@@ -144,7 +146,7 @@ export class ZodPerformanceGuard implements CanActivate {
     }
   }
 
-  private optimizeRequestProcessing(request: any): void {
+  private optimizeRequestProcessing(request: { body?: unknown }): void {
     // Optimize JSON parsing for large payloads
     if (request.body && typeof request.body === 'string') {
       try {
@@ -163,7 +165,7 @@ export class ZodPerformanceGuard implements CanActivate {
     }
   }
 
-  private applyCachingHeaders(request: any, options: ZodPerformanceOptions): void {
+  private applyCachingHeaders(request: { res?: { setHeader: (name: string, value: string) => void }; body?: unknown }, options: ZodPerformanceOptions): void {
     const response = request.res;
     if (response) {
       response.setHeader('cache-control', `max-age=${Math.floor(options.cacheTtl / 1000)}`);
@@ -171,7 +173,7 @@ export class ZodPerformanceGuard implements CanActivate {
     }
   }
 
-  private generateETag(data: any): string {
+  private generateETag(data: unknown): string {
     const str = JSON.stringify(data);
     let hash = 0;
     
@@ -185,7 +187,7 @@ export class ZodPerformanceGuard implements CanActivate {
   }
 
   // Public methods for monitoring
-  getRequestMetrics(): Map<string, any> {
+  getRequestMetrics(): Map<string, { startTime: number; requestCount: number; lastRequestTime: number }> {
     return new Map(this.requestMetrics);
   }
 

@@ -5,11 +5,14 @@ import {
   ZodValidationOptions,
   ZodValidationResult,
   ZodSchemaRegistry,
-  ZodValidationContext,
   ZodValidationMetrics,
   ZodAuditLog,
   ZodCustomError,
 } from '../interfaces/zod-validation.interface';
+import {
+  NestZodValidationContext,
+  NestZodValidationResult,
+} from '../types/zod-nest-types';
 
 @Injectable()
 export class ZodValidationService implements ZodSchemaRegistry {
@@ -42,10 +45,10 @@ export class ZodValidationService implements ZodSchemaRegistry {
   }
 
   async validate<T>(
-    data: any,
+    data: unknown,
     options: ZodValidationOptions,
-    context?: ZodValidationContext,
-  ): Promise<ZodValidationResult<T>> {
+    context?: NestZodValidationContext,
+  ): Promise<NestZodValidationResult<T>> {
     const startTime = Date.now();
     const cacheKey = this.generateCacheKey(data, options);
     
@@ -103,11 +106,11 @@ export class ZodValidationService implements ZodSchemaRegistry {
           context: this.buildAuditContext(context),
           userId: context?.user?.id || undefined,
           tenantId: context?.tenant || undefined,
-          requestId: (context?.request as any)?.headers?.['x-request-id'],
+          requestId: context?.request?.headers?.['x-request-id'] as string,
         });
       }
 
-      return validationResult;
+      return validationResult as NestZodValidationResult<T>;
 
     } catch (error) {
       const validationTime = Date.now() - startTime;
@@ -137,11 +140,11 @@ export class ZodValidationService implements ZodSchemaRegistry {
           context: this.buildAuditContext(context),
           userId: context?.user?.id || undefined,
           tenantId: context?.tenant || undefined,
-          requestId: (context?.request as any)?.headers?.['x-request-id'],
+          requestId: context?.request?.headers?.['x-request-id'] as string,
         });
       }
 
-      return validationResult;
+      return validationResult as NestZodValidationResult<T>;
     } finally {
       // Reset error map
       if (options.customErrorMap) {
@@ -198,7 +201,7 @@ export class ZodValidationService implements ZodSchemaRegistry {
 
   // Private methods
   private async performValidation<T>(
-    data: any,
+    data: unknown,
     schema: z.ZodSchema<T>,
     options: ZodValidationOptions,
   ): Promise<T> {
@@ -221,7 +224,7 @@ export class ZodValidationService implements ZodSchemaRegistry {
     return schema.parse(processedData);
   }
 
-  private transformData(data: any, options: ZodValidationOptions): any {
+  private transformData(data: unknown, options: ZodValidationOptions): unknown {
     // Apply data transformations based on options
     if (options.skipMissingProperties) {
       return this.removeMissingProperties(data);
@@ -238,13 +241,13 @@ export class ZodValidationService implements ZodSchemaRegistry {
     return data;
   }
 
-  private whitelistData(data: any, schema: z.ZodSchema): any {
+  private whitelistData(data: unknown, schema: z.ZodSchema): unknown {
     // Extract allowed properties from schema
     const allowedProperties = this.extractSchemaProperties(schema);
     return this.filterProperties(data, allowedProperties);
   }
 
-  private checkForNonWhitelistedProperties(data: any, schema: z.ZodSchema): void {
+  private checkForNonWhitelistedProperties(data: unknown, schema: z.ZodSchema): void {
     const allowedProperties = this.extractSchemaProperties(schema);
     const dataProperties = this.getObjectProperties(data);
     const nonWhitelisted = dataProperties.filter(prop => !allowedProperties.includes(prop));
@@ -256,46 +259,56 @@ export class ZodValidationService implements ZodSchemaRegistry {
 
   private extractSchemaProperties(schema: z.ZodSchema): string[] {
     // Extract property names from Zod object schema
-    if (schema._def && (schema._def as any).shape) {
-      const shape = (schema._def as any).shape;
+    if (schema._def && (schema._def as { shape?: unknown }).shape) {
+      const shape = (schema._def as { shape: unknown }).shape;
       // shape is a function, call it to get the actual shape object
       if (typeof shape === 'function') {
-        return Object.keys(shape());
+        const result = shape();
+        if (this.isRecord(result)) {
+          return Object.keys(result);
+        }
+        return [];
       }
-      return Object.keys(shape);
+      if (this.isRecord(shape)) {
+        return Object.keys(shape);
+      }
     }
     
     // For other schema types, return empty array (no whitelisting)
     return [];
   }
 
-  private getObjectProperties(obj: any): string[] {
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
+  }
+
+  private getObjectProperties(obj: unknown): string[] {
     if (typeof obj !== 'object' || obj === null) {
       return [];
     }
     return Object.keys(obj);
   }
 
-  private filterProperties(data: any, allowedProperties: string[]): any {
+  private filterProperties(data: unknown, allowedProperties: string[]): Record<string, unknown> {
     if (typeof data !== 'object' || data === null) {
-      return data;
+      return data as Record<string, unknown>;
     }
     
-    const result: any = {};
+    const result: Record<string, unknown> = {};
     for (const prop of allowedProperties) {
       if (prop in data) {
-        result[prop] = data[prop];
+        result[prop] = (data as Record<string, unknown>)[prop];
       }
     }
     return result;
   }
 
-  private removeMissingProperties(data: any): any {
+  private removeMissingProperties(data: unknown): Record<string, unknown> {
     if (typeof data !== 'object' || data === null) {
-      return data;
+      return data as Record<string, unknown>;
     }
     
-    const result: any = {};
+    const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined) {
         result[key] = value;
@@ -304,12 +317,12 @@ export class ZodValidationService implements ZodSchemaRegistry {
     return result;
   }
 
-  private removeNullProperties(data: any): any {
+  private removeNullProperties(data: unknown): Record<string, unknown> {
     if (typeof data !== 'object' || data === null) {
-      return data;
+      return data as Record<string, unknown>;
     }
     
-    const result: any = {};
+    const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
       if (value !== null) {
         result[key] = value;
@@ -318,12 +331,12 @@ export class ZodValidationService implements ZodSchemaRegistry {
     return result;
   }
 
-  private removeUndefinedProperties(data: any): any {
+  private removeUndefinedProperties(data: unknown): Record<string, unknown> {
     if (typeof data !== 'object' || data === null) {
-      return data;
+      return data as Record<string, unknown>;
     }
     
-    const result: any = {};
+    const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined) {
         result[key] = value;
@@ -332,13 +345,13 @@ export class ZodValidationService implements ZodSchemaRegistry {
     return result;
   }
 
-  private generateCacheKey(data: any, options: ZodValidationOptions): string {
+  private generateCacheKey(data: unknown, options: ZodValidationOptions): string {
     const dataHash = this.hashObject(data);
     const schemaHash = this.getSchemaVersion(options.schema);
     return `${schemaHash}:${dataHash}:${options.cacheKey || 'default'}`;
   }
 
-  private hashObject(obj: any): string {
+  private hashObject(obj: unknown): string {
     return Buffer.from(JSON.stringify(obj)).toString('base64').slice(0, 16);
   }
 
@@ -377,41 +390,51 @@ export class ZodValidationService implements ZodSchemaRegistry {
     this.metrics.schemaUsage[schemaName] = (this.metrics.schemaUsage[schemaName] || 0) + 1;
   }
 
-  private createZodError(error: any): z.ZodError {
+  private createZodError(error: unknown): z.ZodError {
     if (error instanceof z.ZodError) {
       return error;
     }
     
     // Create a custom ZodError for non-Zod errors
+    const errorMessage = error instanceof Error ? error.message : 'Validation failed';
     return new z.ZodError([
       {
         code: 'custom',
-        message: error.message || 'Validation failed',
+        message: errorMessage,
         path: [],
       },
     ]);
   }
 
   private formatZodErrors(zodError: z.ZodError): ZodCustomError[] {
-    return zodError.errors.map(err => ({
-      code: err.code,
-      message: err.message,
-      path: err.path,
-      context: (err as any).context,
-      severity: 'error' as const,
-    }));
+    return zodError.errors.map(err => {
+      const context = (err as { context?: Record<string, unknown> }).context;
+      const result: ZodCustomError = {
+        code: err.code,
+        message: err.message,
+        path: err.path,
+        severity: 'error' as const,
+      };
+      
+      if (context) {
+        result.context = context;
+      }
+      
+      return result;
+    });
   }
 
-  private buildAuditContext(context?: ZodValidationContext): Record<string, any> {
+  private buildAuditContext(context?: NestZodValidationContext): Record<string, unknown> {
     if (!context) return {};
     
     return {
-      userAgent: (context.request as any)?.headers?.['user-agent'],
-      ip: (context.request as any)?.ip,
-      method: (context.request as any)?.method,
-      url: (context.request as any)?.url,
+      userAgent: context.request?.headers?.['user-agent'],
+      ip: context.request?.ip,
+      method: context.request?.method,
+      url: context.request?.url,
       locale: context.locale,
       timezone: context.timezone,
+      requestId: context.requestId,
     };
   }
 

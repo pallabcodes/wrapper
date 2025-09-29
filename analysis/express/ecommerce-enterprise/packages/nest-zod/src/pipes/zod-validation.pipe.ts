@@ -15,7 +15,7 @@ export class ZodValidationPipe implements PipeTransform {
 
   constructor(private readonly validationService: ZodValidationService) {}
 
-  async transform(value: any, metadata: ArgumentMetadata): Promise<any> {
+  async transform(value: unknown, metadata: ArgumentMetadata): Promise<unknown> {
     if (!metadata.metatype) {
       return value;
     }
@@ -68,13 +68,13 @@ export class ZodValidationPipe implements PipeTransform {
     return null;
   }
 
-  private formatErrors(errors: z.ZodError): any {
+  private formatErrors(errors: z.ZodError): Array<Record<string, unknown>> {
     return errors.errors.map(error => ({
       field: error.path.join('.'),
       message: error.message,
       code: error.code,
-      received: (error as any).received,
-      expected: (error as any).expected,
+      received: (error as z.ZodIssue & { received?: unknown }).received,
+      expected: (error as z.ZodIssue & { expected?: unknown }).expected,
     }));
   }
 }
@@ -91,7 +91,7 @@ export class ZodSchemaPipe<T extends z.ZodSchema> implements PipeTransform {
     private readonly options?: Partial<ZodValidationOptions>,
   ) {}
 
-  async transform(value: any): Promise<z.infer<T>> {
+  async transform(value: unknown): Promise<z.infer<T>> {
     const validationOptions: ZodValidationOptions = {
       schema: this.schema,
       transform: true,
@@ -125,13 +125,13 @@ export class ZodSchemaPipe<T extends z.ZodSchema> implements PipeTransform {
     }
   }
 
-  private formatErrors(errors: z.ZodError): any {
+  private formatErrors(errors: z.ZodError): Array<Record<string, unknown>> {
     return errors.errors.map(error => ({
       field: error.path.join('.'),
       message: error.message,
       code: error.code,
-      received: (error as any).received,
-      expected: (error as any).expected,
+      received: (error as z.ZodIssue & { received?: unknown }).received,
+      expected: (error as z.ZodIssue & { expected?: unknown }).expected,
     }));
   }
 }

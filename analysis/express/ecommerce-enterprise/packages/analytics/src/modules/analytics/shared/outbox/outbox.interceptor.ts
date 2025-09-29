@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class OutboxInterceptor implements NestInterceptor {
   constructor(private readonly reflector: Reflector, private readonly outbox: OutboxService) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const handler = context.getHandler();
     const eventType = this.reflector.get<string | undefined>(OUTBOX_EVENT, handler);
     if (!eventType) return next.handle();

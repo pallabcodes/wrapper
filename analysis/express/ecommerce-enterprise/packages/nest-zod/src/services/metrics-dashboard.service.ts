@@ -59,9 +59,12 @@ export class MetricsDashboardService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MetricsDashboardService.name);
   
   // @WebSocketServer()
-  server: any; // Using any to avoid dependency issues
+  server: { emit: (event: string, data: unknown) => void; to: (room: string) => { emit: (event: string, data: unknown) => void } } | { emit: (event: string, data: unknown) => void; to: (room: string) => { emit: (event: string, data: unknown) => void } } = {
+    emit: (_event: string, _data: unknown) => {},
+    to: (_room: string) => ({ emit: (_event: string, _data: unknown) => {} }),
+  };
 
-  private clients = new Map<string, any>(); // Using any to avoid dependency issues
+  private clients = new Map<string, { id: string; emit: (event: string, data: unknown) => void; join: (room: string) => void; leave: (room: string) => void; disconnect: () => void; on: (event: string, handler: () => void) => void }>();
   private updateInterval!: NodeJS.Timeout;
   private historicalData: DashboardMetrics[] = [];
   
@@ -97,7 +100,7 @@ export class MetricsDashboardService implements OnModuleInit, OnModuleDestroy {
   /**
    * Handle client connection
    */
-  handleConnection(client: any) {
+  handleConnection(client: { id: string; emit: (event: string, data: unknown) => void; join: (room: string) => void; leave: (room: string) => void; disconnect: () => void; on: (event: string, handler: () => void) => void }) {
     if (this.clients.size >= this.config.maxClients) {
       client.emit('error', { message: 'Maximum clients reached' });
       client.disconnect();
@@ -120,7 +123,7 @@ export class MetricsDashboardService implements OnModuleInit, OnModuleDestroy {
    * Handle client subscription to specific metrics
    */
   // @SubscribeMessage('subscribe')
-  handleSubscribe(client: any, data: { metrics: string[] }) {
+  handleSubscribe(client: { id: string; join: (room: string) => void }, data: { metrics: string[] }) {
     client.join(`metrics:${data.metrics.join(',')}`);
     this.logger.log(`Client ${client.id} subscribed to: ${data.metrics.join(', ')}`);
   }
@@ -129,7 +132,7 @@ export class MetricsDashboardService implements OnModuleInit, OnModuleDestroy {
    * Handle client unsubscription
    */
   // @SubscribeMessage('unsubscribe')
-  handleUnsubscribe(client: any, data: { metrics: string[] }) {
+  handleUnsubscribe(client: { id: string; leave: (room: string) => void }, data: { metrics: string[] }) {
     data.metrics.forEach(metric => {
       client.leave(`metrics:${metric}`);
     });
@@ -140,7 +143,7 @@ export class MetricsDashboardService implements OnModuleInit, OnModuleDestroy {
    * Handle client request for historical data
    */
   // @SubscribeMessage('getHistoricalData')
-  handleGetHistoricalData(client: any, data: { hours: number }) {
+  handleGetHistoricalData(client: { emit: (event: string, data: unknown) => void }, data: { hours: number }) {
     const hours = Math.min(data.hours || 1, this.config.historicalDataRetention);
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
     
@@ -159,7 +162,7 @@ export class MetricsDashboardService implements OnModuleInit, OnModuleDestroy {
    * Handle client request for specific schema metrics
    */
   // @SubscribeMessage('getSchemaMetrics')
-  handleGetSchemaMetrics(client: any, data: { schemaName?: string }) {
+  handleGetSchemaMetrics(client: { emit: (event: string, data: unknown) => void }, data: { schemaName?: string }) {
     const schemaStats = this.performanceMonitoring.getSchemaStats(data.schemaName);
     client.emit('schemaMetrics', {
       schemaName: data.schemaName || 'all',
@@ -171,7 +174,7 @@ export class MetricsDashboardService implements OnModuleInit, OnModuleDestroy {
    * Handle client request for performance trends
    */
   // @SubscribeMessage('getPerformanceTrends')
-  handleGetPerformanceTrends(client: any, data: { minutes: number }) {
+  handleGetPerformanceTrends(client: { emit: (event: string, data: unknown) => void }, data: { minutes: number }) {
     const trends = this.performanceMonitoring.getPerformanceTrends(data.minutes || 60);
     client.emit('performanceTrends', {
       minutes: data.minutes || 60,
@@ -288,7 +291,7 @@ export class MetricsDashboardService implements OnModuleInit, OnModuleDestroy {
   /**
    * Send initial data to a client
    */
-  private async sendInitialData(client: any): Promise<void> {
+  private async sendInitialData(client: { emit: (event: string, data: unknown) => void }): Promise<void> {
     try {
       const metrics = await this.collectMetrics();
       client.emit('initialData', metrics);
@@ -380,7 +383,7 @@ export class MetricsDashboardService implements OnModuleInit, OnModuleDestroy {
   /**
    * Convert data to CSV format
    */
-  private convertToCSV(_data: any): string {
+  private convertToCSV(_data: { currentMetrics?: DashboardMetrics | undefined; historicalData: DashboardMetrics[]; dashboardStats: { connectedClients: number; historicalDataPoints: number; uptime: number; lastUpdate: Date } }): string {
     // Simplified CSV conversion for dashboard data
     const headers = [
       'timestamp',

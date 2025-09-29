@@ -299,7 +299,7 @@ export class PaymentMonitoringService {
   /**
    * Update real-time metrics based on payment event
    */
-  private async updateRealTimeMetrics(event: any): Promise<void> {
+  private async updateRealTimeMetrics(event: Record<string, unknown>): Promise<void> {
     // This would typically update a real-time metrics store like Redis
     // For now, we'll simulate the update
     this.logger.debug(`Updating real-time metrics for event: ${event.type}`);

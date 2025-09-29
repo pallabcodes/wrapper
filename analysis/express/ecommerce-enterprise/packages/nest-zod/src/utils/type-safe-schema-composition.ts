@@ -98,24 +98,24 @@ export class TypeSafeSchemaComposer<T extends z.ZodSchema = z.ZodSchema> {
   /**
    * Type-safe schema partial
    */
-  partial(): TypeSafeSchemaComposer<z.ZodObject<any>> {
+  partial(): TypeSafeSchemaComposer<z.ZodObject<Partial<z.infer<T>>>> {
     if (!isZodObjectSchema(this.schema)) {
       throw new Error('Partial operation requires an object schema');
     }
 
-    const newSchema = this.schema.partial() as z.ZodObject<any>;
+    const newSchema = this.schema.partial() as z.ZodObject<Partial<z.infer<T>>>;
     return new TypeSafeSchemaComposer(newSchema, this.options);
   }
 
   /**
    * Type-safe schema required
    */
-  required(): TypeSafeSchemaComposer<z.ZodObject<any>> {
+  required(): TypeSafeSchemaComposer<z.ZodObject<Required<z.infer<T>>>> {
     if (!isZodObjectSchema(this.schema)) {
       throw new Error('Required operation requires an object schema');
     }
 
-    const newSchema = this.schema.required() as z.ZodObject<any>;
+    const newSchema = this.schema.required() as z.ZodObject<Required<z.infer<T>>>;
     return new TypeSafeSchemaComposer(newSchema, this.options);
   }
 
@@ -124,8 +124,8 @@ export class TypeSafeSchemaComposer<T extends z.ZodSchema = z.ZodSchema> {
    */
   conditional(
     condition: (data: z.infer<T>) => boolean,
-    trueSchema: Record<string, any>,
-    falseSchema: Record<string, any>
+    trueSchema: Record<string, unknown>,
+    falseSchema: Record<string, unknown>
   ): TypeSafeSchemaComposer<T> {
     if (!isZodObjectSchema(this.schema)) {
       throw new Error('Conditional operation requires an object schema');
@@ -134,7 +134,7 @@ export class TypeSafeSchemaComposer<T extends z.ZodSchema = z.ZodSchema> {
     const refinedSchema = this.schema.refine((data) => {
       const conditionalData = condition(data) ? trueSchema : falseSchema;
       return Object.keys(conditionalData).every(key => 
-        (conditionalData as any)[key] === (data as any)[key]
+        (conditionalData as Record<string, unknown>)[key] === (data as Record<string, unknown>)[key]
       );
     }, 'Conditional validation failed') as unknown as T;
 
@@ -153,7 +153,7 @@ export class TypeSafeSchemaComposer<T extends z.ZodSchema = z.ZodSchema> {
 
     const refinedSchema = this.schema.refine((data) => {
       for (const [field, schemaFactory] of Object.entries(dependencies)) {
-        if ((data as any)[field] !== undefined) {
+        if ((data as Record<string, unknown>)[field] !== undefined) {
           const dependentSchema = schemaFactory(data);
           try {
             dependentSchema.parse(data);
@@ -183,7 +183,7 @@ export class TypeSafeSchemaComposer<T extends z.ZodSchema = z.ZodSchema> {
    * Type-safe array validation
    */
   arrayValidation(
-    validator: (item: any, index: number, array: any[]) => boolean,
+    validator: (item: unknown, index: number, array: unknown[]) => boolean,
     message: string = 'Array validation failed'
   ): TypeSafeSchemaComposer<T> {
     const refinedSchema = this.schema.refine((data) => {
@@ -306,7 +306,7 @@ export function createTypeSafeComposer<T extends z.ZodSchema>(
 /**
  * Type-safe schema pick utility
  */
-export function typeSafePick<T extends z.ZodObject<any>, K extends SafeSchemaKeys<T>>(
+export function typeSafePick<T extends z.ZodObject<Record<string, z.ZodSchema>>, K extends SafeSchemaKeys<T>>(
   schema: T,
   keys: K[]
 ): z.ZodObject<Pick<z.infer<T>, K>> {
@@ -316,7 +316,7 @@ export function typeSafePick<T extends z.ZodObject<any>, K extends SafeSchemaKey
 /**
  * Type-safe schema omit utility
  */
-export function typeSafeOmit<T extends z.ZodObject<any>, K extends SafeSchemaKeys<T>>(
+export function typeSafeOmit<T extends z.ZodObject<Record<string, z.ZodSchema>>, K extends SafeSchemaKeys<T>>(
   schema: T,
   keys: K[]
 ): z.ZodObject<Omit<z.infer<T>, K>> {
@@ -326,18 +326,18 @@ export function typeSafeOmit<T extends z.ZodObject<any>, K extends SafeSchemaKey
 /**
  * Type-safe schema partial utility
  */
-export function typeSafePartial<T extends z.ZodObject<any>>(
+export function typeSafePartial<T extends z.ZodObject<Record<string, z.ZodSchema>>>(
   schema: T
-): z.ZodObject<any> {
+): z.ZodObject<Partial<z.infer<T>>> {
   return createTypeSafeComposer(schema).partial().build();
 }
 
 /**
  * Type-safe schema required utility
  */
-export function typeSafeRequired<T extends z.ZodObject<any>>(
+export function typeSafeRequired<T extends z.ZodObject<Record<string, z.ZodSchema>>>(
   schema: T
-): z.ZodObject<any> {
+): z.ZodObject<Required<z.infer<T>>> {
   return createTypeSafeComposer(schema).required().build();
 }
 
@@ -348,7 +348,7 @@ export function typeSafeRequired<T extends z.ZodObject<any>>(
 /**
  * Type-safe schema merging
  */
-export function typeSafeMerge<T1 extends z.ZodObject<any>, T2 extends z.ZodObject<any>>(
+export function typeSafeMerge<T1 extends z.ZodObject<Record<string, z.ZodSchema>>, T2 extends z.ZodObject<Record<string, z.ZodSchema>>>(
   schema1: T1,
   schema2: T2
 ): z.ZodObject<z.infer<T1> & z.infer<T2>> {
@@ -382,7 +382,7 @@ export function typeSafeIntersection<T1 extends z.ZodSchema, T2 extends z.ZodSch
  */
 export function typeSafeUnion<T extends z.ZodSchema[]>(
   schemas: T
-): z.ZodUnion<any> {
+): z.ZodUnion<[z.ZodSchema, z.ZodSchema, ...z.ZodSchema[]]> {
   return z.union(schemas as unknown as [z.ZodSchema, z.ZodSchema, ...z.ZodSchema[]]);
 }
 
@@ -392,6 +392,6 @@ export function typeSafeUnion<T extends z.ZodSchema[]>(
 export function typeSafeDiscriminatedUnion<T extends string, U extends z.ZodDiscriminatedUnionOption<T>[]>(
   discriminator: T,
   options: U
-): z.ZodDiscriminatedUnion<T, any> {
+): z.ZodDiscriminatedUnion<T, U> {
   return z.discriminatedUnion(discriminator, options as unknown as [z.ZodDiscriminatedUnionOption<T>, ...z.ZodDiscriminatedUnionOption<T>[]]);
 }

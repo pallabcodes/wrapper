@@ -5,8 +5,14 @@ import { createClient, RedisClientType } from 'redis';
 export interface OutboxEvent {
   id: string;
   type: string;
-  payload: any;
+  payload: Record<string, unknown>;
   createdAt: number;
+}
+
+// Extend global interface to include our custom properties
+declare global {
+  var __OUTBOX__: string[] | undefined;
+  var __INBOX__: Set<string> | undefined;
 }
 
 export class OutboxService {
@@ -27,8 +33,8 @@ export class OutboxService {
       return;
     }
     // noop fallback in memory (best-effort)
-    (global as any).__OUTBOX__ = (global as any).__OUTBOX__ || [];
-    (global as any).__OUTBOX__.push(data);
+    global.__OUTBOX__ = global.__OUTBOX__ || [];
+    global.__OUTBOX__.push(data);
   }
 
   async drain(batch = 50): Promise<OutboxEvent[]> {
@@ -41,7 +47,7 @@ export class OutboxService {
       }
       return items;
     }
-    const arr: string[] = (global as any).__OUTBOX__ || [];
+    const arr: string[] = global.__OUTBOX__ || [];
     while (items.length < batch && arr.length) {
       const v = arr.shift();
       if (!v) break;
@@ -66,8 +72,8 @@ export class InboxService {
       const added = await this.client.sAdd('inbox:processed', eventId);
       return added === 0; // true if already present
     }
-    (global as any).__INBOX__ = (global as any).__INBOX__ || new Set<string>();
-    const set: Set<string> = (global as any).__INBOX__;
+    global.__INBOX__ = global.__INBOX__ || new Set<string>();
+    const set: Set<string> = global.__INBOX__;
     const had = set.has(eventId);
     set.add(eventId);
     return had;

@@ -148,7 +148,7 @@ export class SchemaDiscoveryService implements OnModuleInit {
           },
           usageCount: usage?.usageCount || 0,
           lastUsed: usage?.lastUsed || new Date()
-        } as any
+        } as SchemaUsage
       });
     }
     

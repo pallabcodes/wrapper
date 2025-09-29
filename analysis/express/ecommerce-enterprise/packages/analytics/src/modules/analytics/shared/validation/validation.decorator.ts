@@ -6,7 +6,7 @@ import { ValidationSchema, ValidationField, ValidationRule } from './validation.
 export const VALIDATION_SCHEMA_KEY = 'validation_schema';
 export const VALIDATION_OPTIONS_KEY = 'validation_options';
 
-export const Validate = (schema: ValidationSchema, options?: any) =>
+export const Validate = (schema: ValidationSchema, options?: Record<string, unknown>) =>
   applyDecorators(
     SetMetadata(VALIDATION_SCHEMA_KEY, schema),
     SetMetadata(VALIDATION_OPTIONS_KEY, options),
@@ -97,7 +97,7 @@ export const Pattern = (pattern: RegExp, message?: string): ValidationRule => ({
   message: (field) => message || `${field} format is invalid`,
 });
 
-export const Enum = (values: any[], message?: string): ValidationRule => ({
+export const Enum = (values: unknown[], message?: string): ValidationRule => ({
   name: 'enum',
   validate: (value) => values.includes(value),
   message: (field) => message || `${field} must be one of: ${values.join(', ')}`,

@@ -200,7 +200,7 @@ export const ValidationUtils = {
    * Create a conditional schema based on a condition
    */
   conditional: <T extends z.ZodSchema, U extends z.ZodSchema>(
-    condition: (val: any) => boolean,
+    condition: (val: unknown) => boolean,
     trueSchema: T,
     falseSchema: U
   ) => z.any().refine(
@@ -249,12 +249,12 @@ export const ValidationUtils = {
    */
   cached: <T extends z.ZodSchema>(
     schema: T,
-    cacheKey?: (val: any) => string
+    cacheKey?: (val: z.infer<T>) => string
   ) => {
-    const cache = new Map<string, any>();
+    const cache = new Map<string, z.infer<T>>();
     
     return schema.transform((val) => {
-      const key = cacheKey ? cacheKey(val) : JSON.stringify(val);
+      const key = cacheKey ? cacheKey(val) : JSON.stringify(val as unknown);
       if (cache.has(key)) {
         return cache.get(key);
       }
@@ -309,26 +309,26 @@ export const SchemaCompositionHelpers = {
   /**
    * Pick specific fields from a schema
    */
-  pick: <T extends z.ZodObject<any>, K extends keyof T['shape']>(
+  pick: <T extends z.ZodObject<z.ZodRawShape>, K extends keyof T['shape']>(
     schema: T,
     keys: K[]
-  ) => schema.pick(keys.reduce((acc, key) => ({ ...acc, [key]: true }), {}) as any),
+  ) => schema.pick(keys.reduce((acc, key) => ({ ...acc, [key]: true }), {} as Record<string, true>)),
 
   /**
    * Omit specific fields from a schema
    */
-  omit: <T extends z.ZodObject<any>, K extends keyof T['shape']>(
+  omit: <T extends z.ZodObject<z.ZodRawShape>, K extends keyof T['shape']>(
     schema: T,
     keys: K[]
-  ) => schema.omit(keys.reduce((acc, key) => ({ ...acc, [key]: true }), {}) as any),
+  ) => schema.omit(keys.reduce((acc, key) => ({ ...acc, [key]: true }), {} as Record<string, true>)),
 
   /**
    * Create a partial schema
    */
-  partial: <T extends z.ZodObject<any>>(schema: T) => schema.partial(),
+  partial: <T extends z.ZodObject<z.ZodRawShape>>(schema: T) => schema.partial(),
 
   /**
    * Create a required schema
    */
-  required: <T extends z.ZodObject<any>>(schema: T) => schema.required(),
+  required: <T extends z.ZodObject<z.ZodRawShape>>(schema: T) => schema.required(),
 };

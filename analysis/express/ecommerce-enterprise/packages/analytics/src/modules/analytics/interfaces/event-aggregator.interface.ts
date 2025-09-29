@@ -14,7 +14,7 @@ export interface EventAggregator {
   aggregateEvents(
     eventType: EventType,
     timeWindow: { start: Date; end: Date },
-  ): Promise<any[]>;
+  ): Promise<Record<string, unknown>[]>;
 
   /**
    * Get summary statistics for a specific event type

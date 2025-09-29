@@ -16,9 +16,32 @@ import {
 } from '../utils/type-safe-error-handling';
 import { TYPE_SAFE_VALIDATION_SCHEMA, TYPE_SAFE_VALIDATION_OPTIONS, TypeSafeValidationOptions } from '../decorators/type-safe-validation.decorator';
 
+// Type definitions for better type safety
+interface ValidationErrorResponse {
+  success: boolean;
+  error: string;
+  message?: string;
+  analysis?: {
+    totalIssues: number;
+    severity: string;
+    issueTypes: string[];
+  };
+  suggestions?: string[];
+  issues?: Array<{
+    path: string[];
+    message: string;
+    code: string;
+  }>;
+  metadata?: {
+    totalIssues: number;
+    severity: string;
+    issueTypes: string[];
+  };
+}
+
 @Injectable()
 export class TypeSafeValidationInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest();
     const handler = context.getHandler();
     const controller = context.getClass();
@@ -54,7 +77,7 @@ export class TypeSafeValidationInterceptor implements NestInterceptor {
     }
   }
 
-  private validateData(data: any, schema: z.ZodSchema, options: TypeSafeValidationOptions): any {
+  private validateData(data: unknown, schema: z.ZodSchema, options: TypeSafeValidationOptions): unknown {
     try {
       return schema.parse(data);
     } catch (error) {
@@ -73,7 +96,7 @@ export class TypeSafeValidationInterceptor implements NestInterceptor {
     }
   }
 
-  private formatValidationError(error: z.ZodError, options: TypeSafeValidationOptions): any {
+  private formatValidationError(error: z.ZodError, options: TypeSafeValidationOptions): ValidationErrorResponse {
     const analysis = analyzeZodError(error);
 
     switch (options.errorFormat) {

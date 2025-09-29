@@ -252,7 +252,7 @@ export class PaymentComplianceService {
    * Validate payment data for compliance
    */
   async validatePaymentCompliance(
-    paymentData: any,
+    paymentData: Record<string, unknown>,
     context: {
       userId: string;
       tenantId: string;
@@ -506,7 +506,7 @@ export class PaymentComplianceService {
   /**
    * Validation methods for each compliance framework
    */
-  private async validatePCIDSS(paymentData: any, context: any): Promise<{
+  private async validatePCIDSS(paymentData: Record<string, unknown>, context: Record<string, unknown>): Promise<{
     compliant: boolean;
     violations: string[];
     recommendations: string[];
@@ -515,7 +515,7 @@ export class PaymentComplianceService {
     const recommendations: string[] = [];
 
     // Check if cardholder data is properly handled
-    if (paymentData.cardNumber && !this.isEncrypted(paymentData.cardNumber)) {
+    if (paymentData.cardNumber && !this.isEncrypted(paymentData.cardNumber as string)) {
       violations.push('Cardholder data not encrypted');
       recommendations.push('Encrypt all cardholder data using AES-256');
     }
@@ -527,7 +527,7 @@ export class PaymentComplianceService {
     };
   }
 
-  private async validateGDPR(paymentData: any, context: any): Promise<{
+  private async validateGDPR(paymentData: Record<string, unknown>, context: Record<string, unknown>): Promise<{
     compliant: boolean;
     violations: string[];
     recommendations: string[];
@@ -548,7 +548,7 @@ export class PaymentComplianceService {
     };
   }
 
-  private async validateSOX(paymentData: any, context: any): Promise<{
+  private async validateSOX(paymentData: Record<string, unknown>, context: Record<string, unknown>): Promise<{
     compliant: boolean;
     violations: string[];
     recommendations: string[];

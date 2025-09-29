@@ -4,7 +4,7 @@ export interface RateLimitOptions {
   /** Time window in seconds */
   windowMs: number;
   /** Key generator function for rate limiting */
-  keyGenerator?: (req: any) => string;
+  keyGenerator?: (req: { method: string; url: string; ip?: string | undefined; headers: Record<string, string | string[] | undefined> }) => string;
   /** Skip successful requests from rate limit count */
   skipSuccessfulRequests?: boolean;
   /** Skip failed requests from rate limit count */
@@ -14,7 +14,7 @@ export interface RateLimitOptions {
   /** Custom error status code */
   statusCode?: number;
   /** Skip rate limiting for certain conditions */
-  skip?: (req: any) => boolean;
+  skip?: (req: { method: string; url: string; ip?: string | undefined; headers: Record<string, string | string[] | undefined> }) => boolean;
 }
 
 export interface RateLimitInfo {

@@ -4,7 +4,7 @@ import { RateLimitInfo, RateLimitStorage } from './rate-limit.types';
 
 @Injectable()
 export class RedisRateLimitStorage implements RateLimitStorage {
-  constructor(private readonly redis: any) {}
+  constructor(private readonly redis: { hgetall: (key: string) => Promise<Record<string, string>>; pipeline: () => { hset: (key: string, data: Record<string, string>) => void; pexpire: (key: string, ttl: number) => void; exec: () => Promise<unknown[]> }; eval: (script: string, keys: number, ...args: string[]) => Promise<[number, number, number, number]>; del: (key: string) => Promise<number> }) {}
 
   async get(key: string): Promise<RateLimitInfo | null> {
     const data = await this.redis.hgetall(key);

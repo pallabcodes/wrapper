@@ -8,6 +8,17 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
+interface RequestWithTracking extends Request {
+  requestId?: string;
+}
+
+interface ExceptionResponse {
+  message?: string | string[];
+  error?: string;
+  details?: unknown;
+  statusCode?: number;
+}
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger('GlobalExceptionFilter');
@@ -15,13 +26,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
-    const requestId = (request as any)['requestId'] || 'unknown';
+    const request = ctx.getRequest<RequestWithTracking>();
+    const requestId = request.requestId || 'unknown';
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
     let error = 'Internal Server Error';
-    let details: any = null;
+    let details: unknown = null;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -30,8 +41,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
       } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
-        const responseObj = exceptionResponse as any;
-        message = responseObj.message || message;
+        const responseObj = exceptionResponse as ExceptionResponse;
+        message = Array.isArray(responseObj.message) ? responseObj.message.join(', ') : (responseObj.message || message);
         error = responseObj.error || error;
         details = responseObj.details;
       }

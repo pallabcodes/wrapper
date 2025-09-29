@@ -68,7 +68,7 @@ export class AnalyticsController {
       count: { type: 'number' },
     },
     required: ['data', 'count'],
-  } as any)
+  } as Record<string, unknown>)
   @Resilience({ enabled: true, failureRateThreshold: 0.5, windowMs: 30000, openDurationMs: 20000, halfOpenMaxCalls: 5 })
   @RequirePermissions('events:read')
   @RelationCheck({ relation: 'viewer', objectParam: 'projectId' })
@@ -76,7 +76,7 @@ export class AnalyticsController {
   async getEvents() {
     this.logger.debug('Getting analytics events');
 
-    const result = await this.analyticsService.queryAnalytics({} as any);
+    const result = await this.analyticsService.queryAnalytics({} as Record<string, unknown>);
 
     // Business KPI metrics
     this.businessMetrics.recordEventQuery();

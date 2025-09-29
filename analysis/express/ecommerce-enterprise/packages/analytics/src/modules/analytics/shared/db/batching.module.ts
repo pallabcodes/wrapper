@@ -3,15 +3,15 @@ import { Global, Module, Scope } from '@nestjs/common';
 type BatchFn<K, V> = (keys: readonly K[]) => Promise<readonly (V | Error)[]>;
 
 class SimpleDataLoader<K, V> {
-  private queue: { key: K; resolve: (v: V) => void; reject: (e: any) => void }[] = [];
+  private queue: { key: K; resolve: (v: V) => void; reject: (e: Error) => void }[] = [];
   private scheduled = false;
-  private dedupe = new Map<any, Promise<V>>();
+  private dedupe = new Map<K, Promise<V>>();
   constructor(private readonly batchFn: BatchFn<K, V>) {}
 
   load(key: K): Promise<V> {
     // de-duplicate identical keys within the same microtask window
-    if (this.dedupe.has(key as any)) {
-      return this.dedupe.get(key as any)!;
+    if (this.dedupe.has(key)) {
+      return this.dedupe.get(key)!;
     }
     const promise = new Promise<V>((resolve, reject) => {
       this.queue.push({ key, resolve, reject });
@@ -20,10 +20,10 @@ class SimpleDataLoader<K, V> {
         queueMicrotask(() => this.flush());
       }
     });
-    this.dedupe.set(key as any, promise);
+    this.dedupe.set(key, promise);
     promise.finally(() => {
       // allow GC of key promises once settled
-      this.dedupe.delete(key as any);
+      this.dedupe.delete(key);
     });
     return promise;
   }
@@ -48,7 +48,7 @@ class SimpleDataLoader<K, V> {
 }
 
 export class BatchingService {
-  private loaders = new Map<string, SimpleDataLoader<any, any>>();
+  private loaders = new Map<string, SimpleDataLoader<unknown, unknown>>();
 
   getOrCreateLoader<K, V>(name: string, batchFn: BatchFn<K, V>): SimpleDataLoader<K, V> {
     if (!this.loaders.has(name)) {

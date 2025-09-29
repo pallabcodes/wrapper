@@ -491,15 +491,15 @@ export class ThreePhasePaymentService {
     return PaymentProvider.STRIPE;
   }
 
-  private async authorizeWithStripe(request: any, payment: Payment): Promise<AuthorizationResult> {
+  private async authorizeWithStripe(request: Record<string, unknown>, payment: Payment): Promise<AuthorizationResult> {
     // Mock Stripe authorization implementation
     return {
       authorizationId: `auth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       status: 'authorized',
-      amount: request.amount,
-      currency: request.currency,
+      amount: request.amount as number,
+      currency: request.currency as string,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      paymentMethodId: request.paymentMethodId,
+      paymentMethodId: request.paymentMethodId as string,
       provider: PaymentProvider.STRIPE,
       metadata: {
         stripePaymentIntentId: `pi_${Date.now()}`,
@@ -508,15 +508,15 @@ export class ThreePhasePaymentService {
     };
   }
 
-  private async authorizeWithBraintree(request: any, payment: Payment): Promise<AuthorizationResult> {
+  private async authorizeWithBraintree(request: Record<string, unknown>, payment: Payment): Promise<AuthorizationResult> {
     // Mock Braintree authorization implementation
     return {
       authorizationId: `auth_bt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       status: 'authorized',
-      amount: request.amount,
-      currency: request.currency,
+      amount: request.amount as number,
+      currency: request.currency as string,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      paymentMethodId: request.paymentMethodId,
+      paymentMethodId: request.paymentMethodId as string,
       provider: PaymentProvider.BRAINTREE,
       metadata: {
         braintreeTransactionId: `bt_${Date.now()}`,
@@ -525,15 +525,15 @@ export class ThreePhasePaymentService {
     };
   }
 
-  private async authorizeWithPayPal(request: any, payment: Payment): Promise<AuthorizationResult> {
+  private async authorizeWithPayPal(request: Record<string, unknown>, payment: Payment): Promise<AuthorizationResult> {
     // Mock PayPal authorization implementation
     return {
       authorizationId: `auth_pp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       status: 'authorized',
-      amount: request.amount,
-      currency: request.currency,
+      amount: request.amount as number,
+      currency: request.currency as string,
       expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days for PayPal
-      paymentMethodId: request.paymentMethodId,
+      paymentMethodId: request.paymentMethodId as string,
       provider: PaymentProvider.PAYPAL,
       metadata: {
         paypalOrderId: `pp_${Date.now()}`,
@@ -542,13 +542,13 @@ export class ThreePhasePaymentService {
     };
   }
 
-  private async captureWithStripe(request: any, payment: Payment): Promise<CaptureResult> {
+  private async captureWithStripe(request: Record<string, unknown>, payment: Payment): Promise<CaptureResult> {
     // Mock Stripe capture implementation
     return {
       captureId: `cap_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      authorizationId: request.authorizationId,
+      authorizationId: request.authorizationId as string,
       status: 'captured',
-      amount: request.amount || payment.amount,
+      amount: (request.amount as number) || payment.amount,
       currency: payment.currency,
       capturedAt: new Date(),
       provider: PaymentProvider.STRIPE,
@@ -556,23 +556,23 @@ export class ThreePhasePaymentService {
         stripeChargeId: `ch_${Date.now()}`,
       },
       fees: {
-        amount: Math.round((request.amount || payment.amount) * 0.029 + 30), // 2.9% + 30¢
+        amount: Math.round(((request.amount as number) || payment.amount) * 0.029 + 30), // 2.9% + 30¢
         currency: payment.currency,
         breakdown: [
-          { type: 'stripe_fee', amount: Math.round((request.amount || payment.amount) * 0.029), description: 'Stripe processing fee' },
+          { type: 'stripe_fee', amount: Math.round(((request.amount as number) || payment.amount) * 0.029), description: 'Stripe processing fee' },
           { type: 'fixed_fee', amount: 30, description: 'Fixed fee' },
         ],
       },
     };
   }
 
-  private async captureWithBraintree(request: any, payment: Payment): Promise<CaptureResult> {
+  private async captureWithBraintree(request: Record<string, unknown>, payment: Payment): Promise<CaptureResult> {
     // Mock Braintree capture implementation
     return {
       captureId: `cap_bt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      authorizationId: request.authorizationId,
+      authorizationId: request.authorizationId as string,
       status: 'captured',
-      amount: request.amount || payment.amount,
+      amount: (request.amount as number) || payment.amount,
       currency: payment.currency,
       capturedAt: new Date(),
       provider: PaymentProvider.BRAINTREE,
@@ -580,23 +580,23 @@ export class ThreePhasePaymentService {
         braintreeTransactionId: `bt_${Date.now()}`,
       },
       fees: {
-        amount: Math.round((request.amount || payment.amount) * 0.029 + 30), // 2.9% + 30¢
+        amount: Math.round(((request.amount as number) || payment.amount) * 0.029 + 30), // 2.9% + 30¢
         currency: payment.currency,
         breakdown: [
-          { type: 'braintree_fee', amount: Math.round((request.amount || payment.amount) * 0.029), description: 'Braintree processing fee' },
+          { type: 'braintree_fee', amount: Math.round(((request.amount as number) || payment.amount) * 0.029), description: 'Braintree processing fee' },
           { type: 'fixed_fee', amount: 30, description: 'Fixed fee' },
         ],
       },
     };
   }
 
-  private async captureWithPayPal(request: any, payment: Payment): Promise<CaptureResult> {
+  private async captureWithPayPal(request: Record<string, unknown>, payment: Payment): Promise<CaptureResult> {
     // Mock PayPal capture implementation
     return {
       captureId: `cap_pp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      authorizationId: request.authorizationId,
+      authorizationId: request.authorizationId as string,
       status: 'captured',
-      amount: request.amount || payment.amount,
+      amount: (request.amount as number) || payment.amount,
       currency: payment.currency,
       capturedAt: new Date(),
       provider: PaymentProvider.PAYPAL,
@@ -604,24 +604,24 @@ export class ThreePhasePaymentService {
         paypalCaptureId: `pp_${Date.now()}`,
       },
       fees: {
-        amount: Math.round((request.amount || payment.amount) * 0.034 + 30), // 3.4% + 30¢
+        amount: Math.round(((request.amount as number) || payment.amount) * 0.034 + 30), // 3.4% + 30¢
         currency: payment.currency,
         breakdown: [
-          { type: 'paypal_fee', amount: Math.round((request.amount || payment.amount) * 0.034), description: 'PayPal processing fee' },
+          { type: 'paypal_fee', amount: Math.round(((request.amount as number) || payment.amount) * 0.034), description: 'PayPal processing fee' },
           { type: 'fixed_fee', amount: 30, description: 'Fixed fee' },
         ],
       },
     };
   }
 
-  private async settleWithStripe(request: any, payment: Payment): Promise<SettlementResult> {
+  private async settleWithStripe(request: Record<string, unknown>, payment: Payment): Promise<SettlementResult> {
     // Mock Stripe settlement implementation
     const capture = payment.metadata?.capture as CaptureResult;
     const netAmount = capture.amount - capture.fees.amount;
 
     return {
       settlementId: `settle_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      captureId: request.captureId,
+      captureId: request.captureId as string,
       status: 'settled',
       amount: capture.amount,
       currency: capture.currency,
@@ -641,14 +641,14 @@ export class ThreePhasePaymentService {
     };
   }
 
-  private async settleWithBraintree(request: any, payment: Payment): Promise<SettlementResult> {
+  private async settleWithBraintree(request: Record<string, unknown>, payment: Payment): Promise<SettlementResult> {
     // Mock Braintree settlement implementation
     const capture = payment.metadata?.capture as CaptureResult;
     const netAmount = capture.amount - capture.fees.amount;
 
     return {
       settlementId: `settle_bt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      captureId: request.captureId,
+      captureId: request.captureId as string,
       status: 'settled',
       amount: capture.amount,
       currency: capture.currency,
@@ -668,14 +668,14 @@ export class ThreePhasePaymentService {
     };
   }
 
-  private async settleWithPayPal(request: any, payment: Payment): Promise<SettlementResult> {
+  private async settleWithPayPal(request: Record<string, unknown>, payment: Payment): Promise<SettlementResult> {
     // Mock PayPal settlement implementation
     const capture = payment.metadata?.capture as CaptureResult;
     const netAmount = capture.amount - capture.fees.amount;
 
     return {
       settlementId: `settle_pp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      captureId: request.captureId,
+      captureId: request.captureId as string,
       status: 'settled',
       amount: capture.amount,
       currency: capture.currency,

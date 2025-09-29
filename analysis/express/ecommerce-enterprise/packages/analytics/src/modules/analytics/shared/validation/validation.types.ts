@@ -1,7 +1,7 @@
 export interface ValidationError {
   field: string;
   message: string;
-  value: any;
+  value: unknown;
   constraint: string;
   children?: ValidationError[];
 }
@@ -9,14 +9,14 @@ export interface ValidationError {
 export interface ValidationResult {
   isValid: boolean;
   errors: ValidationError[];
-  data?: any;
+  data?: unknown;
 }
 
 export interface ValidationOptions {
   /** Skip validation for certain conditions */
-  skip?: (req: any) => boolean;
+  skip?: (req: { method: string; url: string; ip?: string; headers: Record<string, string | string[] | undefined> }) => boolean;
   /** Transform data after validation */
-  transform?: (data: any) => any;
+  transform?: (data: unknown) => unknown;
   /** Custom error messages */
   messages?: Record<string, string>;
   /** Whether to strip unknown properties */
@@ -29,16 +29,16 @@ export interface ValidationOptions {
 
 export interface ValidationRule {
   name: string;
-  validate: (value: any, context: ValidationContext) => boolean | Promise<boolean>;
-  message: (field: string, value: any) => string;
+  validate: (value: unknown, context: ValidationContext) => boolean | Promise<boolean>;
+  message: (field: string, value: unknown) => string;
 }
 
 export interface ValidationContext {
   field: string;
-  value: any;
-  parent?: any;
+  value: unknown;
+  parent?: unknown;
   path: string;
-  request: any;
+  request: { method: string; url: string; ip?: string; headers: Record<string, string | string[] | undefined> };
 }
 
 export interface ValidationSchema {
@@ -51,7 +51,7 @@ export interface ValidationField {
   min?: number;
   max?: number;
   pattern?: RegExp;
-  enum?: any[];
+  enum?: unknown[];
   items?: ValidationField;
   properties?: ValidationSchema;
   custom?: ValidationRule[];

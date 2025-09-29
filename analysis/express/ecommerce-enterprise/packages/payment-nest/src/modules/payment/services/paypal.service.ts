@@ -169,14 +169,14 @@ export class PayPalService {
     });
   }
 
-  async handleWebhook(payload: any): Promise<{
+  async handleWebhook(payload: Record<string, unknown>): Promise<{
     type: string;
-    data: any;
+    data: Record<string, unknown>;
   }> {
     // PayPal webhook verification would go here
     // For now, we'll just return the payload
     return {
-      type: payload.event_type || 'unknown',
+      type: (payload.event_type as string) || 'unknown',
       data: payload,
     };
   }

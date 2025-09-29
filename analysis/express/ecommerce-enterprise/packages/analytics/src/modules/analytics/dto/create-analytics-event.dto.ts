@@ -17,7 +17,7 @@ export class CreateAnalyticsEventDto {
   userId!: string;
   sessionId?: string;
   timestamp?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
   location?: {

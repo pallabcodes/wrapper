@@ -364,9 +364,9 @@ export class DecoratorBasedValidationController {
     includeSuggestions: true,
   })
   @TypeSafeIntrospect()
-  async createComplexPayment(@Body() data: z.infer<typeof BasicPaymentSchema>, @Request() req: any) {
+  async createComplexPayment(@Body() data: z.infer<typeof BasicPaymentSchema>, @Request() req: Record<string, unknown>) {
     // Determine schema based on user role (simulated)
-    const userRole = req.user?.role || 'user';
+    const userRole = (req as any).user?.role || 'user';
     
     let schema;
     switch (userRole) {

@@ -114,13 +114,13 @@ export class BraintreeService {
 
   async handleWebhook(payload: string, signature: string): Promise<{
     type: string;
-    data: any;
+    data: Record<string, unknown>;
   }> {
     try {
       const webhookNotification = await this.gateway.webhookNotification.parse(signature, payload);
       return {
         type: webhookNotification.kind,
-        data: webhookNotification,
+        data: webhookNotification as unknown as Record<string, unknown>,
       };
     } catch (error) {
       throw new BadRequestException(`Braintree webhook verification failed: ${(error as Error).message}`);

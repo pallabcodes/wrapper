@@ -353,7 +353,7 @@ export class EnterpriseZodValidationService implements OnModuleInit {
       z.number(),
       z.boolean(),
       z.object({}),
-      z.array(z.any()),
+      z.array(z.unknown()),
     ];
 
     commonSchemas.forEach(schema => {
@@ -402,7 +402,7 @@ export class EnterpriseZodValidationService implements OnModuleInit {
   }
 
   private getSchemaVersion(schema: z.ZodSchema): string {
-    return schema.description || (schema._def as any).typeName || 'unknown';
+    return schema.description || (schema._def as { typeName?: string }).typeName || 'unknown';
   }
 
   private applyTransformations(data: unknown, options: ZodValidationOptions): unknown {
@@ -463,7 +463,7 @@ export class EnterpriseZodValidationService implements OnModuleInit {
     success: boolean,
     duration: number,
     context?: ZodValidationContext,
-    error?: any,
+    error?: unknown,
   ): Promise<void> {
     const auditLog: ZodAuditLog = {
       timestamp: new Date(),

@@ -14,7 +14,7 @@ export interface LogEntry {
   service: string;
   version: string;
   environment: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   error?: {
     name: string;
     message: string;
@@ -27,7 +27,7 @@ export interface LogEntry {
     cpuUsage: number;
   };
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface LogQuery {
@@ -145,14 +145,14 @@ export class StructuredLoggingService implements OnModuleInit {
     level: LogEntry['level'],
     message: string,
     context?: string,
-    data?: Record<string, any>,
+    data?: Record<string, unknown>,
     options?: {
       traceId?: string;
       spanId?: string;
       userId?: string;
       requestId?: string;
       tags?: string[];
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
       performance?: {
         duration: number;
         memoryUsage: number;
@@ -185,11 +185,11 @@ export class StructuredLoggingService implements OnModuleInit {
       performance: options?.performance,
       tags: options?.tags || [],
       metadata: options?.metadata,
-    } as any;
+    };
 
     // Add error information if level is error or fatal
     if (level === 'error' || level === 'fatal') {
-      logEntry.error = this.extractErrorInfo(data?.['error']) as any;
+      logEntry.error = this.extractErrorInfo(data?.['error']);
     }
 
     this.addLogEntry(logEntry);
@@ -220,7 +220,7 @@ export class StructuredLoggingService implements OnModuleInit {
       traceId,
       spanId,
       tags: ['validation', 'start'],
-    } as any);
+    });
 
     return logId;
   }
@@ -248,7 +248,7 @@ export class StructuredLoggingService implements OnModuleInit {
         cpuUsage: process.cpuUsage().user,
       },
       tags: ['validation', 'success'],
-    } as any);
+    });
   }
 
   /**
@@ -276,7 +276,7 @@ export class StructuredLoggingService implements OnModuleInit {
         cpuUsage: process.cpuUsage().user,
       },
       tags: ['validation', 'error'],
-    } as any);
+    });
   }
 
   /**
@@ -295,7 +295,7 @@ export class StructuredLoggingService implements OnModuleInit {
     }, {
       performance: duration ? { duration, memoryUsage: 0, cpuUsage: 0 } : undefined,
       tags: ['cache', operation],
-    } as any);
+    });
   }
 
   /**
@@ -314,7 +314,7 @@ export class StructuredLoggingService implements OnModuleInit {
     }, {
       context,
       tags: ['performance', 'metric'],
-    } as any);
+    });
   }
 
   /**
@@ -324,7 +324,7 @@ export class StructuredLoggingService implements OnModuleInit {
     alertType: string,
     message: string,
     severity: 'low' | 'medium' | 'high' | 'critical',
-    data?: Record<string, any>
+    data?: Record<string, unknown>
   ): void {
     this.log('warn', `Alert: ${message}`, 'alert', {
       alertType,
@@ -650,7 +650,7 @@ export class StructuredLoggingService implements OnModuleInit {
   /**
    * Extract error information
    */
-  private extractErrorInfo(error: any): LogEntry['error'] | undefined {
+  private extractErrorInfo(error: unknown): LogEntry['error'] | undefined {
     if (!error) return undefined;
     
     if (error instanceof Error) {
@@ -658,7 +658,7 @@ export class StructuredLoggingService implements OnModuleInit {
         name: error.constructor.name,
         message: error.message,
         stack: error.stack,
-      } as any;
+      };
     }
     
     if (error instanceof z.ZodError) {
@@ -689,7 +689,15 @@ export class StructuredLoggingService implements OnModuleInit {
    */
   private startLogMetrics(): void {
     setInterval(() => {
-      this.updateLogMetrics({} as LogEntry);
+      this.updateLogMetrics({
+        id: 'metrics',
+        timestamp: new Date(),
+        level: 'info',
+        message: 'metrics-tick',
+        service: 'nest-zod-validation',
+        version: '1.0.0',
+        environment: process.env['NODE_ENV'] || 'development',
+      } as LogEntry);
     }, 60000); // Every minute
   }
 

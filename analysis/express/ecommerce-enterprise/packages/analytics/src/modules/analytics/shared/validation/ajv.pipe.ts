@@ -11,10 +11,10 @@ export class AjvValidationPipe implements PipeTransform {
   private ajv = new Ajv({ coerceTypes: true, removeAdditional: true, useDefaults: true });
   private schemaCache = new WeakMap<object, ValidateFunction>();
 
-  transform(value: any, metadata: ArgumentMetadata) {
+  transform(value: unknown, metadata: ArgumentMetadata) {
     const { metatype, type } = metadata;
     if (!metatype || ['custom'].includes(type)) return value;
-    const schema = (metatype as any)?.jsonSchema as object | undefined;
+    const schema = (metatype as { jsonSchema?: object })?.jsonSchema;
     if (!schema) return value; // fallback: no schema provided => do nothing
 
     let validator = this.schemaCache.get(metatype);

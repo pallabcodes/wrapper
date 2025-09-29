@@ -19,7 +19,7 @@ export class ResilienceInterceptor implements NestInterceptor {
   private circuits = new Map<string, Circuit>();
   constructor(private readonly reflector: Reflector) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const handler = context.getHandler();
     const cls = context.getClass();
     const opts = this.mergeOptions(
@@ -48,7 +48,7 @@ export class ResilienceInterceptor implements NestInterceptor {
     if (circuit.state === 'open') {
       const now = Date.now();
       if (!circuit.lastOpenedAt || now - circuit.lastOpenedAt < (opts.openDurationMs || 0)) {
-        return throwError(() => new Error('CircuitOpen')) as any;
+        return throwError(() => new Error('CircuitOpen'));
       }
       // Move to half-open when window elapsed
       circuit.state = 'half_open';
@@ -57,7 +57,7 @@ export class ResilienceInterceptor implements NestInterceptor {
 
     if (circuit.state === 'half_open') {
       if (circuit.halfOpenInFlight >= (opts.halfOpenMaxCalls || 0)) {
-        return throwError(() => new Error('CircuitHalfOpenMaxed')) as any;
+        return throwError(() => new Error('CircuitHalfOpenMaxed'));
       }
       circuit.halfOpenInFlight++;
     }
@@ -98,7 +98,7 @@ export class ResilienceInterceptor implements NestInterceptor {
     );
   }
 
-  private withHedging(primary$: Observable<any>, next: CallHandler, hedgeAfterMs: number): Observable<any> {
+  private withHedging(primary$: Observable<unknown>, next: CallHandler, hedgeAfterMs: number): Observable<unknown> {
     // Race the original with a delayed duplicate subscription after hedgeAfterMs
     const hedged$ = defer(async () => {
       await new Promise((r) => setTimeout(r, hedgeAfterMs));
@@ -151,7 +151,7 @@ export class ResilienceInterceptor implements NestInterceptor {
 
   private mergeOptions(...levels: Array<ResilienceOptions | undefined>): ResilienceOptions & { enabled: boolean } {
     const merged = Object.assign({}, DEFAULTS, ...levels.filter(Boolean));
-    return { ...merged, enabled: levels.some((l) => l && l.enabled !== false) } as any;
+    return { ...merged, enabled: levels.some((l) => l && l.enabled !== false) } as ResilienceOptions & { enabled: boolean };
   }
 }
 

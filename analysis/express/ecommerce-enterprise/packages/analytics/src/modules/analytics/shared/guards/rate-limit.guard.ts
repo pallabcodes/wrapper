@@ -16,7 +16,7 @@ export class RateLimitGuard implements CanActivate {
       context.getClass(),
     ]);
     if (!limit) return true;
-    const req: any = context.switchToHttp().getRequest();
+    const req = context.switchToHttp().getRequest<{ ip?: string; method: string; route?: { path: string }; originalUrl?: string; url: string }>();
     const key = `${req.ip}:${req.method}:${req.route?.path || req.originalUrl || req.url}`;
     const now = Date.now();
     const bucket = this.keyToBucket.get(key) || { tokens: limit, lastRefill: now };

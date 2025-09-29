@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export interface ValidationErrorContext {
   schema: string;
-  data: any;
+  data: unknown;
   path: string[];
   timestamp: Date;
   requestId?: string;
@@ -234,14 +234,14 @@ export class SchemaErrorDebugger {
   /**
    * Extract data structure for debugging
    */
-  private static extractDataStructure(data: any): string {
+  private static extractDataStructure(data: unknown): string {
     if (data === null) return 'null';
     if (data === undefined) return 'undefined';
     if (typeof data === 'string') return `string (length: ${data.length})`;
     if (typeof data === 'number') return `number (${data})`;
     if (typeof data === 'boolean') return `boolean (${data})`;
     if (Array.isArray(data)) return `array (length: ${data.length})`;
-    if (typeof data === 'object') return `object (keys: ${Object.keys(data).join(', ')})`;
+    if (typeof data === 'object') return `object (keys: ${Object.keys(data as Record<string, unknown>).join(', ')})`;
     return typeof data;
   }
 
@@ -251,14 +251,14 @@ export class SchemaErrorDebugger {
   private static getExpectedType(issue: z.ZodIssue): string {
     switch (issue.code) {
       case 'invalid_type':
-        return (issue as any).expected || 'unknown';
+        return (issue as { expected?: string }).expected || 'unknown';
       case 'too_small':
       case 'too_big':
-        return (issue as any).type || 'unknown';
+        return (issue as { type?: string }).type || 'unknown';
       case 'invalid_string':
-        return `string (${(issue as any).validation || 'unknown'})`;
+        return `string (${(issue as { validation?: string }).validation || 'unknown'})`;
       case 'invalid_enum_value':
-        return `enum (${(issue as any).options?.join(' | ') || 'unknown'})`;
+        return `enum (${(issue as { options?: string[] }).options?.join(' | ') || 'unknown'})`;
       default:
         return 'unknown';
     }
@@ -267,11 +267,11 @@ export class SchemaErrorDebugger {
   /**
    * Get actual type from data
    */
-  private static getActualType(data: any, path: string[]): string {
-    let current = data;
+  private static getActualType(data: unknown, path: string[]): string {
+    let current: unknown = data;
     for (const key of path) {
-      if (current && typeof current === 'object' && key in current) {
-        current = current[key];
+      if (current && typeof current === 'object' && key in (current as Record<string, unknown>)) {
+        current = (current as Record<string, unknown>)[key];
       } else {
         return 'undefined';
       }
@@ -288,32 +288,32 @@ export class SchemaErrorDebugger {
   private static generateSuggestedFix(issue: z.ZodIssue, _context: ValidationErrorContext): string {
     switch (issue.code) {
       case 'invalid_type':
-        return `Change the value to be of type ${(issue as any).expected || 'unknown'}`;
+        return `Change the value to be of type ${(issue as { expected?: string }).expected || 'unknown'}`;
       case 'too_small':
-        if ((issue as any).type === 'string') {
-          return `Make the string at least ${(issue as any).minimum || 'unknown'} characters long`;
-        } else if ((issue as any).type === 'number') {
-          return `Use a number that is at least ${(issue as any).minimum || 'unknown'}`;
+        if ((issue as { type?: string; minimum?: number }).type === 'string') {
+          return `Make the string at least ${(issue as { minimum?: number }).minimum || 'unknown'} characters long`;
+        } else if ((issue as { type?: string; minimum?: number }).type === 'number') {
+          return `Use a number that is at least ${(issue as { minimum?: number }).minimum || 'unknown'}`;
         }
         break;
       case 'too_big':
-        if ((issue as any).type === 'string') {
-          return `Make the string at most ${(issue as any).maximum || 'unknown'} characters long`;
-        } else if ((issue as any).type === 'number') {
-          return `Use a number that is at most ${(issue as any).maximum || 'unknown'}`;
+        if ((issue as { type?: string; maximum?: number }).type === 'string') {
+          return `Make the string at most ${(issue as { maximum?: number }).maximum || 'unknown'} characters long`;
+        } else if ((issue as { type?: string; maximum?: number }).type === 'number') {
+          return `Use a number that is at most ${(issue as { maximum?: number }).maximum || 'unknown'}`;
         }
         break;
       case 'invalid_string':
-        if ((issue as any).validation === 'email') {
+        if ((issue as { validation?: string }).validation === 'email') {
           return `Use a valid email format (e.g., user@example.com)`;
-        } else if ((issue as any).validation === 'url') {
+        } else if ((issue as { validation?: string }).validation === 'url') {
           return `Use a valid URL format (e.g., https://example.com)`;
-        } else if ((issue as any).validation === 'uuid') {
+        } else if ((issue as { validation?: string }).validation === 'uuid') {
           return `Use a valid UUID format (e.g., 123e4567-e89b-12d3-a456-426614174000)`;
         }
         break;
       case 'invalid_enum_value':
-        return `Use one of the allowed values: ${(issue as any).options?.join(', ') || 'unknown'}`;
+        return `Use one of the allowed values: ${(issue as { options?: string[] }).options?.join(', ') || 'unknown'}`;
       case 'custom':
         return issue.message || 'Fix the custom validation error';
     }
@@ -356,14 +356,16 @@ export class SchemaErrorDebugger {
   /**
    * Get most common error type
    */
-  private static getMostCommonErrorType(errorTypes: string[]): 'validation' | 'transformation' | 'refinement' | 'unknown' {
+  private static getMostCommonErrorType(errorTypes: Array<'validation' | 'transformation' | 'refinement' | 'unknown'>): 'validation' | 'transformation' | 'refinement' | 'unknown' {
     const counts = errorTypes.reduce((acc, type) => {
       acc[type] = (acc[type] || 0) + 1;
       return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<'validation' | 'transformation' | 'refinement' | 'unknown', number>);
     
-    const mostCommon = Object.entries(counts).reduce((a, b) => (counts[a[0]] || 0) > (counts[b[0]] || 0) ? a : b);
-    return (mostCommon[0] as any) || 'unknown';
+    const entries = Object.entries(counts) as Array<[keyof typeof counts, number]>;
+    if (entries.length === 0) return 'unknown';
+    const mostCommon = entries.reduce((a, b) => (a[1] > b[1] ? a : b));
+    return mostCommon[0];
   }
 
   /**
@@ -416,7 +418,7 @@ export class SchemaErrorDebugger {
   /**
    * Generate suggestions based on error analysis
    */
-  private static generateSuggestions(errorType: string, patterns: string[]): string[] {
+  private static generateSuggestions(errorType: 'validation' | 'transformation' | 'refinement' | 'unknown', patterns: string[]): string[] {
     const suggestions: string[] = [];
     
     if (errorType === 'validation') {

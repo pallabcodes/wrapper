@@ -9,7 +9,7 @@ import type { CacheStore, CacheEntry } from '../cache/types';
 export class IdempotencyInterceptor implements NestInterceptor {
   constructor(private readonly reflector: Reflector, @Inject(CACHE_STORE) private readonly store: CacheStore) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const handler = context.getHandler();
     const enabled = this.reflector.get<boolean | undefined>(IDEMPOTENCY, handler);
     if (!enabled) return next.handle();
@@ -23,7 +23,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
     if (!key) throw new BadRequestException('Idempotency-Key header required');
     const cacheKey = `idem:${method}:${req.route?.path || req.url}:${key}`;
 
-    const existing = (this.store as any).get(cacheKey) as CacheEntry | undefined;
+    const existing = this.store.get(cacheKey) as CacheEntry<{ statusCode: number; body: unknown }> | undefined;
     if (existing && Date.now() < existing.expireAt) {
       // replay stored response
       res.statusCode = (existing.value?.statusCode as number) || res.statusCode;
@@ -34,13 +34,13 @@ export class IdempotencyInterceptor implements NestInterceptor {
       tap((body) => {
         const ttlMs = 60_000; // 1 minute default replay window
         const now = Date.now();
-        const entry: CacheEntry<any> = {
+        const entry: CacheEntry<{ statusCode: number; body: unknown }> = {
           value: { statusCode: res.statusCode, body },
           cachedAt: now,
           staleAt: now + ttlMs,
           expireAt: now + ttlMs,
         };
-        (this.store as any).set(cacheKey, entry);
+        this.store.set(cacheKey, entry);
       }),
     );
   }

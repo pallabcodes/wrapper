@@ -1,6 +1,22 @@
 import { Injectable, ExecutionContext, Logger } from '@nestjs/common';
 import { ThrottlerGuard, ThrottlerException } from '@nestjs/throttler';
 import { Reflector } from '@nestjs/core';
+import { Request } from 'express';
+
+interface ThrottlerOptions {
+  ttl: number;
+  limit: number;
+}
+
+interface ThrottlerStorageService {
+  increment(key: string, ttl: number): Promise<number>;
+}
+
+interface RequestWithConnection extends Request {
+  connection?: {
+    remoteAddress?: string;
+  };
+}
 
 @Injectable()
 export class AnalyticsThrottlerGuard extends ThrottlerGuard {
@@ -8,8 +24,8 @@ export class AnalyticsThrottlerGuard extends ThrottlerGuard {
 
   constructor(
     reflector: Reflector,
-    options?: any,
-    storageService?: any
+    options?: ThrottlerOptions,
+    storageService?: ThrottlerStorageService
   ) {
     super(options, storageService, reflector);
   }
@@ -65,7 +81,7 @@ export class AnalyticsThrottlerGuard extends ThrottlerGuard {
     return true;
   }
 
-  protected override getTracker(req: any): Promise<string> {
+  protected override getTracker(req: RequestWithConnection): Promise<string> {
     // Use IP address as the default tracker
     // In production, you might want to use user ID for authenticated requests
     return Promise.resolve(req.ip || req.connection.remoteAddress || 'unknown');
@@ -80,7 +96,7 @@ export class AnalyticsThrottlerGuard extends ThrottlerGuard {
     return `${tracker}:${method}:${url}`;
   }
 
-  protected override getErrorMessage(_context: ExecutionContext, _throttlerLimitDetail: any): Promise<string> {
+  protected override getErrorMessage(_context: ExecutionContext, _throttlerLimitDetail: unknown): Promise<string> {
     return Promise.resolve('Too many requests. Please try again later.');
   }
 }

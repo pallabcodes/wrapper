@@ -1,6 +1,6 @@
-export class AnalyticsResponseDto {
+export class AnalyticsResponseDto<T = unknown> {
   success!: boolean;
-  data!: any;
+  data!: T;
   timestamp!: Date;
   error?: string;
   message?: string;
@@ -13,8 +13,8 @@ export class AnalyticsResponseDto {
     hasPrev?: boolean;
   };
 
-  static success<T>(data: T, message?: string): AnalyticsResponseDto {
-    const response = new AnalyticsResponseDto();
+  static success<T>(data: T, message?: string): AnalyticsResponseDto<T> {
+    const response = new AnalyticsResponseDto<T>();
     response.success = true;
     response.data = data;
     response.timestamp = new Date();
@@ -22,17 +22,18 @@ export class AnalyticsResponseDto {
     return response;
   }
 
-  static error(error: string, message?: string): AnalyticsResponseDto {
-    const response = new AnalyticsResponseDto();
+  static error(error: string, message?: string): AnalyticsResponseDto<null> {
+    const response = new AnalyticsResponseDto<null>();
     response.success = false;
+    response.data = null;
     response.error = error;
     response.timestamp = new Date();
     if (message) response.message = message;
     return response;
   }
 
-  static paginated<T>(data: T, pagination: { total: number; page: number; limit: number }): AnalyticsResponseDto {
-    const response = new AnalyticsResponseDto();
+  static paginated<T>(data: T, pagination: { total: number; page: number; limit: number }): AnalyticsResponseDto<T> {
+    const response = new AnalyticsResponseDto<T>();
     response.success = true;
     response.data = data;
     response.timestamp = new Date();

@@ -22,7 +22,7 @@ export class AnalyticsLoggerMiddleware implements NestMiddleware {
     // Override response.end to log response details
     const originalEnd = res.end;
     const logger = this.logger; // Capture logger in closure
-    res.end = function(chunk?: any, encoding?: any): Response {
+    res.end = function(chunk?: string | Buffer, encoding?: BufferEncoding): Response {
       const duration = Date.now() - startTime;
       const { statusCode } = res;
 

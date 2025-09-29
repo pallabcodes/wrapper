@@ -204,7 +204,7 @@ export function ObservableValidation(
  * Conditional validation based on request context
  */
 export function EnterpriseConditionalValidation(
-  condition: (request: any) => boolean,
+  condition: (request: unknown) => boolean,
   trueSchema: z.ZodSchema,
   falseSchema?: z.ZodSchema,
   options?: Partial<ZodValidationOptions>

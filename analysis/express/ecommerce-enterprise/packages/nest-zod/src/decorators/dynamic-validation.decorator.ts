@@ -25,7 +25,7 @@ export const VALIDATION_CONTEXT_METADATA = 'validation-context-metadata';
  *     .withOptions({ audit: true, cache: true })
  * )
  */
-export function DynamicValidation<T = any>(
+export function DynamicValidation<T = unknown>(
   builderFn: (builder: DynamicValidationBuilder<T>) => DynamicValidationBuilder<T>,
   options?: Partial<DynamicValidationOptions>
 ) {
@@ -55,7 +55,7 @@ export function DynamicValidation<T = any>(
  *   moderator: ModeratorUserSchema
  * })
  */
-export function ConditionalValidation<T = any>(
+export function ConditionalValidation<T = unknown>(
   schemas: Record<string, z.ZodSchema>,
   options?: Partial<DynamicValidationOptions> & {
     userRoleField?: string;
@@ -86,7 +86,7 @@ export function ConditionalValidation<T = any>(
  * }))
  */
 export function ContextAwareValidation(
-  contextFn: (request: any) => {
+  contextFn: (request: unknown) => {
     schema: z.ZodSchema;
     options?: Partial<DynamicValidationOptions>;
   }
@@ -112,7 +112,7 @@ export function ContextAwareValidation(
  *   { name: 'security', schema: SecuritySchema, continueOnError: true }
  * ])
  */
-export function PipelineValidation<T = any>(
+export function PipelineValidation<T = unknown>(
   steps: ValidationStep[],
   options?: Partial<DynamicValidationOptions>
 ) {
@@ -139,7 +139,7 @@ export function PipelineValidation<T = any>(
  *   PATCH: PartialUpdateSchema
  * })
  */
-export function MethodBasedValidation<T = any>(
+export function MethodBasedValidation<T = unknown>(
   schemas: Record<string, z.ZodSchema>,
   options?: Partial<DynamicValidationOptions>
 ) {
@@ -165,7 +165,7 @@ export function MethodBasedValidation<T = any>(
  *   'multipart/form-data': FormDataSchema
  * })
  */
-export function ContentTypeValidation<T = any>(
+export function ContentTypeValidation<T = unknown>(
   schemas: Record<string, z.ZodSchema>,
   options?: Partial<DynamicValidationOptions>
 ) {
@@ -194,7 +194,7 @@ export function ContentTypeValidation<T = any>(
  *   'user.delete': DeleteUserSchema
  * })
  */
-export function PermissionValidation<T = any>(
+export function PermissionValidation<T = unknown>(
   schemas: Record<string, z.ZodSchema>,
   options?: Partial<DynamicValidationOptions> & {
     permissionField?: string;
@@ -221,7 +221,7 @@ export function PermissionValidation<T = any>(
  *   'tenant2': Tenant2Schema
  * })
  */
-export function TenantValidation<T = any>(
+export function TenantValidation<T = unknown>(
   schemas: Record<string, z.ZodSchema>,
   options?: Partial<DynamicValidationOptions>
 ) {
@@ -249,7 +249,7 @@ export function TenantValidation<T = any>(
  *   }
  * })
  */
-export function ABTestValidation<T = any>(
+export function ABTestValidation<T = unknown>(
   config: {
     variant: string;
     schemas: Record<string, z.ZodSchema>;
@@ -280,7 +280,7 @@ export function ABTestValidation<T = any>(
  *   'legacy-checkout': LegacyCheckoutSchema
  * })
  */
-export function FeatureFlagValidation<T = any>(
+export function FeatureFlagValidation<T = unknown>(
   schemas: Record<string, z.ZodSchema>,
   options?: Partial<DynamicValidationOptions> & {
     featureFlagField?: string;
@@ -292,14 +292,15 @@ export function FeatureFlagValidation<T = any>(
     for (const [feature, schema] of Object.entries(schemas)) {
       builder.when(
         (data, context) => {
-          const dataFlags = (data as any)?.[featureFlagField] as Record<string, any> | undefined;
+          const recordData = data as Record<string, unknown>;
+          const dataFlags = recordData?.[featureFlagField] as Record<string, unknown> | undefined;
           const contextFlags = context?.user?.permissions || [];
           const flags = dataFlags || contextFlags;
           if (Array.isArray(flags)) {
             return flags.includes(feature);
           }
           if (flags && typeof flags === 'object' && !Array.isArray(flags)) {
-            return (flags as Record<string, any>)[feature] === true;
+            return (flags as Record<string, unknown>)[feature] === true;
           }
           return false;
         },
@@ -320,7 +321,7 @@ export function FeatureFlagValidation<T = any>(
  *   'after-hours': AfterHoursSchema
  * })
  */
-export function TimeBasedValidation<T = any>(
+export function TimeBasedValidation<T = unknown>(
   schemas: Record<string, z.ZodSchema>,
   options?: Partial<DynamicValidationOptions> & {
     timezone?: string;
@@ -364,7 +365,7 @@ export function TimeBasedValidation<T = any>(
  *   'production': ProdSchema
  * })
  */
-export function EnvironmentValidation<T = any>(
+export function EnvironmentValidation<T = unknown>(
   schemas: Record<string, z.ZodSchema>,
   options?: Partial<DynamicValidationOptions>
 ) {
@@ -395,7 +396,7 @@ export function EnvironmentValidation<T = any>(
  *   fallback: DefaultSchema
  * })
  */
-export function SmartValidation<T = any>(
+export function SmartValidation<T = unknown>(
   config: {
     analyzers: Array<{
       condition: (data: T, context?: ValidationContext) => boolean;
@@ -434,6 +435,6 @@ export function SmartValidation<T = any>(
 }
 
 // Helper function to create dynamic validation builder
-function createDynamicValidation<T = any>(baseSchema?: z.ZodSchema): DynamicValidationBuilder<T> {
+function createDynamicValidation<T = unknown>(baseSchema?: z.ZodSchema): DynamicValidationBuilder<T> {
   return new DynamicValidationBuilder<T>(baseSchema);
 }

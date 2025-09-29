@@ -21,7 +21,7 @@ export class WebhookController {
   @ApiResponse({ status: 200, description: 'Webhook processed successfully' })
   @ApiResponse({ status: 400, description: 'Invalid webhook signature' })
   async handleStripeWebhook(
-    @Body() payload: any,
+    @Body() payload: Record<string, unknown>,
     @Headers('stripe-signature') signature: string,
   ): Promise<{ received: boolean }> {
     try {
@@ -38,7 +38,7 @@ export class WebhookController {
   @ApiResponse({ status: 200, description: 'Webhook processed successfully' })
   @ApiResponse({ status: 400, description: 'Invalid webhook signature' })
   async handleBraintreeWebhook(
-    @Body() payload: any,
+    @Body() payload: Record<string, unknown>,
     @Headers('bt-signature') signature: string,
   ): Promise<{ received: boolean }> {
     try {
@@ -55,7 +55,7 @@ export class WebhookController {
   @ApiResponse({ status: 200, description: 'Webhook processed successfully' })
   @ApiResponse({ status: 400, description: 'Invalid webhook data' })
   async handlePayPalWebhook(
-    @Body() payload: any,
+    @Body() payload: Record<string, unknown>,
   ): Promise<{ received: boolean }> {
     try {
       await this.webhookService.handlePayPalWebhook(payload);

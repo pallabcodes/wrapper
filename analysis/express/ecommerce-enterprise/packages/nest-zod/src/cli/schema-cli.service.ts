@@ -240,7 +240,13 @@ export class SchemaCLIService {
   /**
    * Print schemas in table format
    */
-  private printSchemasTable(schemas: any[]): void {
+  private printSchemasTable(schemas: Array<{
+    name: string;
+    filePath: string;
+    lineNumber: number;
+    metadata: { complexity: number; size: number };
+    usage: { decorators: unknown[] };
+  }>): void {
     console.log('\n📋 Discovered Schemas\n');
     console.log('┌─────────────────┬─────────────────┬─────────────┬─────────────┬─────────────┐');
     console.log('│ Name            │ File            │ Complexity  │ Size        │ Usage       │');
@@ -262,7 +268,13 @@ export class SchemaCLIService {
   /**
    * Print schemas in list format
    */
-  private printSchemasList(schemas: any[]): void {
+  private printSchemasList(schemas: Array<{
+    name: string;
+    filePath: string;
+    lineNumber: number;
+    metadata: { complexity: number; size: number };
+    usage: { decorators: unknown[] };
+  }>): void {
     console.log('\n📋 Discovered Schemas\n');
     
     for (const schema of schemas) {

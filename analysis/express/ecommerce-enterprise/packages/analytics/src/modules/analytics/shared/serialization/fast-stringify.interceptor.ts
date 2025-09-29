@@ -6,25 +6,25 @@ import fastJson from 'fast-json-stringify';
 const SERIALIZE_SCHEMA = 'serialize:schema';
 
 export function Serialize(schema?: object): MethodDecorator & ClassDecorator {
-  return ((target: any, _key?: any, descriptor?: any) => {
+  return ((target: unknown, _key?: string | symbol, descriptor?: PropertyDescriptor) => {
     const loc = descriptor?.value || target;
     Reflect.defineMetadata(SERIALIZE_SCHEMA, schema, loc);
-  }) as any;
+  }) as MethodDecorator & ClassDecorator;
 }
 
 @Injectable()
 export class FastStringifyInterceptor implements NestInterceptor {
-  private cache = new WeakMap<object, (data: any) => string>();
+  private cache = new WeakMap<object, (data: unknown) => string>();
   constructor(private readonly reflector: Reflector) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const handler = context.getHandler();
     const schema = this.reflector.get<object | undefined>(SERIALIZE_SCHEMA, handler);
     if (!schema) return next.handle();
 
     let stringify = this.cache.get(handler);
     if (!stringify) {
-      stringify = fastJson(schema as any);
+      stringify = fastJson(schema as Record<string, unknown>);
       this.cache.set(handler, stringify);
     }
     const res = context.switchToHttp().getResponse();

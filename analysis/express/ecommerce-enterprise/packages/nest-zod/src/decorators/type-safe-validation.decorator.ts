@@ -65,7 +65,7 @@ export interface TypeSafeSchemaOptions {
  *   errorFormat: 'user',
  *   enableRecovery: true
  * })
- * async createUser(@Body() data: unknown) { ... }
+ * async createUser(@Body() data: Record<string, unknown>) { ... }
  */
 export function TypeSafeValidation(options: TypeSafeValidationOptions) {
   return applyDecorators(
@@ -90,7 +90,7 @@ export function TypeSafeValidation(options: TypeSafeValidationOptions) {
  * class UserController { ... }
  */
 export function TypeSafeSchema(options: TypeSafeSchemaOptions = {}) {
-  return function (target: any) {
+  return function (target: Function) {
     // Store schema options in class metadata
     Reflect.defineMetadata(TYPE_SAFE_VALIDATION_OPTIONS, options, target);
     return target;
@@ -106,10 +106,10 @@ export function TypeSafeSchema(options: TypeSafeSchemaOptions = {}) {
  * 
  * Usage:
  * @TypeSafeField('email', z.string().email())
- * async validateEmail(@Body() data: unknown) { ... }
+ * async validateEmail(@Body() data: Record<string, unknown>) { ... }
  */
 export function TypeSafeField(fieldName: string, schema: z.ZodSchema) {
-  return function (target: any, propertyKey: string, _descriptor: PropertyDescriptor) {
+  return function (target: Function, propertyKey: string, _descriptor: PropertyDescriptor) {
     const existingSchemas = Reflect.getMetadata(TYPE_SAFE_VALIDATION_SCHEMA, target) || {};
     existingSchemas[propertyKey] = existingSchemas[propertyKey] || {};
     existingSchemas[propertyKey][fieldName] = schema;
@@ -126,10 +126,10 @@ export function TypeSafeField(fieldName: string, schema: z.ZodSchema) {
  * 
  * Usage:
  * @TypeSafeMethod(UserSchema, { errorFormat: 'api' })
- * async createUser(@Body() data: unknown) { ... }
+ * async createUser(@Body() data: Record<string, unknown>) { ... }
  */
 export function TypeSafeMethod(schema: z.ZodSchema, options: Partial<TypeSafeValidationOptions> = {}) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (target: Function, propertyKey: string, descriptor: PropertyDescriptor) {
     const validationOptions: TypeSafeValidationOptions = {
       schema,
       errorFormat: 'user',
@@ -253,18 +253,18 @@ export const TypeSafeParam = createParamDecorator(
  *   format: 'api',
  *   includeDetails: true
  * })
- * async createUser(@Body() data: unknown) { ... }
+ * async createUser(@Body() data: Record<string, unknown>) { ... }
  */
 export function TypeSafeErrorHandling(options: {
   format?: 'user' | 'api' | 'detailed';
   includeDetails?: boolean;
   includeSuggestions?: boolean;
-  customHandler?: (error: z.ZodError) => any;
+  customHandler?: (error: z.ZodError) => unknown;
 }) {
-  return function (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (_target: Function, _propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       try {
         return await originalMethod.apply(this, args);
       } catch (error) {
@@ -317,28 +317,28 @@ export function TypeSafeErrorHandling(options: {
  *   enabled: true,
  *   fallbackData: { ... }
  * })
- * async createUser(@Body() data: unknown) { ... }
+ * async createUser(@Body() data: Record<string, unknown>) { ... }
  */
 export function TypeSafeRecovery(options: {
   enabled?: boolean;
-  fallbackData?: any;
-  onRecovery?: (recoveredData: any) => void;
+  fallbackData?: Record<string, unknown>;
+  onRecovery?: (recoveredData: Record<string, unknown>) => void;
 }) {
-  return function (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (_target: Function, _propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       try {
         return await originalMethod.apply(this, args);
       } catch (error) {
         if (error instanceof z.ZodError && options.enabled) {
           // Attempt error recovery
           const recovery = attemptZodErrorRecovery(args[0], error.issues[0]?.path ? 
-            z.object({}) : z.any(), error);
+            z.object({}) : z.unknown(), error);
           
           if (recovery.recovered) {
             if (options.onRecovery) {
-              options.onRecovery(recovery.data);
+              options.onRecovery(recovery.data as Record<string, unknown>);
             }
             return {
               success: true,
@@ -365,13 +365,13 @@ export function TypeSafeRecovery(options: {
  * 
  * Usage:
  * @TypeSafeIntrospect()
- * async getSchemaInfo(@Body() data: unknown) { ... }
+ * async getSchemaInfo(@Body() data: Record<string, unknown>) { ... }
  */
 export function TypeSafeIntrospect() {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (target: Function, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       const result = await originalMethod.apply(this, args);
       
       // Add schema introspection to the result

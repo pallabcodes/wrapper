@@ -5,7 +5,7 @@ import { ValidationError, ValidationResult, ValidationOptions, ValidationContext
 export class ValidationService {
   private readonly logger = new Logger(ValidationService.name);
 
-  async validate(data: any, schema: ValidationSchema, options: ValidationOptions = {}): Promise<ValidationResult> {
+  async validate(data: unknown, schema: ValidationSchema, options: ValidationOptions = {}): Promise<ValidationResult> {
     const errors: ValidationError[] = [];
     
     try {
@@ -38,21 +38,21 @@ export class ValidationService {
   }
 
   private async validateObject(
-    data: any,
+    data: unknown,
     schema: ValidationSchema,
     path: string,
     options: ValidationOptions,
     errors: ValidationError[],
-  ): Promise<any> {
+  ): Promise<unknown> {
     if (data === null || data === undefined) {
       return data;
     }
 
-    const result: any = {};
+    const result: Record<string, unknown> = {};
 
     for (const [key, fieldSchema] of Object.entries(schema)) {
       const fieldPath = path ? `${path}.${key}` : key;
-      const value = data[key];
+      const value = (data as Record<string, unknown>)[key];
 
       if (this.isValidationField(fieldSchema)) {
         const fieldResult = await this.validateField(value, fieldSchema, fieldPath, options, errors);
@@ -83,17 +83,17 @@ export class ValidationService {
   }
 
   private async validateField(
-    value: any,
+    value: unknown,
     field: ValidationField,
     path: string,
     options: ValidationOptions,
     errors: ValidationError[],
-  ): Promise<any> {
+  ): Promise<unknown> {
     const context: ValidationContext = {
       field: path,
       value,
       path,
-      request: options as any, // This would be the actual request in real usage
+      request: { method: 'GET', url: '/', headers: {} }, // This would be the actual request in real usage
     };
 
     // Check if field is required
@@ -255,7 +255,7 @@ export class ValidationService {
     return value;
   }
 
-  private validateType(value: any, type: string): boolean {
+  private validateType(value: unknown, type: string): boolean {
     switch (type) {
       case 'string':
         return typeof value === 'string';
@@ -268,7 +268,7 @@ export class ValidationService {
       case 'object':
         return typeof value === 'object' && value !== null && !Array.isArray(value);
       case 'date':
-        return value instanceof Date || !isNaN(Date.parse(value));
+        return value instanceof Date || (typeof value === 'string' && !isNaN(Date.parse(value)));
       case 'email':
         return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
       case 'url':
@@ -280,7 +280,16 @@ export class ValidationService {
     }
   }
 
-  private isValidationField(schema: any): schema is ValidationField {
-    return schema && typeof schema === 'object' && 'type' in schema;
+  private isValidationField(schema: unknown): schema is ValidationField {
+    if (schema === null || typeof schema !== 'object') {
+      return false;
+    }
+    
+    const obj = schema as Record<string, unknown>;
+    const hasType = 'type' in obj;
+    const typeValue = obj['type'];
+    const typeIsString = typeof typeValue === 'string';
+    
+    return (hasType && typeIsString) as boolean;
   }
 }

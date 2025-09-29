@@ -95,7 +95,7 @@ export class DynamicValidationDemoController {
     audit: true,
     cache: true,
   })
-  async createRoleBasedPayment(@Body() paymentData: any) {
+  async createRoleBasedPayment(@Body() paymentData: Record<string, unknown>) {
     return {
       success: true,
       message: 'Payment created with role-based validation',
@@ -113,7 +113,7 @@ export class DynamicValidationDemoController {
     schema: req.user?.role === 'admin' ? AdminPaymentSchema : BasicPaymentSchema,
     audit: true,
   }))
-  async createContextAwarePayment(@Body() paymentData: any) {
+  async createContextAwarePayment(@Body() paymentData: Record<string, unknown>) {
     return {
       success: true,
       message: 'Payment created with context-aware validation',
@@ -132,7 +132,7 @@ export class DynamicValidationDemoController {
     PUT: PremiumPaymentSchema,
     PATCH: BasicPaymentSchema.partial(),
   })
-  async createMethodBased(@Body() paymentData: any) {
+  async createMethodBased(@Body() paymentData: Record<string, unknown>) {
     return {
       success: true,
       message: 'Payment created with method-based validation',
@@ -151,7 +151,7 @@ export class DynamicValidationDemoController {
     'payment.create.premium': PremiumPaymentSchema,
     'payment.create.admin': AdminPaymentSchema,
   })
-  async createPermissionBased(@Body() paymentData: any) {
+  async createPermissionBased(@Body() paymentData: Record<string, unknown>) {
     return {
       success: true,
       message: 'Payment created with permission-based validation',
@@ -170,13 +170,13 @@ export class DynamicValidationDemoController {
     schemas: {
       A: BasicPaymentSchema.extend({
         experimentalFeature: z.boolean().optional(),
-      }),
+      }) as any,
       B: PremiumPaymentSchema.extend({
         newUI: z.boolean().optional(),
-      }),
+      }) as any,
     },
   } as any)
-  async createABTestPayment(@Body() paymentData: any) {
+  async createABTestPayment(@Body() paymentData: Record<string, unknown>) {
     return {
       success: true,
       message: 'Payment created with A/B test validation',
@@ -196,10 +196,10 @@ export class DynamicValidationDemoController {
         step: z.number(),
         progress: z.number().min(0).max(100),
       }),
-    }),
-    'legacy-payment-flow': BasicPaymentSchema,
+    }) as any,
+    'legacy-payment-flow': BasicPaymentSchema as any,
   } as any)
-  async createFeatureFlagPayment(@Body() paymentData: any) {
+  async createFeatureFlagPayment(@Body() paymentData: Record<string, unknown>) {
     return {
       success: true,
       message: 'Payment created with feature flag validation',
@@ -233,7 +233,7 @@ export class DynamicValidationDemoController {
     ],
     fallback: BasicPaymentSchema,
   })
-  async createSmartPayment(@Body() paymentData: any) {
+  async createSmartPayment(@Body() paymentData: Record<string, unknown>) {
     return {
       success: true,
       message: 'Payment created with smart validation',
@@ -291,7 +291,7 @@ export class DynamicValidationDemoController {
         errorStrategy: 'collect',
       })
   )
-  async createComplexDynamicPayment(@Body() paymentData: any) {
+  async createComplexDynamicPayment(@Body() paymentData: Record<string, unknown>) {
     return {
       success: true,
       message: 'Payment created with complex dynamic validation',
@@ -341,7 +341,7 @@ export class DynamicValidationDemoController {
     audit: true,
     errorStrategy: 'collect',
   })
-  async createPipelinePayment(@Body() paymentData: any) {
+  async createPipelinePayment(@Body() paymentData: Record<string, unknown>) {
     return {
       success: true,
       message: 'Payment created with pipeline validation',
@@ -353,9 +353,14 @@ export class DynamicValidationDemoController {
    * Example 10: Using the validation pipeline service directly
    */
   @Post('service-pipeline-payment')
-  async createServicePipelinePayment(@Body() paymentData: any, @Request() req: any) {
+  async createServicePipelinePayment(@Body() paymentData: Record<string, unknown>, @Request() req: Record<string, unknown>) {
     const context: ValidationContext = {
-      user: req.user,
+      user: (req as any).user || {
+        id: 'system',
+        role: 'user',
+        permissions: ['payment.create'],
+        tenantId: 'default',
+      },
       request: req,
       data: paymentData,
     };
@@ -418,7 +423,7 @@ export class DynamicValidationDemoController {
         { description: 'Form data payment validation' }
       )
   )
-  async createContentTypePayment(@Body() paymentData: any) {
+  async createContentTypePayment(@Body() paymentData: Record<string, unknown>) {
     return {
       success: true,
       message: 'Payment created with content-type validation',

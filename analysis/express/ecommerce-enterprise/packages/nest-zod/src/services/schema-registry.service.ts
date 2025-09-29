@@ -8,7 +8,7 @@ export interface SchemaDefinition<T extends z.ZodSchema = z.ZodSchema> {
   version: string;
   description?: string;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
   isActive: boolean;
@@ -85,7 +85,7 @@ export class SchemaRegistryService implements OnModuleInit {
       version?: string;
       description?: string;
       tags?: string[];
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
     }
   ): T {
     const version = options?.version || '1.0.0';
@@ -107,7 +107,7 @@ export class SchemaRegistryService implements OnModuleInit {
       updatedAt: new Date(),
       isActive: true,
       usageCount: 0,
-    } as any;
+    } as SchemaDefinition<T>;
 
     // Store schema
     this.schemas.set(fullName, schemaDefinition);
@@ -180,7 +180,7 @@ export class SchemaRegistryService implements OnModuleInit {
       version?: string;
       description?: string;
       tags?: string[];
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
     }
   ): T {
     const schema = composer(this);
@@ -204,7 +204,7 @@ export class SchemaRegistryService implements OnModuleInit {
       version?: string;
       description?: string;
       tags?: string[];
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
     }
   ): T {
     const composition = this.schemaCompositions.get(compositionName);
@@ -230,7 +230,7 @@ export class SchemaRegistryService implements OnModuleInit {
     }
 
     // Register composed schema
-    return this.register(compositionName, schema as any, options);
+    return this.register(compositionName, schema as T, options);
   }
 
   /**
@@ -386,7 +386,7 @@ export class SchemaRegistryService implements OnModuleInit {
       version?: string;
       description?: string;
       tags?: string[];
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
       transform?: (schema: T) => T;
     }
   ): T {
@@ -400,7 +400,7 @@ export class SchemaRegistryService implements OnModuleInit {
       description: modifications.description,
       tags: modifications.tags,
       metadata: modifications.metadata,
-    } as any);
+    });
   }
 
   /**
@@ -417,7 +417,7 @@ export class SchemaRegistryService implements OnModuleInit {
       const s2 = this.get(schema2);
       
       // Basic compatibility check
-      if ((s1._def as any).typeName !== (s2._def as any).typeName) {
+      if ((s1._def as { typeName?: string }).typeName !== (s2._def as { typeName?: string }).typeName) {
         issues.push('Different schema types');
       }
       
@@ -503,7 +503,7 @@ export class SchemaRegistryService implements OnModuleInit {
       { name: 'uuid', schema: z.string().uuid() },
       { name: 'url', schema: z.string().url() },
       { name: 'date', schema: z.date() },
-      { name: 'array', schema: z.array(z.any()) },
+      { name: 'array', schema: z.array(z.unknown()) },
       { name: 'object', schema: z.object({}) },
     ];
 

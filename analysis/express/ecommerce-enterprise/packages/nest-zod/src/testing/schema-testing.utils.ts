@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export interface SchemaTestCase<T = any> {
+export interface SchemaTestCase<T = unknown> {
   name: string;
   data: T;
   expected: 'valid' | 'invalid';
@@ -8,7 +8,7 @@ export interface SchemaTestCase<T = any> {
   description?: string;
 }
 
-export interface SchemaTestSuite<T = any> {
+export interface SchemaTestSuite<T = unknown> {
   schema: z.ZodSchema<T>;
   name: string;
   description?: string;
@@ -52,7 +52,7 @@ export class SchemaTestingUtils {
       testCases,
       setup: options?.setup,
       teardown: options?.teardown
-    } as any;
+    } as SchemaTestSuite<T>;
   }
 
   /**
@@ -166,7 +166,7 @@ export class SchemaTestingUtils {
     // Generate invalid test cases
     testCases.push({
       name: 'invalid_null',
-      data: null as any,
+      data: null as unknown as T,
       expected: 'invalid',
       expectedErrors: ['Expected'],
       description: 'Null value should be invalid'
@@ -174,7 +174,7 @@ export class SchemaTestingUtils {
 
     testCases.push({
       name: 'invalid_undefined',
-      data: undefined as any,
+      data: undefined as unknown as T,
       expected: 'invalid',
       expectedErrors: ['Expected'],
       description: 'Undefined value should be invalid'
@@ -182,7 +182,7 @@ export class SchemaTestingUtils {
 
     testCases.push({
       name: 'invalid_wrong_type',
-      data: 'string' as any,
+      data: 'string' as unknown as T,
       expected: 'invalid',
       expectedErrors: ['Expected'],
       description: 'Wrong type should be invalid'
@@ -198,11 +198,11 @@ export class SchemaTestingUtils {
     // This is a simplified implementation
     // In practice, this would use more sophisticated data generation
     if (schema instanceof z.ZodObject) {
-      const data: any = {};
+      const data: Record<string, unknown> = {};
       for (const [key, fieldSchema] of Object.entries(schema.shape)) {
-        data[key] = this.generateFieldData(fieldSchema as z.ZodSchema<any>);
+        data[key] = this.generateFieldData(fieldSchema as z.ZodSchema);
       }
-      return data as T;
+      return data as unknown as T;
     }
     
     if (schema instanceof z.ZodString) {
@@ -218,16 +218,16 @@ export class SchemaTestingUtils {
     }
     
     if (schema instanceof z.ZodArray) {
-      return [this.generateFieldData(schema.element as z.ZodSchema<any>)] as T;
+      return [this.generateFieldData(schema.element as z.ZodSchema)] as unknown as T;
     }
     
-    return {} as T;
+    return {} as unknown as T;
   }
 
   /**
    * Generate test data for a specific field
    */
-  private static generateFieldData(fieldSchema: z.ZodSchema<any>): any {
+  private static generateFieldData(fieldSchema: z.ZodSchema): unknown {
     if (fieldSchema instanceof z.ZodString) {
       return 'test string';
     }
@@ -245,7 +245,7 @@ export class SchemaTestingUtils {
     }
     
     if (fieldSchema instanceof z.ZodObject) {
-      const data: any = {};
+      const data: Record<string, unknown> = {};
       for (const [key, subFieldSchema] of Object.entries(fieldSchema.shape)) {
         data[key] = this.generateFieldData(subFieldSchema as z.ZodSchema);
       }
@@ -267,7 +267,7 @@ export class SchemaTestingUtils {
    * Create a mock schema for testing
    */
   static createMockSchema<T>(data: T): z.ZodSchema<T> {
-    return z.literal(data as any);
+    return z.literal(data as unknown as z.LiteralValue) as unknown as z.ZodSchema<T>;
   }
 
   /**
@@ -308,7 +308,7 @@ export class SchemaTestingUtils {
           }
         }
         return true;
-      }, `Fields must be at least ${constraints.minLength} characters`) as any;
+      }, `Fields must be at least ${constraints.minLength} characters`) as unknown as z.ZodSchema;
     }
     
     if (constraints.maxLength) {
@@ -319,7 +319,7 @@ export class SchemaTestingUtils {
           }
         }
         return true;
-      }, `Fields must be at most ${constraints.maxLength} characters`) as any;
+      }, `Fields must be at most ${constraints.maxLength} characters`) as unknown as z.ZodSchema;
     }
     
     if (constraints.pattern) {
@@ -330,7 +330,7 @@ export class SchemaTestingUtils {
           }
         }
         return true;
-      }, `Fields must match required pattern`) as any;
+      }, `Fields must match required pattern`) as unknown as z.ZodSchema;
     }
     
     if (constraints.min) {
@@ -341,7 +341,7 @@ export class SchemaTestingUtils {
           }
         }
         return true;
-      }, `Fields must be at least ${constraints.min}`) as any;
+      }, `Fields must be at least ${constraints.min}`) as unknown as z.ZodSchema;
     }
     
     if (constraints.max) {
@@ -352,7 +352,7 @@ export class SchemaTestingUtils {
           }
         }
         return true;
-      }, `Fields must be at most ${constraints.max}`) as any;
+      }, `Fields must be at most ${constraints.max}`) as unknown as z.ZodSchema;
     }
     
     return schema;

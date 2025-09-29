@@ -8,7 +8,7 @@ export class ValidationPipe implements PipeTransform {
 
   constructor(private readonly validationService: ValidationService) {}
 
-  async transform(value: any, metadata: ArgumentMetadata): Promise<any> {
+  async transform(value: unknown, metadata: ArgumentMetadata): Promise<unknown> {
     const { metatype } = metadata;
     
     if (!metatype || !this.toValidate(metatype)) {
@@ -67,7 +67,7 @@ export class SchemaValidationPipe implements PipeTransform {
     private readonly options: ValidationOptions = {},
   ) {}
 
-  async transform(value: any, _metadata: ArgumentMetadata): Promise<any> {
+  async transform(value: unknown, _metadata: ArgumentMetadata): Promise<unknown> {
     const result = await this.validationService.validate(value, this.schema, this.options);
 
     if (!result.isValid) {
