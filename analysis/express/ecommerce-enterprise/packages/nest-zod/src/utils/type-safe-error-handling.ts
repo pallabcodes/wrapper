@@ -300,13 +300,31 @@ export class TypeSafeErrorFormatter {
     };
     
     if (options.includeDetails) {
-      response.details = error.issues.map((issue, index) => ({
-        field: issue.path.length > 0 ? issue.path.join('.') : 'root',
-        code: issue.code,
-        message: issue.message,
-        expected: analysis.issues[index]?.context.expected,
-        received: analysis.issues[index]?.context.received,
-      }));
+      response.details = error.issues.map((issue, index) => {
+        const detail: {
+          field: string;
+          code: string;
+          message: string;
+          expected?: string;
+          received?: string;
+        } = {
+          field: issue.path.length > 0 ? issue.path.join('.') : 'root',
+          code: issue.code,
+          message: issue.message,
+        };
+        
+        const expected = analysis.issues[index]?.context.expected;
+        const received = analysis.issues[index]?.context.received;
+        
+        if (expected !== undefined) {
+          detail.expected = expected;
+        }
+        if (received !== undefined) {
+          detail.received = received;
+        }
+        
+        return detail;
+      });
     }
     
     if (options.includeSuggestions && analysis.suggestions.length > 0) {

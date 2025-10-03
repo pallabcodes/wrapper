@@ -395,12 +395,22 @@ export class SchemaRegistryService implements OnModuleInit {
       ? modifications.transform(sourceSchema)
       : sourceSchema;
 
-    return this.register(targetName, modifiedSchema, {
-      version: modifications.version,
-      description: modifications.description,
-      tags: modifications.tags,
-      metadata: modifications.metadata,
-    });
+    const options: { version?: string; description?: string; tags?: string[]; metadata?: Record<string, unknown> } = {};
+    
+    if (modifications.version) {
+      options.version = modifications.version;
+    }
+    if (modifications.description) {
+      options.description = modifications.description;
+    }
+    if (modifications.tags) {
+      options.tags = modifications.tags;
+    }
+    if (modifications.metadata) {
+      options.metadata = modifications.metadata;
+    }
+    
+    return this.register(targetName, modifiedSchema, options);
   }
 
   /**

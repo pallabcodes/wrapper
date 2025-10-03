@@ -34,15 +34,25 @@ export class EnterpriseZodValidationPipe implements PipeTransform<unknown> {
     }
 
     // Create validation context
+    const contextData = context as ZodValidationContext;
     const validationContext: ZodValidationContext = {
-      request: context?.request,
-      response: context?.response,
-      executionContext: context?.executionContext,
-      user: context?.user,
-      tenant: context?.tenant,
-      locale: context?.locale,
-      timezone: context?.timezone,
+      request: contextData?.request,
+      response: contextData?.response,
+      executionContext: contextData?.executionContext,
     };
+    
+    if (contextData?.user) {
+      validationContext.user = contextData.user;
+    }
+    if (contextData?.tenant) {
+      validationContext.tenant = contextData.tenant;
+    }
+    if (contextData?.locale) {
+      validationContext.locale = contextData.locale;
+    }
+    if (contextData?.timezone) {
+      validationContext.timezone = contextData.timezone;
+    }
 
     try {
       // Execute enterprise validation

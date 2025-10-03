@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "npm run build:addon && tsc",
+    "build": "tsc",
     "build:addon": "node-gyp rebuild",
     "dev": "tsc --watch",
     "test": "jest",

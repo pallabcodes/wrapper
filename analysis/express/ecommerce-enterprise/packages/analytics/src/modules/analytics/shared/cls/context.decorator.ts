@@ -7,7 +7,7 @@ export const Context = createParamDecorator(
     const contextService: ContextService = request.app?.get?.(ContextService);
     if (!contextService) return undefined;
     if (!data) return contextService.getAll();
-    return contextService.get(data);
+    return contextService.get(data as any);
   },
 );
 

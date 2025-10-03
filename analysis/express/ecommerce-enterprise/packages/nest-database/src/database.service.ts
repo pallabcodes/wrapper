@@ -30,7 +30,7 @@ export class DatabaseService {
       const cached = await this.queryCache.get(cacheKey);
       if (cached) {
         this.metrics.recordCacheHit();
-        return cached;
+        return cached as T[];
       }
 
       // Optimize query

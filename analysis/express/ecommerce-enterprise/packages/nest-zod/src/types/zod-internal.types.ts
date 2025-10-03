@@ -42,7 +42,7 @@ export interface ZodInternalSchema {
  * Type guard to check if a schema has internal structure
  */
 export function hasInternalStructure(schema: unknown): schema is ZodInternalSchema {
-  return schema && typeof schema === 'object' && '_def' in schema;
+  return Boolean(schema && typeof schema === 'object' && '_def' in schema);
 }
 
 /**
@@ -67,7 +67,7 @@ export interface ZodIssueInternal {
  * Type guard for Zod error issues
  */
 export function isZodIssueInternal(issue: unknown): issue is ZodIssueInternal {
-  return issue && typeof issue === 'object' && 'code' in issue && 'path' in issue;
+  return Boolean(issue && typeof issue === 'object' && 'code' in issue && 'path' in issue);
 }
 
 // ============================================================================
@@ -213,7 +213,7 @@ export type SafeSchemaInfer<T> = T extends z.ZodSchema<infer U>
  * Check if value is a Zod schema
  */
 export function isZodSchema(value: unknown): value is z.ZodSchema {
-  return value && typeof value === 'object' && '_def' in value && 'parse' in value;
+  return Boolean(value && typeof value === 'object' && '_def' in value && 'parse' in value);
 }
 
 /**

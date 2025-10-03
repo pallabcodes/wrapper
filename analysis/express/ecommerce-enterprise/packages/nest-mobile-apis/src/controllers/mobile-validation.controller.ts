@@ -39,7 +39,7 @@ export class MobileValidationController {
       return {
         success: false,
         error: 'Validation failed',
-        details: result.errors?.message,
+        details: Array.isArray(result.errors) ? result.errors.map(e => e.message).join(', ') : result.errors?.message,
         metadata: result.metadata
       };
     }
@@ -72,7 +72,7 @@ export class MobileValidationController {
       return {
         success: false,
         error: 'Validation failed',
-        details: result.errors?.message,
+        details: Array.isArray(result.errors) ? result.errors.map(e => e.message).join(', ') : result.errors?.message,
         metadata: result.metadata
       };
     }
@@ -105,7 +105,7 @@ export class MobileValidationController {
       return {
         success: false,
         error: 'Validation failed',
-        details: result.errors?.message,
+        details: Array.isArray(result.errors) ? result.errors.map(e => e.message).join(', ') : result.errors?.message,
         metadata: result.metadata
       };
     }
@@ -136,7 +136,7 @@ export class MobileValidationController {
       return {
         success: false,
         error: 'Validation failed',
-        details: result.errors?.message,
+        details: Array.isArray(result.errors) ? result.errors.map(e => e.message).join(', ') : result.errors?.message,
         metadata: result.metadata
       };
     }
@@ -167,7 +167,7 @@ export class MobileValidationController {
       return {
         success: false,
         error: 'Validation failed',
-        details: result.errors?.message,
+        details: Array.isArray(result.errors) ? result.errors.map(e => e.message).join(', ') : result.errors?.message,
         metadata: result.metadata
       };
     }
@@ -230,7 +230,7 @@ export class MobileValidationController {
       return {
         success: false,
         error: 'Device-aware validation failed',
-        details: result.errors?.message,
+        details: Array.isArray(result.errors) ? result.errors.map(e => e.message).join(', ') : result.errors?.message,
         metadata: result.metadata
       };
     }
@@ -262,7 +262,7 @@ export class MobileValidationController {
       return {
         success: false,
         error: 'Real-time validation failed',
-        details: result.errors?.message,
+        details: Array.isArray(result.errors) ? result.errors.map(e => e.message).join(', ') : result.errors?.message,
         metadata: result.metadata
       };
     }
@@ -301,7 +301,7 @@ export class MobileValidationController {
       return {
         success: false,
         error: 'A/B testing validation failed',
-        details: result.errors?.message,
+        details: Array.isArray(result.errors) ? result.errors.map(e => e.message).join(', ') : result.errors?.message,
         metadata: result.metadata
       };
     }

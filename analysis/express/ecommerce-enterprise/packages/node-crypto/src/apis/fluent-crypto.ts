@@ -44,7 +44,7 @@ export class FluentCrypto {
   /**
    * 🔐 Start encryption operation
    */
-  encrypt(data: any): FluentEncryption {
+  encrypt(data: unknown): FluentEncryption {
     return new FluentEncryption(this.api, data, this.config);
   }
 
@@ -72,7 +72,7 @@ export class FluentCrypto {
   /**
    * 🧪 Run performance test
    */
-  async test(options: { iterations?: number; dataSize?: number } = {}): Promise<any> {
+  async test(options: { iterations?: number; dataSize?: number } = {}): Promise<unknown> {
     return this.api.test(options);
   }
 }
@@ -82,10 +82,10 @@ export class FluentCrypto {
  */
 export class FluentEncryption {
   private api: CryptoAPI;
-  private data: any;
+  private data: unknown;
   private config: FluentCryptoConfig;
 
-  constructor(api: CryptoAPI, data: any, config: FluentCryptoConfig) {
+  constructor(api: CryptoAPI, data: unknown, config: FluentCryptoConfig) {
     this.api = api;
     this.data = data;
     this.config = config;
@@ -95,7 +95,7 @@ export class FluentEncryption {
    * Set algorithm
    */
   withAlgorithm(algorithm: string): FluentEncryption {
-    this.config.algorithm = algorithm as any;
+    this.config.algorithm = algorithm as FluentCryptoConfig['algorithm'];
     return this;
   }
 
@@ -197,7 +197,7 @@ export class FluentKeyGeneration {
    * Set algorithm
    */
   withAlgorithm(algorithm: string): FluentKeyGeneration {
-    this.config.algorithm = algorithm as any;
+    this.config.algorithm = algorithm as FluentCryptoConfig['algorithm'];
     return this;
   }
 
@@ -243,7 +243,7 @@ export const fluentCrypto = {
   /**
    * Start encryption
    */
-  encrypt(data: any): FluentEncryption {
+  encrypt(data: unknown): FluentEncryption {
     const crypto = createFluentCrypto();
     return crypto.encrypt(data);
   },

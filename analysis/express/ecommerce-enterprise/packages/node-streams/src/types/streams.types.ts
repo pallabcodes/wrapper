@@ -273,7 +273,7 @@ export interface StreamPool {
   name: string;
   maxSize: number;
   currentSize: number;
-  streams: Map<string, any>;
+  streams: Map<string, NodeJS.ReadableStream | NodeJS.WritableStream | NodeJS.DuplexStream | NodeJS.TransformStream>;
   metrics: StreamMetrics;
   config: StreamConfig;
 }

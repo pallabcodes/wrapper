@@ -67,7 +67,7 @@ const PaymentMetadataSchema = z.object({
   campaignId: z.string().optional(),
   source: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  customFields: z.record(z.string(), z.any()).optional(),
+  customFields: z.record(z.string(), z.unknown()).optional(),
 });
 
 const PaymentStatusSchema = z.enum([
@@ -451,7 +451,7 @@ export class TypeSafeValidationDemoController {
   async createComplexPayment(@Body() data: unknown, @Request() req: Record<string, unknown>) {
     try {
       // Determine schema based on user role (simulated)
-      const userRole = ((req as any).user as any)?.role || 'user';
+      const userRole = (req.user as { role?: string })?.role || 'user';
       
       let schema;
       switch (userRole) {

@@ -75,7 +75,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       success: false,
       error,
       message,
-      ...(details && { details }),
+      ...(details && typeof details === 'object' ? { details } : {}),
       timestamp: new Date().toISOString(),
       path: request.originalUrl,
       method: request.method,

@@ -219,7 +219,7 @@ async function demonstrateMobileIntegration() {
       logInfo(`Validation time: ${userResult.metadata?.validationTime}ms`);
       logInfo(`Cache hit: ${userResult.metadata?.cacheHit ? 'Yes' : 'No'}`);
     } else {
-      logError(`Mobile user validation failed: ${userResult.errors?.message}`);
+      logError(`Mobile user validation failed: ${Array.isArray(userResult.errors) ? userResult.errors.map(e => e.message).join(', ') : userResult.errors?.message}`);
     }
     
     // Mobile product validation with image optimization
@@ -235,7 +235,7 @@ async function demonstrateMobileIntegration() {
       logSuccess(`Mobile product validation passed!`);
       logInfo(`Validated mobile product data: ${JSON.stringify(productResult.data, null, 2)}`);
     } else {
-      logError(`Mobile product validation failed: ${productResult.errors?.message}`);
+      logError(`Mobile product validation failed: ${Array.isArray(productResult.errors) ? productResult.errors.map(e => e.message).join(', ') : productResult.errors?.message}`);
     }
     
     // Mobile order validation with location awareness
@@ -251,7 +251,7 @@ async function demonstrateMobileIntegration() {
       logSuccess(`Mobile order validation passed!`);
       logInfo(`Validated mobile order data: ${JSON.stringify(orderResult.data, null, 2)}`);
     } else {
-      logError(`Mobile order validation failed: ${orderResult.errors?.message}`);
+      logError(`Mobile order validation failed: ${Array.isArray(orderResult.errors) ? orderResult.errors.map(e => e.message).join(', ') : orderResult.errors?.message}`);
     }
     
     // Mobile notification validation
@@ -266,7 +266,7 @@ async function demonstrateMobileIntegration() {
       logSuccess(`Mobile notification validation passed!`);
       logInfo(`Validated mobile notification data: ${JSON.stringify(notificationResult.data, null, 2)}`);
     } else {
-      logError(`Mobile notification validation failed: ${notificationResult.errors?.message}`);
+      logError(`Mobile notification validation failed: ${Array.isArray(notificationResult.errors) ? notificationResult.errors.map(e => e.message).join(', ') : notificationResult.errors?.message}`);
     }
     
     // Mobile analytics validation
@@ -281,7 +281,7 @@ async function demonstrateMobileIntegration() {
       logSuccess(`Mobile analytics validation passed!`);
       logInfo(`Validated mobile analytics data: ${JSON.stringify(analyticsResult.data, null, 2)}`);
     } else {
-      logError(`Mobile analytics validation failed: ${analyticsResult.errors?.message}`);
+      logError(`Mobile analytics validation failed: ${Array.isArray(analyticsResult.errors) ? analyticsResult.errors.map(e => e.message).join(', ') : analyticsResult.errors?.message}`);
     }
     
   } catch (error) {

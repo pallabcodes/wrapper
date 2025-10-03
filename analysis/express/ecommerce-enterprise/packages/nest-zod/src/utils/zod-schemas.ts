@@ -312,7 +312,7 @@ export const SchemaCompositionHelpers = {
   pick: <T extends z.ZodObject<z.ZodRawShape>, K extends keyof T['shape']>(
     schema: T,
     keys: K[]
-  ) => schema.pick(keys.reduce((acc, key) => ({ ...acc, [key]: true }), {} as Record<string, true>)),
+  ) => schema.pick(keys.reduce((acc, key) => ({ ...acc, [key]: true }), {} as any)),
 
   /**
    * Omit specific fields from a schema
@@ -320,7 +320,7 @@ export const SchemaCompositionHelpers = {
   omit: <T extends z.ZodObject<z.ZodRawShape>, K extends keyof T['shape']>(
     schema: T,
     keys: K[]
-  ) => schema.omit(keys.reduce((acc, key) => ({ ...acc, [key]: true }), {} as Record<string, true>)),
+  ) => schema.omit(keys.reduce((acc, key) => ({ ...acc, [key]: true }), {} as any)),
 
   /**
    * Create a partial schema

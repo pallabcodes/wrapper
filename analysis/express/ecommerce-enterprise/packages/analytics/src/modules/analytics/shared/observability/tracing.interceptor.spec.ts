@@ -5,18 +5,18 @@ import type { ExecutionContext, CallHandler } from '@nestjs/common';
 import { context as otContext, trace, Span, SpanOptions, SpanKind, Tracer } from '@opentelemetry/api';
 
 class MockTracer implements Tracer {
-  startSpan(name: string, options?: SpanOptions, _ctx?: any): Span {
+  startSpan(name: string, options?: SpanOptions, _ctx?: unknown): Span {
     return {
-      spanContext: () => ({ traceId: 't', spanId: 's', traceFlags: 1 } as any),
-      setAttribute: () => this as any,
-      setAttributes: () => this as any,
-      addEvent: () => this as any,
-      setStatus: () => this as any,
-      updateName: () => this as any,
+      spanContext: () => ({ traceId: 't', spanId: 's', traceFlags: 1 }),
+      setAttribute: () => this,
+      setAttributes: () => this,
+      addEvent: () => this,
+      setStatus: () => this,
+      updateName: () => this,
       end: () => {},
       isRecording: () => true,
       recordException: () => {},
-    } as any;
+    } as Span;
   }
 }
 
@@ -26,19 +26,19 @@ function createCtx(): ExecutionContext {
       getRequest: () => ({ method: 'GET', url: '/x', route: { path: '/x' } }),
       getResponse: () => ({ statusCode: 200 }),
     }),
-  } as any;
+  } as ExecutionContext;
 }
 
 describe('TracingInterceptor', () => {
   it('creates a span and ends it on success', (done) => {
-    const als: any = { getStore: () => ({ requestId: 'rid' }) };
+    const als = { getStore: () => ({ requestId: 'rid' }) };
     const ctxSvc = new ContextService(als);
     const interceptor = new TracingInterceptor(ctxSvc);
     // override tracer
-    (interceptor as any).tracer = new MockTracer();
+    (interceptor as { tracer: Tracer }).tracer = new MockTracer();
 
     const ctx = createCtx();
-    const next: CallHandler = { handle: () => of('ok') } as any;
+    const next: CallHandler = { handle: () => of('ok') };
     interceptor.intercept(ctx, next).subscribe((v) => {
       expect(v).toBe('ok');
       done();

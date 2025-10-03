@@ -54,7 +54,7 @@ export class EventRepository {
       // naive per-type fetch; swap with IN queries or UNION in real DB
       for (const t of types) {
         const rows = await db.select().from(analyticsEvents).where(eq(analyticsEvents.eventType, t));
-        map.set(t, rows as AnalyticsEvent[]);
+        map.set(t, rows as unknown as AnalyticsEvent[]);
       }
       return types.map((t: string) => map.get(t) || []);
     });

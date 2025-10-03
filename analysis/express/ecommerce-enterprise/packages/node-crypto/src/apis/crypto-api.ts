@@ -35,7 +35,7 @@ export interface SimpleEncryptionResult {
 }
 
 export interface SimpleDecryptionResult {
-  data: any; // Original data
+  data: unknown; // Original data
   keyId: string;
   algorithm: string;
   decryptedAt: string;
@@ -89,7 +89,7 @@ export class CryptoAPI {
    * @param options - Optional encryption options
    * @returns Simple encryption result with base64 encoded data
    */
-  async encrypt(data: any, options: { 
+  async encrypt(data: unknown, options: { 
     algorithm?: string; 
     expiresIn?: number; // hours
     userId?: string;
@@ -217,15 +217,15 @@ export class CryptoAPI {
       const metrics = this.cryptoService.getPerformanceMetrics();
       const analysis = this.cryptoService.getPerformanceAnalysis();
       
-      const totalOperations = Object.values(metrics).reduce((sum, metric: any) => sum + (metric.callCount || 0), 0);
-      const successfulOperations = Object.values(metrics).reduce((sum, metric: any) => 
+      const totalOperations = Object.values(metrics).reduce((sum, metric: { callCount?: number }) => sum + (metric.callCount || 0), 0);
+      const successfulOperations = Object.values(metrics).reduce((sum, metric: { callCount?: number; successRate?: number }) => 
         sum + (metric.callCount || 0) * (metric.successRate || 1), 0
       );
       
       return {
         totalOperations,
         successRate: totalOperations > 0 ? (successfulOperations / totalOperations) * 100 : 100,
-        averageDuration: Object.values(metrics).reduce((sum, metric: any) => 
+        averageDuration: Object.values(metrics).reduce((sum, metric: { averageDuration?: number }) => 
           sum + (metric.averageDuration || 0), 0
         ) / Object.keys(metrics).length || 0,
         lastOperation: new Date().toISOString(),
@@ -442,7 +442,7 @@ export const crypto = {
   /**
    * Encrypt data quickly
    */
-  async encrypt(data: any, options?: { algorithm?: string; expiresIn?: number }): Promise<SimpleEncryptionResult> {
+  async encrypt(data: unknown, options?: { algorithm?: string; expiresIn?: number }): Promise<SimpleEncryptionResult> {
     const api = createCryptoAPI();
     return api.encrypt(data, options);
   },

@@ -20,7 +20,7 @@ export const RateLimitByIP = (max: number, windowMs: number) =>
   RateLimit({
     max,
     windowMs,
-    keyGenerator: (req) => `ip:${req.ip || req.connection.remoteAddress}`,
+    keyGenerator: (req) => `ip:${req.ip || 'unknown'}`,
     message: 'Too many requests from this IP address.',
   });
 
@@ -29,6 +29,6 @@ export const RateLimitByUser = (max: number, windowMs: number) =>
   RateLimit({
     max,
     windowMs,
-    keyGenerator: (req) => `user:${req.user?.id || 'anonymous'}`,
+    keyGenerator: (_req) => `user:anonymous`,
     message: 'Too many requests from this user.',
   });

@@ -22,6 +22,13 @@ export interface CacheMetrics {
   averageAccessTime: number;
 }
 
+export interface CacheStatistics {
+  schemaCache: { size: number; maxSize: number };
+  validationCache: { size: number; maxSize: number };
+  metadataCache: { size: number };
+  metrics: CacheMetrics;
+}
+
 export interface ValidationCacheEntry<T = unknown> {
   data: T;
   timestamp: Date;
@@ -457,12 +464,7 @@ export class AdvancedCachingService implements OnModuleInit {
   /**
    * Get cache statistics
    */
-  getCacheStatistics(): {
-    schemaCache: { size: number; maxSize: number };
-    validationCache: { size: number; maxSize: number };
-    metadataCache: { size: number };
-    metrics: CacheMetrics;
-  } {
+  getCacheStatistics(): CacheStatistics {
     return {
       schemaCache: {
         size: this.schemaCache.size,

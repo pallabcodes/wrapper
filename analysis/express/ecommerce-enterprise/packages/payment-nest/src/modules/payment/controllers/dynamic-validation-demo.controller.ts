@@ -110,7 +110,7 @@ export class DynamicValidationDemoController {
    */
   @Post('context-aware-payment')
   @ContextAwareValidation((req) => ({
-    schema: req.user?.role === 'admin' ? AdminPaymentSchema : BasicPaymentSchema,
+    schema: (req as any).user?.role === 'admin' ? AdminPaymentSchema : BasicPaymentSchema,
     audit: true,
   }))
   async createContextAwarePayment(@Body() paymentData: Record<string, unknown>) {
@@ -216,17 +216,17 @@ export class DynamicValidationDemoController {
   @SmartValidation({
     analyzers: [
       {
-        condition: (data) => data.amount > 10000,
+        condition: (data) => (data as any).amount > 10000,
         schema: AdminPaymentSchema,
         priority: 100,
       },
       {
-        condition: (data) => data.priority === 'high',
+        condition: (data) => (data as any).priority === 'high',
         schema: PremiumPaymentSchema,
         priority: 80,
       },
       {
-        condition: (data) => data.customFields !== undefined,
+        condition: (data) => (data as any).customFields !== undefined,
         schema: PremiumPaymentSchema,
         priority: 60,
       },
@@ -258,7 +258,7 @@ export class DynamicValidationDemoController {
       // Premium users with high amounts get premium validation
       .when(
         (data, context) => 
-          context?.user?.role === 'premium' && data.amount > 1000,
+          context?.user?.role === 'premium' && (data as any).amount > 1000,
         PremiumPaymentSchema,
         { priority: 80, description: 'Premium high-value payment' }
       )
@@ -312,12 +312,12 @@ export class DynamicValidationDemoController {
     },
     {
       name: 'payment-method-validation',
-      condition: (data) => data.paymentMethod !== undefined,
+      condition: (data) => (data as any).paymentMethod !== undefined,
       schema: z.union([CardPaymentSchema, BankPaymentSchema, WalletPaymentSchema]),
     },
     {
       name: 'fraud-detection',
-      condition: (data) => data.amount > 1000,
+      condition: (data) => (data as any).amount > 1000,
       schema: z.object({
         amount: z.number().max(50000, 'Amount exceeds fraud detection limit'),
       }),
@@ -329,7 +329,7 @@ export class DynamicValidationDemoController {
     },
     {
       name: 'compliance-check',
-      condition: (data) => data.currency === 'USD',
+      condition: (data) => (data as any).currency === 'USD',
       schema: z.object({
         currency: z.string().refine(
           (val) => val === 'USD',
@@ -402,13 +402,13 @@ export class DynamicValidationDemoController {
     builder
       .when(
         (data, context) => 
-          context?.request?.headers?.['content-type']?.includes('application/json'),
+          (context?.request as any)?.headers?.['content-type']?.includes('application/json'),
         BasicPaymentSchema,
         { description: 'JSON payment validation' }
       )
       .when(
         (data, context) => 
-          context?.request?.headers?.['content-type']?.includes('application/xml'),
+          (context?.request as any)?.headers?.['content-type']?.includes('application/xml'),
         BasicPaymentSchema.extend({
           xmlFormat: z.boolean().default(true),
         }),
@@ -416,7 +416,7 @@ export class DynamicValidationDemoController {
       )
       .when(
         (data, context) => 
-          context?.request?.headers?.['content-type']?.includes('multipart/form-data'),
+          (context?.request as any)?.headers?.['content-type']?.includes('multipart/form-data'),
         BasicPaymentSchema.extend({
           fileUpload: z.boolean().optional(),
         }),

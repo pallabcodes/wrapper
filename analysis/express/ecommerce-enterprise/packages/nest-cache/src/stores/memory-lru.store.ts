@@ -1,5 +1,5 @@
 import { CacheStore, CacheEntry } from '../interfaces/cache-store.interface';
-import LRUCache from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 
 export class MemoryLRUStore implements CacheStore {
   private cache: LRUCache<string, CacheEntry>;
@@ -7,7 +7,7 @@ export class MemoryLRUStore implements CacheStore {
   constructor(options: { max: number; ttl?: number } = { max: 1000 }) {
     this.cache = new LRUCache({
       max: options.max,
-      maxAge: options.ttl || 1000 * 60 * 60, // 1 hour default
+      ttl: options.ttl || 1000 * 60 * 60, // 1 hour default
     });
   }
 
@@ -27,7 +27,7 @@ export class MemoryLRUStore implements CacheStore {
   }
 
   async del(key: string): Promise<void> {
-    this.cache.del(key);
+    this.cache.delete(key);
   }
 
   async exists(key: string): Promise<boolean> {
@@ -39,13 +39,13 @@ export class MemoryLRUStore implements CacheStore {
   }
 
   async keys(pattern?: string): Promise<string[]> {
-    const allKeys = Array.from(this.cache.keys());
+    const allKeys = Array.from(this.cache.keys()) as string[];
     if (!pattern) {
       return allKeys;
     }
     
     const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-    return allKeys.filter(key => regex.test(key));
+    return allKeys.filter((key: string) => regex.test(key));
   }
 
   async size(): Promise<number> {
@@ -89,7 +89,7 @@ export class MemoryLRUStore implements CacheStore {
 
   async mdel(keys: string[]): Promise<void> {
     for (const key of keys) {
-      this.cache.del(key);
+      this.cache.delete(key);
     }
   }
 

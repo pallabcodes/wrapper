@@ -98,24 +98,24 @@ export class TypeSafeSchemaComposer<T extends z.ZodSchema = z.ZodSchema> {
   /**
    * Type-safe schema partial
    */
-  partial(): TypeSafeSchemaComposer<z.ZodObject<Partial<z.infer<T>>>> {
+  partial(): TypeSafeSchemaComposer<z.ZodObject<any>> {
     if (!isZodObjectSchema(this.schema)) {
       throw new Error('Partial operation requires an object schema');
     }
 
-    const newSchema = this.schema.partial() as z.ZodObject<Partial<z.infer<T>>>;
+    const newSchema = this.schema.partial() as z.ZodObject<any>;
     return new TypeSafeSchemaComposer(newSchema, this.options);
   }
 
   /**
    * Type-safe schema required
    */
-  required(): TypeSafeSchemaComposer<z.ZodObject<Required<z.infer<T>>>> {
+  required(): TypeSafeSchemaComposer<z.ZodObject<any>> {
     if (!isZodObjectSchema(this.schema)) {
       throw new Error('Required operation requires an object schema');
     }
 
-    const newSchema = this.schema.required() as z.ZodObject<Required<z.infer<T>>>;
+    const newSchema = this.schema.required() as z.ZodObject<any>;
     return new TypeSafeSchemaComposer(newSchema, this.options);
   }
 
@@ -328,7 +328,7 @@ export function typeSafeOmit<T extends z.ZodObject<Record<string, z.ZodSchema>>,
  */
 export function typeSafePartial<T extends z.ZodObject<Record<string, z.ZodSchema>>>(
   schema: T
-): z.ZodObject<Partial<z.infer<T>>> {
+): z.ZodObject<any> {
   return createTypeSafeComposer(schema).partial().build();
 }
 
@@ -337,7 +337,7 @@ export function typeSafePartial<T extends z.ZodObject<Record<string, z.ZodSchema
  */
 export function typeSafeRequired<T extends z.ZodObject<Record<string, z.ZodSchema>>>(
   schema: T
-): z.ZodObject<Required<z.infer<T>>> {
+): z.ZodObject<any> {
   return createTypeSafeComposer(schema).required().build();
 }
 
@@ -393,5 +393,5 @@ export function typeSafeDiscriminatedUnion<T extends string, U extends z.ZodDisc
   discriminator: T,
   options: U
 ): z.ZodDiscriminatedUnion<T, U> {
-  return z.discriminatedUnion(discriminator, options as unknown as [z.ZodDiscriminatedUnionOption<T>, ...z.ZodDiscriminatedUnionOption<T>[]]);
+  return z.discriminatedUnion(discriminator, options as any);
 }

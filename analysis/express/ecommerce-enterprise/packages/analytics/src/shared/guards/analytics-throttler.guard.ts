@@ -1,7 +1,7 @@
 import { Injectable, ExecutionContext, Logger } from '@nestjs/common';
 import { ThrottlerGuard, ThrottlerException } from '@nestjs/throttler';
 import { Reflector } from '@nestjs/core';
-import { Request } from 'express';
+// import { Request } from 'express';
 
 interface ThrottlerOptions {
   ttl: number;
@@ -12,7 +12,8 @@ interface ThrottlerStorageService {
   increment(key: string, ttl: number): Promise<number>;
 }
 
-interface RequestWithConnection extends Request {
+interface RequestWithConnection {
+  ip?: string;
   connection?: {
     remoteAddress?: string;
   };
@@ -27,7 +28,7 @@ export class AnalyticsThrottlerGuard extends ThrottlerGuard {
     options?: ThrottlerOptions,
     storageService?: ThrottlerStorageService
   ) {
-    super(options, storageService, reflector);
+    super(options as any, storageService as any, reflector);
   }
 
   override async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -84,7 +85,7 @@ export class AnalyticsThrottlerGuard extends ThrottlerGuard {
   protected override getTracker(req: RequestWithConnection): Promise<string> {
     // Use IP address as the default tracker
     // In production, you might want to use user ID for authenticated requests
-    return Promise.resolve(req.ip || req.connection.remoteAddress || 'unknown');
+    return Promise.resolve(req.ip || req.connection?.remoteAddress || 'unknown');
   }
 
   protected override generateKey(context: ExecutionContext, tracker: string): string {

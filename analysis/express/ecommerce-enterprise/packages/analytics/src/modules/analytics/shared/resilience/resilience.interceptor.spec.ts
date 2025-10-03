@@ -5,12 +5,12 @@ import type { ExecutionContext, CallHandler } from '@nestjs/common';
 
 function ctxFor(path: string): ExecutionContext {
   return {
-    getHandler: () => ({} as any),
-    getClass: () => ({} as any),
+    getHandler: () => ({}),
+    getClass: () => ({}),
     switchToHttp: () => ({
       getRequest: () => ({ method: 'GET', url: path, route: { path } }),
     }),
-  } as any;
+  } as ExecutionContext;
 }
 
 describe('ResilienceInterceptor', () => {
@@ -18,7 +18,7 @@ describe('ResilienceInterceptor', () => {
     const reflector = { get: () => ({ enabled: true, windowMs: 1000, minimumRps: 1 }) } as unknown as Reflector;
     const itc = new ResilienceInterceptor(reflector);
     const ctx = ctxFor('/ok');
-    const next: CallHandler = { handle: () => of('ok') } as any;
+    const next: CallHandler = { handle: () => of('ok') };
     itc.intercept(ctx, next).subscribe((v) => {
       expect(v).toBe('ok');
       done();
@@ -30,8 +30,8 @@ describe('ResilienceInterceptor', () => {
     const itc = new ResilienceInterceptor(reflector);
     const ctx = ctxFor('/flaky');
 
-    const failNext: CallHandler = { handle: () => throwError(() => new Error('downstream')) } as any;
-    const okNext: CallHandler = { handle: () => of('ok') } as any;
+    const failNext: CallHandler = { handle: () => throwError(() => new Error('downstream')) };
+    const okNext: CallHandler = { handle: () => of('ok') };
 
     // two failures to trip
     itc.intercept(ctx, failNext).subscribe({ error: () => {

@@ -244,7 +244,7 @@ export type NestZodOmit<T extends NestZodObject, K extends NestZodObjectKeys<T>>
  * Make all properties optional in a Zod object schema
  */
 export type NestZodPartial<T extends NestZodObject> = 
-  z.ZodObject<Partial<z.infer<T>>>;
+  z.ZodObject<{ [K in keyof z.infer<T>]: z.ZodOptional<z.ZodTypeAny> }>;
 
 /**
  * Make all properties required in a Zod object schema
@@ -339,5 +339,4 @@ export type {
   ZodError,
   ZodErrorMap,
   ZodIssue,
-  ZodRawIssue,
 } from 'zod';

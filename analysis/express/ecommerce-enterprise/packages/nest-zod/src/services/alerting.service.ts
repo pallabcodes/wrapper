@@ -1,12 +1,26 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { PerformanceMonitoringService } from './performance-monitoring.service';
-import { AdvancedCachingService } from './advanced-caching.service';
+import { PerformanceMonitoringService, PerformanceMetrics } from './performance-monitoring.service';
+import { AdvancedCachingService, CacheStatistics } from './advanced-caching.service';
+
+export interface AlertMetrics {
+  performance: PerformanceMetrics;
+  cache: CacheStatistics;
+  schemas: Array<{
+    schemaName: string;
+    totalValidations: number;
+    averageTime: number;
+    successRate: number;
+    errorBreakdown: Record<string, number>;
+    throughput: number;
+    lastUsed: Date;
+  }>;
+}
 
 export interface AlertRule {
   id: string;
   name: string;
   description: string;
-  condition: (metrics: Record<string, unknown>) => boolean;
+  condition: (metrics: AlertMetrics) => boolean;
   severity: 'low' | 'medium' | 'high' | 'critical';
   enabled: boolean;
   cooldown: number; // milliseconds
@@ -264,7 +278,7 @@ export class AlertingService implements OnModuleInit {
     const cacheStats = this.cachingService.getCacheStatistics();
     const schemaStats = this.performanceMonitoring.getSchemaStats();
 
-    const metrics = {
+    const metrics: AlertMetrics = {
       performance: performanceMetrics,
       cache: cacheStats,
       schemas: schemaStats,
@@ -289,7 +303,7 @@ export class AlertingService implements OnModuleInit {
   /**
    * Trigger an alert
    */
-  private async triggerAlert(rule: AlertRule, metrics: Record<string, unknown>): Promise<void> {
+  private async triggerAlert(rule: AlertRule, metrics: AlertMetrics): Promise<void> {
     const now = Date.now();
     const lastAlertTime = this.lastAlertTimes.get(rule.id) || 0;
     
@@ -315,7 +329,7 @@ export class AlertingService implements OnModuleInit {
       severity: rule.severity,
       timestamp: new Date(),
       status: 'active',
-      data: metrics,
+      data: metrics as unknown as Record<string, unknown>,
       channels: rule.channels,
       tags: rule.tags || undefined,
     };
@@ -506,7 +520,7 @@ export class AlertingService implements OnModuleInit {
   /**
    * Generate alert message
    */
-  private generateAlertMessage(rule: AlertRule, _metrics: Record<string, unknown>): string {
+  private generateAlertMessage(rule: AlertRule, _metrics: AlertMetrics): string {
     return `${rule.name}: ${rule.description}`;
   }
 

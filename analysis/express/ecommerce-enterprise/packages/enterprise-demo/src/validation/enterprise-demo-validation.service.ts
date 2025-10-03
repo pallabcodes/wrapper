@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { EnterpriseZodValidationService } from '@ecommerce-enterprise/nest-zod';
-import { ErrorMaps } from '@ecommerce-enterprise/nest-zod/dist/utils/zod-schemas';
+import { ErrorMaps } from '@ecommerce-enterprise/nest-zod';
 
 // Enterprise Demo-specific Zod Schemas
 export const EnterpriseDemoUserSchema = z.object({

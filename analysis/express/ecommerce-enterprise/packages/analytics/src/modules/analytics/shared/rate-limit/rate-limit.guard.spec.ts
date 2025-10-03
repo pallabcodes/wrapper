@@ -15,7 +15,7 @@ describe('RateLimitGuard', () => {
     ip: '127.0.0.1',
     connection: { remoteAddress: '127.0.0.1' },
     user: { id: 'user123' },
-  };
+  } as { ip: string; connection: { remoteAddress: string }; user?: { id?: string } };
 
   const mockResponse = {
     setHeader: jest.fn(),
@@ -106,7 +106,7 @@ describe('RateLimitGuard', () => {
     const options = {
       max: 10,
       windowMs: 60000,
-      keyGenerator: (req: any) => `user:${req.user.id}`,
+      keyGenerator: (req: { user?: { id?: string } }) => `user:${req.user?.id}`,
     };
     reflector.get.mockReturnValue(options);
 
@@ -126,7 +126,7 @@ describe('RateLimitGuard', () => {
     const options = {
       max: 10,
       windowMs: 60000,
-      skip: (req: any) => req.user?.id === 'admin',
+      skip: (req: { user?: { id?: string } }) => req.user?.id === 'admin',
     };
     reflector.get.mockReturnValue(options);
 

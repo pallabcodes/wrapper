@@ -8,6 +8,7 @@ import {
 import { z } from 'zod';
 import { ZodValidationService } from '../services/zod-validation.service';
 import { ZodValidationOptions } from '../interfaces/zod-validation.interface';
+import { NestZodValidationError } from '../types/zod-nest-types';
 
 @Injectable()
 export class ZodValidationPipe implements PipeTransform {
@@ -68,7 +69,16 @@ export class ZodValidationPipe implements PipeTransform {
     return null;
   }
 
-  private formatErrors(errors: z.ZodError): Array<Record<string, unknown>> {
+  private formatErrors(errors: z.ZodError | NestZodValidationError[]): Array<Record<string, unknown>> {
+    if (Array.isArray(errors)) {
+      return errors.map(error => ({
+        field: error.field,
+        message: error.message,
+        code: error.code,
+        received: error.received,
+        expected: error.expected,
+      }));
+    }
     return errors.errors.map(error => ({
       field: error.path.join('.'),
       message: error.message,
@@ -125,7 +135,16 @@ export class ZodSchemaPipe<T extends z.ZodSchema> implements PipeTransform {
     }
   }
 
-  private formatErrors(errors: z.ZodError): Array<Record<string, unknown>> {
+  private formatErrors(errors: z.ZodError | NestZodValidationError[]): Array<Record<string, unknown>> {
+    if (Array.isArray(errors)) {
+      return errors.map(error => ({
+        field: error.field,
+        message: error.message,
+        code: error.code,
+        received: error.received,
+        expected: error.expected,
+      }));
+    }
     return errors.errors.map(error => ({
       field: error.path.join('.'),
       message: error.message,

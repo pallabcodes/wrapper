@@ -174,22 +174,25 @@ export class StructuredLoggingService implements OnModuleInit {
       level,
       message,
       context: context || 'default',
-      traceId: options?.traceId,
-      spanId: options?.spanId,
-      userId: options?.userId,
-      requestId: options?.requestId,
+      ...(options?.traceId && { traceId: options.traceId }),
+      ...(options?.spanId && { spanId: options.spanId }),
+      ...(options?.userId && { userId: options.userId }),
+      ...(options?.requestId && { requestId: options.requestId }),
       service: 'nest-zod-validation',
       version: '1.0.0',
       environment: process.env['NODE_ENV'] || 'development',
-      data,
-      performance: options?.performance,
-      tags: options?.tags || [],
-      metadata: options?.metadata,
+      ...(data && { data }),
+      ...(options?.performance && { performance: options.performance }),
+      ...(options?.tags && { tags: options.tags }),
+      ...(options?.metadata && { metadata: options.metadata }),
     };
 
     // Add error information if level is error or fatal
     if (level === 'error' || level === 'fatal') {
-      logEntry.error = this.extractErrorInfo(data?.['error']);
+      const errorInfo = this.extractErrorInfo(data?.['error']);
+      if (errorInfo) {
+        logEntry.error = errorInfo;
+      }
     }
 
     this.addLogEntry(logEntry);
@@ -217,8 +220,8 @@ export class StructuredLoggingService implements OnModuleInit {
       dataSize,
       operation: 'validation_start',
     }, {
-      traceId,
-      spanId,
+      ...(traceId && { traceId }),
+      ...(spanId && { spanId }),
       tags: ['validation', 'start'],
     });
 
@@ -240,8 +243,8 @@ export class StructuredLoggingService implements OnModuleInit {
       dataSize,
       operation: 'validation_success',
     }, {
-      traceId,
-      spanId,
+      ...(traceId && { traceId }),
+      ...(spanId && { spanId }),
       performance: {
         duration,
         memoryUsage: process.memoryUsage().heapUsed,
@@ -268,8 +271,8 @@ export class StructuredLoggingService implements OnModuleInit {
       operation: 'validation_error',
       error,
     }, {
-      traceId,
-      spanId,
+      ...(traceId && { traceId }),
+      ...(spanId && { spanId }),
       performance: {
         duration,
         memoryUsage: process.memoryUsage().heapUsed,
@@ -293,7 +296,7 @@ export class StructuredLoggingService implements OnModuleInit {
       key,
       size,
     }, {
-      performance: duration ? { duration, memoryUsage: 0, cpuUsage: 0 } : undefined,
+      ...(duration && { performance: { duration, memoryUsage: 0, cpuUsage: 0 } }),
       tags: ['cache', operation],
     });
   }
@@ -312,7 +315,7 @@ export class StructuredLoggingService implements OnModuleInit {
       value,
       unit,
     }, {
-      context,
+      ...(context && { context }),
       tags: ['performance', 'metric'],
     });
   }
@@ -657,7 +660,7 @@ export class StructuredLoggingService implements OnModuleInit {
       return {
         name: error.constructor.name,
         message: error.message,
-        stack: error.stack,
+        ...(error.stack && { stack: error.stack }),
       };
     }
     

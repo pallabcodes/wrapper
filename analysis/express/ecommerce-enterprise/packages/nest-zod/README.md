@@ -15,6 +15,14 @@ Enterprise-grade Zod integration for NestJS with advanced validation, caching, a
 - **Dynamic & Conditional Validation**: Revolutionary validation system with 10x better DX than native Zod
 - **File Upload Validation**: Specialized validation for file uploads with size and type restrictions
 
+## 💡 Why @nest-zod over plain zod
+
+- **End-to-end type safety**: Typed pipeline execution, alert metrics, tracing logs, dashboard events — unknown only at IO boundaries, immediately narrowed.
+- **Schema composition that preserves inference**: Helpers and composition APIs keep `z.infer` intact through pick/omit/merge/partial and dynamic flows.
+- **Observability-first**: First-class, strongly typed tracing, metrics, caching stats, and alerting rules that fail fast at compile-time if shapes drift.
+- **NestJS-native ergonomics**: Guards, pipes, interceptors, and decorators designed for Nest workflows with strict types and zero `any`.
+- **Enterprise utilities**: Caching, rate limiting, auditing, i18n error maps — all with precise types for safer refactors.
+
 ## 📦 Installation
 
 ```bash
@@ -143,6 +151,60 @@ async createComplex(@Body() data: any) {
 async createWithPipeline(@Body() data: any) {
   return { success: true, data };
 }
+```
+
+### 🧑‍💻 Developer Guide: Typed Patterns
+
+These minimal examples show how @nest-zod strengthens types across flows.
+
+1) Typed validation pipeline
+
+```ts
+import { z } from 'zod';
+const InputSchema = z.object({ id: z.string(), payload: z.object({ count: z.number() }) });
+type Input = z.infer<typeof InputSchema>;
+
+const result = await validationPipelineService.executePipeline<Input>('example', {
+  id: 'abc',
+  payload: { count: 1 },
+});
+
+// result.data is Input
+result.data.payload.count.toFixed(0);
+```
+
+2) Typed alert rules using AlertMetrics
+
+```ts
+import type { AlertMetrics, AlertRule } from './src/services/alerting.service';
+
+const highErrorRate: AlertRule = {
+  id: 'high_error_rate',
+  name: 'High Error Rate',
+  description: 'Error rate above 10% in the last minute',
+  severity: 'high',
+  enabled: true,
+  cooldown: 5 * 60 * 1000,
+  channels: ['default'],
+  condition: (m: AlertMetrics) => m.performance.errorRate > 0.1,
+};
+```
+
+3) Typed tracing logs and exporters
+
+```ts
+import type { LogData } from './src/services/distributed-tracing.service';
+const span = tracingService.startSpan('validate-order');
+const data: LogData = { orderId: 'o-123', ok: true, attempts: 1 };
+tracingService.addSpanLog(span.spanId, 'info', 'Validated order', data);
+tracingService.exportTraceData('jaeger');
+```
+
+4) Typed dashboard events
+
+```ts
+const metrics = await metricsDashboardService.forceUpdate();
+metrics.performance.averageValidationTime.toFixed(2);
 ```
 
 ### Async Validation

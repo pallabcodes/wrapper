@@ -267,7 +267,7 @@ export class SchemaTestingUtils {
    * Create a mock schema for testing
    */
   static createMockSchema<T>(data: T): z.ZodSchema<T> {
-    return z.literal(data as unknown as z.LiteralValue) as unknown as z.ZodSchema<T>;
+    return z.literal(data as unknown as string | number | boolean) as unknown as z.ZodSchema<T>;
   }
 
   /**
@@ -282,11 +282,11 @@ export class SchemaTestingUtils {
     min?: number;
     max?: number;
   }): z.ZodSchema {
-    let schema = z.object({});
+    let schema: z.ZodSchema = z.object({});
     
     if (constraints.required) {
       for (const field of constraints.required) {
-        schema = schema.extend({
+        schema = (schema as z.ZodObject<any>).extend({
           [field]: z.string()
         });
       }
@@ -294,7 +294,7 @@ export class SchemaTestingUtils {
     
     if (constraints.optional) {
       for (const field of constraints.optional) {
-        schema = schema.extend({
+        schema = (schema as z.ZodObject<any>).extend({
           [field]: z.string().optional()
         });
       }
@@ -308,7 +308,7 @@ export class SchemaTestingUtils {
           }
         }
         return true;
-      }, `Fields must be at least ${constraints.minLength} characters`) as unknown as z.ZodSchema;
+      }, `Fields must be at least ${constraints.minLength} characters`);
     }
     
     if (constraints.maxLength) {
@@ -319,7 +319,7 @@ export class SchemaTestingUtils {
           }
         }
         return true;
-      }, `Fields must be at most ${constraints.maxLength} characters`) as unknown as z.ZodSchema;
+      }, `Fields must be at most ${constraints.maxLength} characters`);
     }
     
     if (constraints.pattern) {
@@ -330,7 +330,7 @@ export class SchemaTestingUtils {
           }
         }
         return true;
-      }, `Fields must match required pattern`) as unknown as z.ZodSchema;
+      }, `Fields must match required pattern`);
     }
     
     if (constraints.min) {
@@ -341,7 +341,7 @@ export class SchemaTestingUtils {
           }
         }
         return true;
-      }, `Fields must be at least ${constraints.min}`) as unknown as z.ZodSchema;
+      }, `Fields must be at least ${constraints.min}`);
     }
     
     if (constraints.max) {
@@ -352,7 +352,7 @@ export class SchemaTestingUtils {
           }
         }
         return true;
-      }, `Fields must be at most ${constraints.max}`) as unknown as z.ZodSchema;
+      }, `Fields must be at most ${constraints.max}`);
     }
     
     return schema;

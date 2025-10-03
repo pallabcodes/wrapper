@@ -105,7 +105,7 @@ export class StreamsService {
   }
 
   // Core stream creation methods
-  async createReadableStream(config: Partial<StreamConfig> = {}): Promise<any> {
+  async createReadableStream(config: Partial<StreamConfig> = {}): Promise<NodeJS.ReadableStream> {
     this.logger.debug('Creating readable stream');
     try {
       const stream = this.streamsService.createReadableStream(config);
@@ -117,7 +117,7 @@ export class StreamsService {
     }
   }
 
-  async createWritableStream(config: Partial<StreamConfig> = {}): Promise<any> {
+  async createWritableStream(config: Partial<StreamConfig> = {}): Promise<NodeJS.WritableStream> {
     this.logger.debug('Creating writable stream');
     try {
       const stream = this.streamsService.createWritableStream(config);
@@ -129,7 +129,7 @@ export class StreamsService {
     }
   }
 
-  async createTransformStream(config: Partial<StreamConfig> = {}): Promise<any> {
+  async createTransformStream(config: Partial<StreamConfig> = {}): Promise<NodeJS.TransformStream> {
     this.logger.debug('Creating transform stream');
     try {
       const stream = this.streamsService.createTransformStream(config);
@@ -141,7 +141,7 @@ export class StreamsService {
     }
   }
 
-  async createDuplexStream(config: Partial<StreamConfig> = {}): Promise<any> {
+  async createDuplexStream(config: Partial<StreamConfig> = {}): Promise<NodeJS.DuplexStream> {
     this.logger.debug('Creating duplex stream');
     try {
       const stream = this.streamsService.createDuplexStream(config);
@@ -154,7 +154,7 @@ export class StreamsService {
   }
 
   // Enhanced stream creation methods
-  async createEncryptedStream(config: EncryptedStreamConfig): Promise<any> {
+  async createEncryptedStream(config: EncryptedStreamConfig): Promise<NodeJS.TransformStream> {
     this.logger.debug('Creating encrypted stream');
     try {
       const stream = this.streamsService.createEncryptedStream(config);
@@ -166,7 +166,7 @@ export class StreamsService {
     }
   }
 
-  async createCompressedStream(config: CompressedStreamConfig): Promise<any> {
+  async createCompressedStream(config: CompressedStreamConfig): Promise<NodeJS.TransformStream> {
     this.logger.debug('Creating compressed stream');
     try {
       const stream = this.streamsService.createCompressedStream(config);
@@ -178,7 +178,7 @@ export class StreamsService {
     }
   }
 
-  async createMultiplexedStream(config: MultiplexedStreamConfig): Promise<any> {
+  async createMultiplexedStream(config: MultiplexedStreamConfig): Promise<NodeJS.DuplexStream> {
     this.logger.debug('Creating multiplexed stream');
     try {
       const stream = this.streamsService.createMultiplexedStream(config);
@@ -190,7 +190,7 @@ export class StreamsService {
     }
   }
 
-  async createSplitterStream(config: StreamSplitterConfig): Promise<any> {
+  async createSplitterStream(config: StreamSplitterConfig): Promise<NodeJS.TransformStream> {
     this.logger.debug('Creating splitter stream');
     try {
       const stream = this.streamsService.createSplitterStream(config);

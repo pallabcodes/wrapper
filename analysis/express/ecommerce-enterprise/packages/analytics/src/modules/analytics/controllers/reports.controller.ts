@@ -35,7 +35,7 @@ export class ReportsController {
   @Get('types/:type/schema')
   @ApiOperation({ summary: 'Get schema for a specific report type' })
   @ApiResponse({ status: 200, description: 'Report type schema retrieved successfully' })
-  async getReportTypeSchema(@Param('type') type: ReportType) {
+  async getReportTypeSchema(@Param('type') type: ReportType): Promise<unknown> {
     return this.reportsService.getReportTypeSchema(type);
   }
 

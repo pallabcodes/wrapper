@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
+import { ZodValidationPipeline, ZodValidationStep } from '../interfaces/zod-validation.interface';
 import { tap, catchError } from 'rxjs/operators';
 import { EnterpriseZodValidationService } from '../services/enterprise-zod-validation.service';
 import { 
@@ -62,11 +63,22 @@ export class EnterpriseZodValidationInterceptor implements NestInterceptor {
       request,
       response: context.switchToHttp().getResponse(),
       executionContext: context,
-      user: request.user,
-      tenant: request.headers['x-tenant-id'],
-      locale: request.headers['accept-language'] || 'en',
-      timezone: request.headers['x-timezone'] || 'UTC',
     };
+    
+    if (request.user && typeof request.user === 'object' && 'id' in request.user) {
+      validationContext.user = request.user as { id: string; [key: string]: unknown };
+    }
+    
+    const tenantHeader = Array.isArray(request.headers['x-tenant-id']) ? request.headers['x-tenant-id'][0] : request.headers['x-tenant-id'];
+    if (tenantHeader) {
+      validationContext.tenant = tenantHeader;
+    }
+    
+    const localeHeader = Array.isArray(request.headers['accept-language']) ? request.headers['accept-language'][0] : request.headers['accept-language'];
+    validationContext.locale = localeHeader || 'en';
+    
+    const timezoneHeader = Array.isArray(request.headers['x-timezone']) ? request.headers['x-timezone'][0] : request.headers['x-timezone'];
+    validationContext.timezone = timezoneHeader || 'UTC';
 
     // Apply conditional validation
     if (options.conditional) {
@@ -108,7 +120,7 @@ export class EnterpriseZodValidationInterceptor implements NestInterceptor {
       }
       
       if (options.batch.parallel) {
-        return this.handleParallelBatchValidation(request, options, validationContext, next);
+        return this.handleParallelBatchValidation({ body: request.body as unknown[] }, options, validationContext, next);
       }
     }
 
@@ -142,7 +154,7 @@ export class EnterpriseZodValidationInterceptor implements NestInterceptor {
     abTestConfig: { userSegmentField?: string; defaultVariant?: string; schemas: Record<string, unknown> }
   ): string | null {
     const userSegmentField = abTestConfig.userSegmentField || 'userId';
-    const userValue = (request as Record<string, unknown>)[userSegmentField] || (request.user as Record<string, unknown> | undefined)?.[userSegmentField as keyof Record<string, unknown>];
+    const userValue = (request as Record<string, unknown>)[userSegmentField] || (request as { user?: Record<string, unknown> }).user?.[userSegmentField];
     
     if (!userValue) {
       return abTestConfig.defaultVariant || null;
@@ -300,22 +312,39 @@ export class EnterpriseZodValidationInterceptor implements NestInterceptor {
     );
   }
 
-  private async loadValidationPipeline(pipelineName: string): Promise<{
-    name: string;
-    steps: unknown[];
-    errorHandling: { strategy: string };
-    performance: { enableCaching: boolean };
-    security: { enableSanitization: boolean };
-    monitoring: { enableMetrics: boolean };
-  }> {
+  private async loadValidationPipeline(pipelineName: string): Promise<ZodValidationPipeline> {
     // This would typically load from a configuration service
     return {
       name: pipelineName,
-      steps: [],
-      errorHandling: { strategy: 'strict' },
-      performance: { enableCaching: true },
-      security: { enableSanitization: true },
-      monitoring: { enableMetrics: true },
+      steps: [] as ZodValidationStep[],
+      errorHandling: { 
+        strategy: 'strict',
+        retryAttempts: 0,
+      },
+      performance: { 
+        enableCaching: true,
+        cacheStrategy: 'lru',
+        maxCacheSize: 1000,
+        cacheTtl: 300000,
+        enableCompression: false,
+        enableParallelValidation: false,
+        maxConcurrentValidations: 10,
+        enableSchemaOptimization: true,
+      },
+      security: { 
+        enableSanitization: true,
+        sanitizationRules: [],
+        enableInjectionDetection: true,
+        maxDepth: 10,
+        maxStringLength: 10000,
+        blockedPatterns: [],
+        allowedTypes: [],
+      },
+      monitoring: { 
+        enableMetrics: true,
+        enableTracing: false,
+        enableProfiling: false,
+      },
     };
   }
 

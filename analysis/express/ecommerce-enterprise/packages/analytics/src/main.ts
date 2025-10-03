@@ -16,16 +16,16 @@ async function bootstrap() {
   try {
     const useFastify = process.env['USE_FASTIFY'] === 'true';
     const app = useFastify
-      ? await NestFactory.create(
-          AnalyticsModule,
-          new FastifyAdapter({
-            logger: false,
-            trustProxy: true,
-            bodyLimit: 1_000_000,
-            keepAliveTimeout: 75_000,
-          }),
-          { logger: ['error', 'warn', 'log', 'debug', 'verbose'] },
-        )
+        ? await NestFactory.create(
+            AnalyticsModule,
+            new FastifyAdapter({
+              logger: false,
+              trustProxy: true,
+              bodyLimit: 1_000_000,
+              keepAliveTimeout: 75_000,
+            }) as any,
+            { logger: ['error', 'warn', 'log', 'debug', 'verbose'] },
+          )
       : await NestFactory.create(AnalyticsModule, {
           logger: ['error', 'warn', 'log', 'debug', 'verbose'],
         });

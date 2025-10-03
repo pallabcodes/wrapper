@@ -21,7 +21,7 @@ export interface ValidationSpan {
     timestamp: number;
     level: 'info' | 'warn' | 'error' | 'debug';
     message: string;
-    data?: unknown | undefined;
+    data?: LogData | undefined;
   }>;
   status: 'started' | 'completed' | 'error';
   error?: {
@@ -29,6 +29,10 @@ export interface ValidationSpan {
     stack?: string | undefined;
     type: string;
   } | undefined;
+}
+
+export interface LogData {
+  [key: string]: string | number | boolean | Date | null | undefined;
 }
 
 export interface TraceMetrics {
@@ -208,7 +212,7 @@ export class DistributedTracingService implements OnModuleInit {
     spanId: string,
     level: 'info' | 'warn' | 'error' | 'debug',
     message: string,
-    data?: unknown
+    data?: LogData
   ): void {
     if (!this.config.enableLogs) return;
 

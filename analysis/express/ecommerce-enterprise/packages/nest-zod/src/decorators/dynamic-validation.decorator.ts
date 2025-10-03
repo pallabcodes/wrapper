@@ -67,7 +67,7 @@ export function ConditionalValidation<T = unknown>(
   return DynamicValidation<T>((builder) => {
     for (const [role, schema] of Object.entries(schemas)) {
       builder.when(
-        ConditionalPatterns.fieldEquals(userRoleField, role),
+        ConditionalPatterns.fieldEquals(userRoleField, role) as (data: T, context?: ValidationContext) => boolean,
         schema,
         { description: `Validation for ${role} role` }
       );
@@ -146,7 +146,7 @@ export function MethodBasedValidation<T = unknown>(
   return DynamicValidation<T>((builder) => {
     for (const [method, schema] of Object.entries(schemas)) {
       builder.when(
-        (_data, context) => context?.request?.method?.toLowerCase() === method.toLowerCase(),
+        (_data, context) => (context as { request?: { method?: string } })?.request?.method?.toLowerCase() === method.toLowerCase(),
         schema,
         { description: `Validation for ${method} method` }
       );
@@ -173,7 +173,7 @@ export function ContentTypeValidation<T = unknown>(
     for (const [contentType, schema] of Object.entries(schemas)) {
       builder.when(
         (_data, context) => {
-          const requestContentType = context?.request?.headers?.['content-type']?.split(';')[0];
+          const requestContentType = (context as { request?: { headers?: Record<string, string> } })?.request?.headers?.['content-type']?.split(';')[0];
           return requestContentType === contentType;
         },
         schema,
@@ -262,7 +262,7 @@ export function ABTestValidation<T = unknown>(
   return DynamicValidation<T>((builder) => {
     for (const [variant, schema] of Object.entries(config.schemas)) {
       builder.when(
-        ConditionalPatterns.fieldEquals(userSegmentField, variant),
+        ConditionalPatterns.fieldEquals(userSegmentField, variant) as (data: T, context?: ValidationContext) => boolean,
         schema,
         { description: `Validation for A/B test variant ${variant}` }
       );

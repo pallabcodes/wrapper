@@ -13,9 +13,9 @@ export class RedisRateLimitStorage implements RateLimitStorage {
     }
 
     return {
-      limit: parseInt(data.limit, 10),
-      remaining: parseInt(data.remaining, 10),
-      resetTime: parseInt(data.resetTime, 10),
+      limit: parseInt(data['limit'] || '0', 10),
+      remaining: parseInt(data['remaining'] || '0', 10),
+      resetTime: parseInt(data['resetTime'] || '0', 10),
     };
   }
 

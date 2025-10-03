@@ -7,8 +7,8 @@ describe('BatchingService', () => {
     const loader = svc.createLoader<string, number>(async (keys) => {
       calls++;
       const map: Record<string, number> = {};
-      keys.forEach((k) => (map[k] = (k as any).length));
-      return keys.map((k) => map[k as string]);
+      keys.forEach((k) => (map[k] = k.length));
+      return keys.map((k) => map[k]);
     });
 
     const p1 = loader.load('abc');

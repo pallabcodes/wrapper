@@ -101,23 +101,50 @@ export class TypeSafeValidationInterceptor implements NestInterceptor {
 
     switch (options.errorFormat) {
       case 'api':
-        return formatZodErrorForAPI(error, {
+        const apiError = formatZodErrorForAPI(error, {
           includeDetails: true,
           includeSuggestions: true,
         });
+        const response: ValidationErrorResponse = {
+          success: false,
+          error: apiError.error,
+          message: apiError.message,
+        };
+        
+        if (apiError.details) {
+          response.analysis = {
+            totalIssues: apiError.details.length,
+            severity: 'medium',
+            issueTypes: [...new Set(apiError.details.map(d => d.code))],
+          };
+          response.issues = apiError.details.map(detail => ({
+            path: [detail.field],
+            message: detail.message,
+            code: detail.code,
+          }));
+        }
+        
+        if (apiError.suggestions) {
+          response.suggestions = apiError.suggestions;
+        }
+        
+        return response;
       
       case 'detailed':
         return {
           success: false,
           error: 'Validation failed',
-          analysis: analysis.summary,
-          suggestions: analysis.suggestions,
-          issues: analysis.issues,
-          metadata: {
+          analysis: {
             totalIssues: analysis.summary.totalIssues,
             severity: analysis.summary.severity,
-            issueTypes: analysis.summary.issueTypes,
+            issueTypes: Object.keys(analysis.summary.issueTypes),
           },
+          suggestions: analysis.suggestions,
+          issues: analysis.issues.map(issue => ({
+            path: [],
+            message: issue.message,
+            code: 'unknown',
+          })),
         };
       
       default: // 'user'

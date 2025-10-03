@@ -132,23 +132,25 @@ export class SchemaDiscoveryService implements OnModuleInit {
   /**
    * Get all schemas with their usage statistics
    */
-  getAllSchemasWithUsage(): Array<DiscoveredSchema & { usage: SchemaUsage }> {
-    const results: Array<DiscoveredSchema & { usage: SchemaUsage }> = [];
+  getAllSchemasWithUsage(): Array<DiscoveredSchema & { schemaUsage: SchemaUsage }> {
+    const results: Array<DiscoveredSchema & { schemaUsage: SchemaUsage }> = [];
     
     for (const [name, schema] of this.discoveredSchemas) {
       const usage = this.schemaUsage.get(name);
+      const defaultUsage: SchemaUsage = {
+        schemaName: name,
+        usedIn: {
+          decorators: [],
+          controllers: [],
+          services: []
+        },
+        usageCount: 0,
+        lastUsed: new Date()
+      };
+      
       results.push({
         ...schema,
-        usage: {
-          schemaName: name,
-          usedIn: {
-            decorators: usage?.usedIn?.decorators || [],
-            controllers: usage?.usedIn?.controllers || [],
-            services: usage?.usedIn?.services || []
-          },
-          usageCount: usage?.usageCount || 0,
-          lastUsed: usage?.lastUsed || new Date()
-        } as SchemaUsage
+        schemaUsage: usage || defaultUsage
       });
     }
     

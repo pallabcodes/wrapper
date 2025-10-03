@@ -29,9 +29,9 @@ export interface PipelineDefinition {
   };
 }
 
-export interface PipelineExecutionResult {
+export interface PipelineExecutionResult<TData = unknown> {
   success: boolean;
-  data: unknown;
+  data: TData;
   errors: z.ZodError[];
   executionTime: number;
   stepsExecuted: string[];
@@ -60,11 +60,11 @@ export class ValidationPipelineService {
   /**
    * Execute a validation pipeline
    */
-  async executePipeline(
+  async executePipeline<TData = unknown>(
     pipelineName: string,
     data: unknown,
     context?: ValidationContext
-  ): Promise<PipelineExecutionResult> {
+  ): Promise<PipelineExecutionResult<TData>> {
     const startTime = performance.now();
     const executionId = this.generateExecutionId();
     
@@ -78,13 +78,13 @@ export class ValidationPipelineService {
       const cacheKey = this.generateCacheKey(pipelineName, data, context);
       const cached = this.executionCache.get(cacheKey);
       if (cached && this.isCacheValid(cached, pipeline.performance.cacheTtl)) {
-        return cached;
+        return cached as PipelineExecutionResult<TData>;
       }
     }
 
-    const result: PipelineExecutionResult = {
+    const result: PipelineExecutionResult<TData> = {
       success: false,
-      data,
+      data: data as TData,
       errors: [],
       executionTime: 0,
       stepsExecuted: [],
@@ -97,7 +97,7 @@ export class ValidationPipelineService {
     };
 
     try {
-      let currentData = data;
+      let currentData: TData = data as TData;
       const errors: z.ZodError[] = [];
 
       // Execute steps
@@ -113,18 +113,18 @@ export class ValidationPipelineService {
           
           // Apply transformation if provided
           if (step.transform) {
-            currentData = step.transform(currentData);
+            currentData = step.transform(currentData) as TData;
           }
 
           // Validate with step schema
-          currentData = await step.schema.parseAsync(currentData);
+          currentData = await step.schema.parseAsync(currentData) as TData;
           result.stepsExecuted.push(step.name);
 
           // Handle step-specific error handling
           if (step.onError) {
             // This is for post-validation processing
             try {
-              currentData = step.onError(new z.ZodError([]), currentData, context) || currentData;
+              currentData = (step.onError(new z.ZodError([]), currentData, context) as TData) || currentData;
             } catch (error) {
               this.logger.warn(`Step '${step.name}' onError handler failed:`, error);
             }
@@ -314,7 +314,7 @@ export const CommonPipelines = {
       },
       {
         name: 'password-strength',
-        condition: (data) => data.password !== undefined,
+        condition: (data) => (data as Record<string, unknown>)['password'] !== undefined,
         schema: z.object({
           password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain uppercase, lowercase, and number'),
         }),
@@ -322,7 +322,7 @@ export const CommonPipelines = {
       },
       {
         name: 'email-uniqueness',
-        condition: (data) => data.email !== undefined,
+        condition: (data) => (data as Record<string, unknown>)['email'] !== undefined,
         schema: z.object({
           email: z.string().email(),
         }),
@@ -371,7 +371,7 @@ export const CommonPipelines = {
       },
       {
         name: 'card-validation',
-        condition: (data) => data.paymentMethod === 'card',
+        condition: (data) => (data as Record<string, unknown>)['paymentMethod'] === 'card',
         schema: z.object({
           cardNumber: z.string().regex(/^\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}$/),
           expiryDate: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/),
@@ -380,7 +380,7 @@ export const CommonPipelines = {
       },
       {
         name: 'bank-validation',
-        condition: (data) => data.paymentMethod === 'bank',
+        condition: (data) => (data as Record<string, unknown>)['paymentMethod'] === 'bank',
         schema: z.object({
           accountNumber: z.string().min(8),
           routingNumber: z.string().length(9),
@@ -394,7 +394,7 @@ export const CommonPipelines = {
         }),
         onError: async (_error, data, _context) => {
           // This would typically trigger additional fraud checks
-          console.log('Fraud detection triggered for amount:', data.amount);
+          console.log('Fraud detection triggered for amount:', (data as Record<string, unknown>)['amount']);
           return data;
         },
         continueOnError: true,
@@ -436,21 +436,21 @@ export const CommonPipelines = {
       },
       {
         name: 'inventory-validation',
-        condition: (data) => data.stock !== undefined,
+        condition: (data) => (data as Record<string, unknown>)['stock'] !== undefined,
         schema: z.object({
           stock: z.number().int().min(0),
         }),
       },
       {
         name: 'image-validation',
-        condition: (data) => data.images !== undefined,
+        condition: (data) => (data as Record<string, unknown>)['images'] !== undefined,
         schema: z.object({
           images: z.array(z.string().url()).max(10, 'Maximum 10 images allowed'),
         }),
       },
       {
         name: 'seo-optimization',
-        condition: (data) => data.name !== undefined,
+        condition: (data) => (data as Record<string, unknown>)['name'] !== undefined,
         schema: z.object({
           name: z.string().min(10, 'Product name should be at least 10 characters for SEO'),
         }),

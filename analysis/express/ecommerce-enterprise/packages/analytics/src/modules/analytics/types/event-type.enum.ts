@@ -312,7 +312,7 @@ export const EVENT_CATEGORIES = {
  */
 export function getEventCategory(eventType: EventType): string {
   for (const [category, events] of Object.entries(EVENT_CATEGORIES)) {
-    if ((events as EventType[]).includes(eventType)) {
+    if ((events as unknown as EventType[]).includes(eventType)) {
       return category;
     }
   }
@@ -323,7 +323,7 @@ export function getEventCategory(eventType: EventType): string {
  * Check if an event type belongs to a specific category
  */
 export function isEventInCategory(eventType: EventType, category: keyof typeof EVENT_CATEGORIES): boolean {
-  return (EVENT_CATEGORIES[category] as EventType[]).includes(eventType);
+  return (EVENT_CATEGORIES[category] as unknown as EventType[]).includes(eventType);
 }
 
 /**

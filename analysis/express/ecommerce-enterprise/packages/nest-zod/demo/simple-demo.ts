@@ -115,7 +115,7 @@ async function demonstrateBasicValidation() {
       logSuccess(`User validation passed!`);
       logInfo(`Validated data: ${JSON.stringify(userResult.data, null, 2)}`);
     } else {
-      logError(`User validation failed: ${userResult.errors?.message}`);
+      logError(`User validation failed: ${Array.isArray(userResult.errors) ? userResult.errors.map(e => e.message).join(', ') : userResult.errors?.message}`);
     }
     
     // Product validation with custom error handling
@@ -130,7 +130,7 @@ async function demonstrateBasicValidation() {
       logSuccess(`Product validation passed!`);
       logInfo(`Validated data: ${JSON.stringify(productResult.data, null, 2)}`);
     } else {
-      logError(`Product validation failed: ${productResult.errors?.message}`);
+      logError(`Product validation failed: ${Array.isArray(productResult.errors) ? productResult.errors.map(e => e.message).join(', ') : productResult.errors?.message}`);
     }
     
     // Validation with auditing and metrics
@@ -147,7 +147,7 @@ async function demonstrateBasicValidation() {
       logInfo(`Validation time: ${auditResult.metadata?.validationTime}ms`);
       logInfo(`Cache hit: ${auditResult.metadata?.cacheHit ? 'Yes' : 'No'}`);
     } else {
-      logError(`Audit validation failed: ${auditResult.errors?.message}`);
+      logError(`Audit validation failed: ${Array.isArray(auditResult.errors) ? auditResult.errors.map(e => e.message).join(', ') : auditResult.errors?.message}`);
     }
     
   } catch (error) {
@@ -330,7 +330,7 @@ async function demonstrateSchemaUtilities() {
     });
     
     if (!errorMapResult.success) {
-      logSuccess(`Error maps working! Spanish error: ${errorMapResult.errors?.message}`);
+      logSuccess(`Error maps working! Spanish error: ${Array.isArray(errorMapResult.errors) ? errorMapResult.errors.map(e => e.message).join(', ') : errorMapResult.errors?.message}`);
     }
     
   } catch (error) {

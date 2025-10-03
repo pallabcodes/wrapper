@@ -156,7 +156,7 @@ async function demonstrateCoreIntegration() {
       logInfo(`Validation time: ${userResult.metadata?.validationTime}ms`);
       logInfo(`Cache hit: ${userResult.metadata?.cacheHit ? 'Yes' : 'No'}`);
     } else {
-      logError(`User validation failed: ${userResult.errors?.message}`);
+      logError(`User validation failed: ${Array.isArray(userResult.errors) ? userResult.errors.map(e => e.message).join(', ') : userResult.errors?.message}`);
     }
     
     // Product validation with Spanish locale
@@ -171,7 +171,7 @@ async function demonstrateCoreIntegration() {
       logSuccess(`Product validation passed!`);
       logInfo(`Validated product data: ${JSON.stringify(productResult.data, null, 2)}`);
     } else {
-      logError(`Product validation failed: ${productResult.errors?.message}`);
+      logError(`Product validation failed: ${Array.isArray(productResult.errors) ? productResult.errors.map(e => e.message).join(', ') : productResult.errors?.message}`);
     }
     
     // Order validation with enterprise features
@@ -186,7 +186,7 @@ async function demonstrateCoreIntegration() {
       logSuccess(`Order validation passed!`);
       logInfo(`Validated order data: ${JSON.stringify(orderResult.data, null, 2)}`);
     } else {
-      logError(`Order validation failed: ${orderResult.errors?.message}`);
+      logError(`Order validation failed: ${Array.isArray(orderResult.errors) ? orderResult.errors.map(e => e.message).join(', ') : orderResult.errors?.message}`);
     }
     
     // Payment validation
@@ -201,7 +201,7 @@ async function demonstrateCoreIntegration() {
       logSuccess(`Payment validation passed!`);
       logInfo(`Validated payment data: ${JSON.stringify(paymentResult.data, null, 2)}`);
     } else {
-      logError(`Payment validation failed: ${paymentResult.errors?.message}`);
+      logError(`Payment validation failed: ${Array.isArray(paymentResult.errors) ? paymentResult.errors.map(e => e.message).join(', ') : paymentResult.errors?.message}`);
     }
     
     // Inventory validation
@@ -216,7 +216,7 @@ async function demonstrateCoreIntegration() {
       logSuccess(`Inventory validation passed!`);
       logInfo(`Validated inventory data: ${JSON.stringify(inventoryResult.data, null, 2)}`);
     } else {
-      logError(`Inventory validation failed: ${inventoryResult.errors?.message}`);
+      logError(`Inventory validation failed: ${Array.isArray(inventoryResult.errors) ? inventoryResult.errors.map(e => e.message).join(', ') : inventoryResult.errors?.message}`);
     }
     
   } catch (error) {

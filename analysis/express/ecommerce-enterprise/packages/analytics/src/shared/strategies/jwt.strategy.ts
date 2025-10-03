@@ -84,8 +84,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         email: payload.email,
         roles: payload.roles || [],
         permissions: payload.permissions || [],
-        iat: payload.iat,
-        exp: payload.exp,
+        iat: payload.iat || 0,
+        exp: payload.exp || 0,
       };
 
       this.logger.debug('JWT validation successful', {

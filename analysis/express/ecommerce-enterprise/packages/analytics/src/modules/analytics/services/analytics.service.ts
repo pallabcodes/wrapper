@@ -210,11 +210,11 @@ export class AnalyticsService {
   private toPlainObject(event: Record<string, unknown>): Record<string, unknown> {
     return {
       ...event,
-      metadata: event.metadata ? JSON.parse(event.metadata) : null,
-      location: event.location ? JSON.parse(event.location) : null,
-      device: event.device ? JSON.parse(event.device) : null,
-      attribution: event.attribution ? JSON.parse(event.attribution) : null,
-      tags: event.tags ? JSON.parse(event.tags) : null,
+      metadata: event['metadata'] ? JSON.parse(event['metadata'] as string) : null,
+      location: event['location'] ? JSON.parse(event['location'] as string) : null,
+      device: event['device'] ? JSON.parse(event['device'] as string) : null,
+      attribution: event['attribution'] ? JSON.parse(event['attribution'] as string) : null,
+      tags: event['tags'] ? JSON.parse(event['tags'] as string) : null,
     };
   }
 

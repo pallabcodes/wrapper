@@ -96,7 +96,7 @@ try {
 // Enhanced Streams Service
 export class EnhancedStreamsService {
   private config: StreamConfiguration;
-  private streams: Map<string, any> = new Map();
+  private streams: Map<string, BaseStream> = new Map();
   private metrics: Map<string, StreamMetrics> = new Map();
   private auditLog: StreamAuditEntry[] = [];
 
@@ -302,7 +302,8 @@ export class EnhancedStreamsService {
       };
     }
 
-    return nativeAddon.analyzeStream?.(streamId) || this.fallbackAnalyzeStream(metrics);
+    const stream = this.streams.get(streamId);
+    return nativeAddon.analyzeStream?.(stream!) || this.fallbackAnalyzeStream(metrics);
   }
 
   // Audit trail
@@ -380,17 +381,19 @@ export class EnhancedStreamsService {
     this.metrics.set(streamId, metrics);
     
     // Set up event listeners for monitoring
-    stream.on('data', (chunk: Buffer) => {
-      this.updateStreamMetrics(streamId, 'data', chunk);
-    });
-    
-    stream.on('error', (error: Error) => {
-      this.updateStreamMetrics(streamId, 'error', error);
-    });
-    
-    stream.on('end', () => {
-      this.updateStreamMetrics(streamId, 'end');
-    });
+    if ('on' in stream && typeof stream.on === 'function') {
+      stream.on('data', (chunk: Buffer) => {
+        this.updateStreamMetrics(streamId, 'data', chunk);
+      });
+      
+      stream.on('error', (error: Error) => {
+        this.updateStreamMetrics(streamId, 'error', error);
+      });
+      
+      stream.on('end', () => {
+        this.updateStreamMetrics(streamId, 'end');
+      });
+    }
   }
 
   private updateStreamMetrics(streamId: string, event: string, data?: Buffer | Error): void {
@@ -515,13 +518,13 @@ export class EnhancedStreamsService {
     
     return new Transform({
       ...config,
-      transform(chunk, encoding, callback) {
+      transform(chunk: Buffer, _encoding: string, callback: (error?: Error | null, data?: Buffer) => void) {
         try {
           const cipher = crypto.createCipher(config.encryptionAlgorithm || 'aes-256-gcm', config.encryptionKey);
           const encrypted = Buffer.concat([cipher.update(chunk), cipher.final()]);
           callback(null, encrypted);
         } catch (error) {
-          callback(error);
+          callback(error instanceof Error ? error : new Error('Encryption failed'));
         }
       },
     });
@@ -533,12 +536,12 @@ export class EnhancedStreamsService {
     
     return new Transform({
       ...config,
-      transform(chunk, encoding, callback) {
+      transform(chunk: Buffer, _encoding: string, callback: (error?: Error | null, data?: Buffer) => void) {
         try {
           const compressed = zlib.gzipSync(chunk);
           callback(null, compressed);
         } catch (error) {
-          callback(error);
+          callback(error instanceof Error ? error : new Error('Compression failed'));
         }
       },
     });
@@ -559,7 +562,7 @@ export class EnhancedStreamsService {
     return new Writable(config);
   }
 
-  private fallbackAnalyzeStream(metrics: StreamMetrics): StreamPerformanceAnalysis {
+  private fallbackAnalyzeStream(_metrics: StreamMetrics): StreamPerformanceAnalysis {
     return {
       slowestOperations: [],
       mostFrequentOperations: [],
