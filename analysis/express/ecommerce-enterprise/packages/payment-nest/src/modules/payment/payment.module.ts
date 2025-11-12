@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EnterpriseAuthModule } from '@ecommerce-enterprise/nest-enterprise-auth';
 import { PaymentController } from './controllers/payment.controller';
 import { EnterprisePaymentController } from './controllers/enterprise-payment.controller';
 import { ThreePhasePaymentController } from './controllers/three-phase-payment.controller';
@@ -20,8 +21,15 @@ import { PayPalService } from './services/paypal.service';
 import { PaymentRepository } from './repositories/payment.repository';
 import { WebhookService } from '../webhook/services/webhook.service';
 import { EnterpriseZodValidationService } from '@ecommerce-enterprise/nest-zod';
+import { RefreshJwtStrategy } from './strategies/refresh.strategy';
 
 @Module({
+  imports: [
+    EnterpriseAuthModule.forRoot({
+      jwt: { secret: process.env.JWT_SECRET || 'dev_secret', signOptions: { expiresIn: '15m' } },
+      defaultStrategy: 'jwt',
+    }),
+  ],
   controllers: [
     PaymentController,
     EnterprisePaymentController,
@@ -46,6 +54,7 @@ import { EnterpriseZodValidationService } from '@ecommerce-enterprise/nest-zod';
     PaymentRepository,
     WebhookService,
     EnterpriseZodValidationService,
+    RefreshJwtStrategy,
   ],
   exports: [
     PaymentService,

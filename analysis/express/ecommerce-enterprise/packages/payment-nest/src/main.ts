@@ -15,7 +15,7 @@ async function bootstrap() {
     new FastifyAdapter({
       logger: true,
       trustProxy: true,
-    }),
+    }) as any,
     {
       logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     }

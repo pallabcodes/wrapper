@@ -19,7 +19,10 @@ import {
   HttpStatus,
   Logger,
   Request,
+  Res,
 } from '@nestjs/common';
+import { TypedJwtAuthGuard } from '@ecommerce-enterprise/nest-enterprise-auth';
+import { RequirePolicy, UseRbacGuard } from '@ecommerce-enterprise/nest-enterprise-rbac';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { EnterprisePaymentService } from '../services/enterprise-payment.service';
 import { FraudDetectionService } from '../services/fraud-detection.service';
@@ -31,6 +34,8 @@ import { PaymentResponseDto } from '../dto/payment-response.dto';
 import { PaymentListResponseDto } from '../dto/payment-list-response.dto';
 import { PaymentProvider, PaymentMethod } from '../entities/payment.entity';
 import { z } from 'zod';
+import { Response } from 'express';
+import { UseRefreshGuard, signAccessToken, signRefreshToken, setAuthCookies } from '@ecommerce-enterprise/nest-enterprise-auth';
 
 type AuthedRequest = {
   ip?: string;
@@ -128,6 +133,7 @@ export const MonitoringDashboardQueryDto = z.object({
 });
 
 @ApiTags('Enterprise Payments')
+@UseGuards(TypedJwtAuthGuard)
 @Controller('enterprise/payments')
 export class EnterprisePaymentController {
   private readonly logger = new Logger(EnterprisePaymentController.name);
@@ -140,6 +146,8 @@ export class EnterprisePaymentController {
   ) {}
 
   @Post()
+  @UseRbacGuard()
+  @RequirePolicy({ allOf: [{ roles: ['admin'] }] })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create enterprise payment with fraud detection and compliance' })
   @ApiResponse({ status: 201, description: 'Payment created successfully', type: PaymentResponseDto })
@@ -187,6 +195,8 @@ export class EnterprisePaymentController {
   }
 
   @Get()
+  @UseRbacGuard()
+  @RequirePolicy({ anyOf: [{ permissions: ['payments:read'] }, { roles: ['analyst'] }] })
   @ApiOperation({ summary: 'Get payments with advanced filtering and analytics' })
   @ApiResponse({ status: 200, description: 'Payments retrieved successfully', type: PaymentListResponseDto })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
@@ -242,6 +252,8 @@ export class EnterprisePaymentController {
   }
 
   @Put(':id')
+  @UseRbacGuard()
+  @RequirePolicy({ allOf: [{ permissions: ['payments:update'] }] })
   @ApiOperation({ summary: 'Update payment with compliance validation' })
   @ApiResponse({ status: 200, description: 'Payment updated successfully', type: PaymentResponseDto })
   @ApiResponse({ status: 404, description: 'Payment not found' })
@@ -262,6 +274,8 @@ export class EnterprisePaymentController {
   }
 
   @Delete(':id')
+  @UseRbacGuard()
+  @RequirePolicy({ allOf: [{ permissions: ['payments:cancel'] }] })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Cancel payment with audit trail' })
   @ApiResponse({ status: 204, description: 'Payment cancelled successfully' })
@@ -478,5 +492,19 @@ export class EnterprisePaymentController {
       req.user?.tenantId,
       { start: startDate, end: endDate }
     );
+  }
+
+  @Post('auth/refresh')
+  @UseRefreshGuard()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refresh access and refresh tokens' })
+  @ApiResponse({ status: 200, description: 'Tokens refreshed' })
+  async refreshTokens(@Request() req: AuthedRequest, @Res({ passthrough: true }) res: Response): Promise<{ ok: true }> {
+    const sub = (req as any)?.user?.sub || (req as any)?.user?.id;
+    const payload = { sub };
+    const access = signAccessToken(payload, { secret: process.env.JWT_SECRET || 'dev_secret', expiresIn: '15m' });
+    const refresh = signRefreshToken(payload, { secret: process.env.REFRESH_JWT_SECRET || process.env.JWT_SECRET || 'dev_refresh_secret', expiresIn: '7d' });
+    setAuthCookies(res, { access, refresh }, { sameSite: 'lax', secure: true, path: '/' });
+    return { ok: true };
   }
 }

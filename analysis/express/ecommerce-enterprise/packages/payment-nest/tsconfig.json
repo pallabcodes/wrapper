@@ -20,7 +20,12 @@
     "paths": {
       "@/*": ["src/*"],
       "@ecommerce-enterprise/authx": ["../authx/src"],
-      "@ecommerce-enterprise/core": ["../core/src"]
+      "@ecommerce-enterprise/core": ["../core/src"],
+      "@ecommerce-enterprise/nest-enterprise-auth": ["../nest-enterprise-auth/dist"],
+      "@ecommerce-enterprise/nest-enterprise-rbac": ["../nest-enterprise-rbac/dist"],
+      "@nestjs/common": ["../../node_modules/@nestjs/common"],
+      "@nestjs/core": ["../../node_modules/@nestjs/core"],
+      "@nestjs/swagger": ["../../node_modules/@nestjs/swagger"]
     }
   }
 }

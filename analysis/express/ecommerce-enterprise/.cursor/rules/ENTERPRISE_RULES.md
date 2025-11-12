@@ -1,0 +1,100 @@
+# Enterprise Engineering Rules
+
+These rules set explicit expectations for the `@ecommerce-enterprise` monorepo. The goal is type safety, strong DX, and production readiness without breaking changes.
+
+## Monorepo execution
+1. Always run services from the monorepo root using project scripts with pnpm and turbo. Do not start individual APIs with ad hoc commands.
+2. Development uses the standard start script such as `npm start`, `pnpm dev`, or `npm run dev:local` from the root.
+3. Do not run services with `node index.js` during development.
+4. Production deploys use `npm run deploy:production` as a single command from the root.
+
+## TypeScript quality gates
+1. No `any` in published code. Prefer specific interfaces and generics or `unknown` with safe narrowing.
+2. No new TypeScript errors or warnings at build time. CI must fail on type errors.
+3. Strict mode across packages with exact optional property types respected. Optional fields only when conceptually optional.
+4. Use bracket notation for dynamic property access when needed to preserve type safety.
+5. Zod utilities must compile under strict mode including effects and schema composition.
+
+## Packages and boundaries
+1. New packages must be non breaking and composable. Public API goes through `src/index.ts` only.
+2. No cross package private imports. Do not import from another package dist internals.
+3. Use forRoot and forFeature patterns for NestJS modules intended for reuse.
+
+## Authentication standards
+1. Provide typed DX over `@nestjs/jwt` and `@nestjs/passport` without altering native behavior.
+2. Guards include `TypedJwtAuthGuard<TUser>` for access tokens and `RefreshJwtAuthGuard` for refresh flow.
+3. Decorators `@CurrentUser` and `@AuthCtx` must be typed and zero logic and safe.
+4. Extractors support cookies and headers. Use `eitherFrom(...)` for composition.
+5. Refresh helpers include `signAccessToken`, `signRefreshToken`, `verifyRefreshToken`, and `rotateTokens`. Cookie helpers default to secure presets.
+
+## Authorization standards
+1. Lightweight and non opinionated RBAC that composes with any auth.
+2. Decorators `@RequireRoles`, `@RequirePermissions`, and `@RequirePolicy` must merge when stacked.
+3. Guard `RbacGuard` evaluates AND and OR semantics with anyOf and allOf policy expressions.
+4. No hardcoded role names in the library. The app defines roles and permissions.
+
+## Microservices demo
+1. Showcase transport variety such as TCP and Redis and NATS and RMQ and Kafka and MQTT and gRPC via isolated modules.
+2. Typed message contracts for request and response and events. Prefer `Observable` for streaming patterns.
+3. Include examples for custom serializers and deserializers and interceptors.
+
+## Code authoring and style
+1. Code examples must be in Java or Golang. Do not use Python.
+2. Do not use hyphen or emoji anywhere in code or comments.
+3. Prefer explicit names over abbreviations. Avoid one or two letter identifiers.
+4. Use early returns and shallow nesting and avoid broad try and catch.
+5. Comments only for non obvious rationale and invariants and caveats.
+
+## CI and testing
+1. CI tasks include install and typecheck and lint and build and test and package size checks for all affected packages.
+2. Pull requests must pass typecheck and lints with zero new warnings.
+3. Snapshots or contract tests for public APIs when practical.
+4. Example apps compile against local packages in CI matrix.
+
+## Security and privacy
+1. Secrets only through env vars or secret managers. Never commit secrets.
+2. JWT claims minimal and typed. Include `sub` and `iat` and `exp` and optional `jti` for refresh rotation.
+3. Cookie presets include `httpOnly` and `sameSite=lax` or stricter and `secure` in non local.
+
+## Observability
+1. Structured logs with request id propagation through `AuthCtx` where applicable.
+2. Errors formatted via `@ecommerce-enterprise/nest-zod` helpers where relevant.
+
+## Documentation and examples
+1. Each package must have a README with quick start and typed examples.
+2. Include minimal examples where it clarifies usage such as auth plus rbac integration paths.
+
+## Contribution workflow
+1. Descriptive commits and pull request titles. Scope limited and non breaking.
+2. Update changelogs or release notes when public APIs change.
+
+## Commands
+1. See `.cursor/rules/commands/MONOREPO_COMMANDS.md` for root level workflows that comply with the no hyphen rule.
+
+## Additional rule sets
+1. `.cursor/rules/TEAM_CONTEXT.md`
+2. `.cursor/rules/RELEASE_POLICY.md`
+3. `.cursor/rules/API_LIFECYCLE.md`
+4. `.cursor/rules/CI_ENFORCEMENT.md`
+5. `.cursor/rules/SECURITY_SUPPLY_CHAIN.md`
+6. `.cursor/rules/OBSERVABILITY_SLOS.md`
+7. `.cursor/rules/ERROR_LOGGING_SCHEMA.md`
+8. `.cursor/rules/RESILIENCE_ROLLOUT.md`
+9. `.cursor/rules/PERF_SCALABILITY_POLICY.md`
+10. `.cursor/rules/DATA_MIGRATIONS.md`
+11. `.cursor/rules/ARCHITECTURE_RULES.md`
+12. `.cursor/rules/CODE_QUALITY_DEEP.md`
+13. `.cursor/rules/OWNERSHIP_REVIEW.md`
+14. `.cursor/rules/DOCS_STANDARDS.md`
+15. `.cursor/rules/REVIEW_SCRUTINY.md`
+16. `.cursor/rules/SCALABILITY_PERFORMANCE.md`
+17. `.cursor/rules/CODE_QUALITY.md`
+18. `.cursor/rules/CODE_STANDARDS.md`
+19. `.cursor/rules/PRODUCTION_READINESS.md`
+20. `.cursor/rules/CLIENT_EXPECTATIONS.md`
+21. `.cursor/rules/CUSTOMIZATION_GUIDE.md`
+22. `.cursor/rules/DEBUG_OPERABILITY.md`
+23. `.cursor/rules/READABILITY_MAINTAINABILITY.md`
+
+---
+These rules guide day to day engineering across the monorepo and are enforced through CI where possible.

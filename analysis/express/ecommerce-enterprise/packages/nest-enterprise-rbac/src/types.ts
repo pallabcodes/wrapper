@@ -40,6 +40,20 @@ export function evaluatePolicy(user: RbacUserLike, policy: RbacPolicy): boolean 
   return true;
 }
 
+export function mergePolicies(policies: RbacPolicy[]): RbacPolicy {
+  const merged: RbacPolicy = {};
+  for (const p of policies) {
+    if (!p) continue;
+    if (p.allOf && p.allOf.length) {
+      merged.allOf = [...(merged.allOf ?? []), ...p.allOf];
+    }
+    if (p.anyOf && p.anyOf.length) {
+      merged.anyOf = [...(merged.anyOf ?? []), ...p.anyOf];
+    }
+  }
+  return merged;
+}
+
 export function mergePolicy(base: RbacPolicy | undefined, add: RbacPolicy): RbacPolicy {
   return {
     allOf: [...(base?.allOf ?? []), ...(add.allOf ?? [])],

@@ -1,0 +1,16 @@
+# Architecture Rules
+
+## Boundaries
+1. No cycles in dependency graph across packages
+2. Import only from public index of other packages
+3. Keep module surfaces small and stable
+
+## Layers
+1. Separate domain and application and infrastructure concerns
+2. Keep side effects behind interfaces
+3. Prefer composition over inheritance
+
+## ADRs
+1. Capture significant decisions in short ADRs
+2. Record context and decision and consequences
+3. Link ADRs from relevant code and docs

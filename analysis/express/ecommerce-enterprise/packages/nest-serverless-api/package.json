@@ -1,0 +1,36 @@
+{
+  "name": "@ecommerce-enterprise/nest-serverless-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NestJS API packaged for AWS Lambda using serverless-express adapter.",
+  "main": "dist/lambda.js",
+  "types": "dist/lambda.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist",
+    "deploy": "serverless deploy",
+    "sls:offline": "serverless offline"
+  },
+  "dependencies": {
+    "@ecommerce-enterprise/nest-enterprise-auth": "*",
+    "@ecommerce-enterprise/nest-enterprise-rbac": "*",
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0",
+    "@nestjs/platform-express": "^10.0.0",
+    "@vendia/serverless-express": "^4.10.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.134",
+    "@types/express": "^4.17.21",
+    "rimraf": "^5.0.5",
+    "serverless": "^3.39.0",
+    "serverless-offline": "^13.8.0",
+    "typescript": "^5.4.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": ">=10",
+    "@nestjs/core": ">=10"
+  }
+}

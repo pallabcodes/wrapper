@@ -16,8 +16,8 @@ export const CurrentUser = createParamDecorator<keyof AuthUserBase | undefined>(
   },
 );
 
-export const AuthCtx = createParamDecorator<undefined, ExecutionContext, AuthContext | undefined>(
-  (_data, ctx) => {
+export const AuthCtx = createParamDecorator<undefined>(
+  (_data: undefined, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     return request.authContext as AuthContext | undefined;
   },
