@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Interview Sandbox' %></title>
+  
+  <!-- Design System CSS -->
+  <link rel="stylesheet" href="/assets/design-system.css">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  
+  <!-- Theme Toggle Script -->
+  <script src="/assets/theme-toggle.js"></script>
+  
+  <% if (typeof styles !== 'undefined') { %>
+    <%- styles %>
+  <% } %>
+</head>
+<body class="min-h-screen flex flex-col" style="background-color: var(--bg-primary); color: var(--text-primary);">
+  <%- include('../partials/header') %>
+
+  <main class="flex-1">
+    <% if (typeof errors !== 'undefined' && errors && errors.length > 0) { %>
+      <div class="container mx-auto px-4 mt-4">
+        <div class="px-4 py-3 rounded-design-lg border" role="alert" style="background-color: var(--color-error-light); border-color: var(--color-error); color: var(--color-error-dark);">
+          <ul class="list-disc list-inside space-y-1">
+            <% errors.forEach(function(error) { %>
+              <li><%= error %></li>
+            <% }); %>
+          </ul>
+        </div>
+      </div>
+    <% } %>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="container mx-auto px-4 mt-4">
+        <div class="px-4 py-3 rounded-design-lg border" role="alert" style="background-color: var(--color-success-light); border-color: var(--color-success); color: var(--color-success-dark);">
+          <%= success %>
+        </div>
+      </div>
+    <% } %>
+
+    <%- body %>
+  </main>
+
+  <%- include('../partials/footer') %>
+
+  <% if (typeof scripts !== 'undefined') { %>
+    <%- scripts %>
+  <% } %>
+</body>
+</html>

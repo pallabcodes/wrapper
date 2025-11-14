@@ -1,0 +1,128 @@
+<% 
+  // Process dynamic values first
+  const emailValue = typeof formData !== 'undefined' && formData.email ? formData.email : '';
+  
+  const bodyContent = `
+    <div class="container mx-auto px-4 py-8">
+      <div class="max-w-md mx-auto">
+        <div class="rounded-design-lg shadow-design-md border p-8" style="background-color: var(--bg-primary); border-color: var(--border-light);">
+          <h2 class="text-2xl font-semibold text-center mb-6" style="color: var(--text-primary);">
+            <i class="fas fa-sign-in-alt" style="color: var(--color-primary-600);"></i> Login
+          </h2>
+          
+          <form action="/api/auth/login" method="POST" id="loginForm" class="space-y-4">
+            <div>
+              <label for="email" class="block text-sm font-medium mb-1" style="color: var(--text-secondary);">Email Address</label>
+              <input 
+                type="email" 
+                class="w-full px-4 py-2 border rounded-design-lg outline-none transition-design"
+                style="border-color: var(--border-medium); background-color: var(--bg-primary); color: var(--text-primary);"
+                onfocus="this.style.borderColor='var(--color-primary-500)'; this.style.boxShadow='0 0 0 3px var(--color-primary-100)'"
+                onblur="this.style.borderColor='var(--border-medium)'; this.style.boxShadow='none'"
+                id="email" 
+                name="email" 
+                required
+                value="${emailValue}"
+              >
+            </div>
+
+            <div>
+              <label for="password" class="block text-sm font-medium mb-1" style="color: var(--text-secondary);">Password</label>
+              <input 
+                type="password" 
+                class="w-full px-4 py-2 border rounded-design-lg outline-none transition-design"
+                style="border-color: var(--border-medium); background-color: var(--bg-primary); color: var(--text-primary);"
+                onfocus="this.style.borderColor='var(--color-primary-500)'; this.style.boxShadow='0 0 0 3px var(--color-primary-100)'"
+                onblur="this.style.borderColor='var(--border-medium)'; this.style.boxShadow='none'"
+                id="password" 
+                name="password" 
+                required
+              >
+            </div>
+
+            <div class="flex items-center">
+              <input type="checkbox" class="h-4 w-4 rounded" id="rememberMe" name="rememberMe" style="accent-color: var(--color-primary-600);">
+              <label class="ml-2 block text-sm" for="rememberMe" style="color: var(--text-secondary);">
+                Remember me
+              </label>
+            </div>
+
+            <button type="submit" class="w-full font-medium py-2 px-4 rounded-design-lg transition-design flex items-center justify-center space-x-2 text-white" style="background-color: var(--color-primary-600);" onmouseover="this.style.backgroundColor='var(--color-primary-700)'" onmouseout="this.style.backgroundColor='var(--color-primary-600)'">
+              <i class="fas fa-sign-in-alt"></i>
+              <span>Login</span>
+            </button>
+          </form>
+
+          <hr class="my-6 border-gray-200">
+
+          <div class="text-center space-y-2">
+            <p>
+              <a href="/auth/forgot-password" class="text-sm text-blue-600 hover:text-blue-800 hover:underline">Forgot your password?</a>
+            </p>
+            <p class="text-sm text-gray-600">
+              Don't have an account? 
+              <a href="/auth/signup" class="text-blue-600 hover:text-blue-800 font-medium hover:underline">Sign up here</a>
+            </p>
+          </div>
+
+          <hr class="my-6 border-gray-200">
+
+          <div class="space-y-3">
+            <a href="/api/auth/google" class="w-full bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg border border-gray-300 transition flex items-center justify-center space-x-2">
+              <i class="fab fa-google text-red-500"></i>
+              <span>Login with Google</span>
+            </a>
+            <a href="/api/auth/facebook" class="w-full bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg border border-gray-300 transition flex items-center justify-center space-x-2">
+              <i class="fab fa-facebook text-blue-600"></i>
+              <span>Login with Facebook</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  const scriptsContent = `
+    <script>
+      // Check for success message in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('success')) {
+        alert(urlParams.get('success'));
+      }
+
+      document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData);
+        
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok) {
+            // Store tokens (in production, use httpOnly cookies)
+            if (result.data && result.data.accessToken) {
+              localStorage.setItem('accessToken', result.data.accessToken);
+              localStorage.setItem('refreshToken', result.data.refreshToken);
+            }
+            window.location.href = '/';
+          } else {
+            alert(result.message || 'Login failed');
+          }
+        } catch (error) {
+          alert('An error occurred. Please try again.');
+        }
+      });
+    </script>
+  `;
+%>
+<%- include('../layouts/base', { 
+  title: 'Login - Interview Sandbox',
+  body: bodyContent,
+  scripts: scriptsContent
+}) %>

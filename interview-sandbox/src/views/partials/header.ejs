@@ -1,0 +1,73 @@
+<nav class="bg-[var(--color-primary-600)] text-white shadow-design-md">
+  <div class="container mx-auto px-4">
+    <div class="flex items-center justify-between h-16">
+      <a href="/" class="flex items-center space-x-2 text-xl font-semibold hover:opacity-80 transition-design">
+        <i class="fas fa-code"></i>
+        <span>Interview Sandbox</span>
+      </a>
+      
+      <div class="hidden md:flex items-center space-x-4">
+        <!-- Theme Toggle Button -->
+        <button 
+          onclick="toggleTheme()" 
+          class="p-2 rounded-lg hover:bg-[var(--color-primary-700)] transition-design"
+          aria-label="Toggle theme"
+          title="Toggle light/dark mode"
+        >
+          <i id="theme-toggle-icon" class="fas fa-moon"></i>
+        </button>
+        <% if (typeof user !== 'undefined' && user) { %>
+          <a href="/api/users/me" class="hover:text-blue-200 transition flex items-center space-x-1">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+          </a>
+          <a href="/auth/logout" class="hover:text-blue-200 transition flex items-center space-x-1">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+          </a>
+        <% } else { %>
+          <a href="/auth/login" class="hover:text-blue-200 transition flex items-center space-x-1">
+            <i class="fas fa-sign-in-alt"></i>
+            <span>Login</span>
+          </a>
+          <a href="/auth/signup" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg transition flex items-center space-x-1">
+            <i class="fas fa-user-plus"></i>
+            <span>Sign Up</span>
+          </a>
+        <% } %>
+      </div>
+
+      <!-- Mobile menu button -->
+      <button id="mobileMenuBtn" class="md:hidden p-2 rounded-lg hover:bg-blue-700 transition">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+
+    <!-- Mobile menu -->
+    <div id="mobileMenu" class="hidden md:hidden pb-4 space-y-2">
+      <% if (typeof user !== 'undefined' && user) { %>
+        <a href="/api/users/me" class="block px-4 py-2 hover:bg-blue-700 rounded-lg transition">
+          <i class="fas fa-user"></i> Profile
+        </a>
+        <a href="/auth/logout" class="block px-4 py-2 hover:bg-blue-700 rounded-lg transition">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+      <% } else { %>
+        <a href="/auth/login" class="block px-4 py-2 hover:bg-blue-700 rounded-lg transition">
+          <i class="fas fa-sign-in-alt"></i> Login
+        </a>
+        <a href="/auth/signup" class="block px-4 py-2 hover:bg-blue-700 rounded-lg transition">
+          <i class="fas fa-user-plus"></i> Sign Up
+        </a>
+      <% } %>
+    </div>
+  </div>
+</nav>
+
+<script>
+  // Mobile menu toggle
+  document.getElementById('mobileMenuBtn')?.addEventListener('click', function() {
+    const menu = document.getElementById('mobileMenu');
+    menu?.classList.toggle('hidden');
+  });
+</script>

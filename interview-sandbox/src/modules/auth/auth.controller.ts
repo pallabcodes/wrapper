@@ -6,7 +6,10 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Res,
+  Query,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -29,6 +32,13 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly responseMapper: AuthResponseMapper,
   ) {}
+
+  // ============================================
+  // JSON API ROUTES (POST)
+  // Note: HTML template routes (GET /auth/*) are registered
+  // directly on Express in app-bootstrap.service.ts to bypass
+  // the /api global prefix for direct browser access
+  // ============================================
 
   @Public()
   @Post('register')

@@ -1,4 +1,6 @@
 import { INestApplication, Logger } from '@nestjs/common';
+import { getConnectionToken } from '@nestjs/sequelize';
+import { Sequelize } from 'sequelize-typescript';
 
 export class AppShutdownHandler {
   private readonly logger = new Logger(AppShutdownHandler.name);
@@ -39,8 +41,9 @@ export class AppShutdownHandler {
     }, this.shutdownTimeout);
 
     try {
-      await this.closeHttpServer();
+      // Close database connections BEFORE closing HTTP server
       await this.closeDatabaseConnections();
+      await this.closeHttpServer();
 
       clearTimeout(shutdownTimer);
       this.logger.log('Graceful shutdown completed');
@@ -59,13 +62,24 @@ export class AppShutdownHandler {
 
   private async closeDatabaseConnections(): Promise<void> {
     try {
-      const sequelize = this.app.get('SEQUELIZE');
+      // Use getConnectionToken() to get the correct Sequelize connection token
+      const connectionToken = getConnectionToken();
+      const sequelize = this.app.get<Sequelize>(connectionToken, { strict: false });
+      
       if (sequelize && typeof sequelize.close === 'function') {
         await sequelize.close();
         this.logger.log('Database connections closed');
+      } else {
+        this.logger.debug('Sequelize connection not available or already closed');
       }
-    } catch (error) {
-      this.logger.warn('Error closing database connections:', error);
+    } catch (error: any) {
+      // Silently handle if Sequelize is not available or already closed
+      // This is expected if database module is not configured or connection doesn't exist
+      if (error?.name === 'UnknownElementException' || error?.message?.includes('does not exist')) {
+        this.logger.debug('Database connection not registered, skipping closure');
+      } else {
+        this.logger.warn('Error closing database connections:', error?.message || error);
+      }
     }
   }
 }

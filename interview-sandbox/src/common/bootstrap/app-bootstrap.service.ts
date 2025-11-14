@@ -16,6 +16,7 @@ export class AppBootstrapService {
   configure(): void {
     this.setGlobalPrefix();
     this.enableCors();
+    this.setupViewEngine();
     this.setupGlobalPipes();
     this.setupGlobalFilters();
     this.setupGlobalInterceptors();
@@ -41,6 +42,61 @@ export class AppBootstrapService {
       credentials: corsConfig?.credentials ?? true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
+    });
+  }
+
+  private setupViewEngine(): void {
+    // Configure EJS view engine for HTML templates
+    // Views directory: src/views (relative to project root)
+    const expressApp = this.app.getHttpAdapter().getInstance();
+    const path = require('path');
+    expressApp.set('view engine', 'ejs');
+    expressApp.set('views', path.join(process.cwd(), 'src', 'views'));
+    
+    // Serve static assets (CSS, JS) from views/assets directory
+    const expressStatic = require('express').static;
+    expressApp.use('/assets', expressStatic(path.join(process.cwd(), 'src', 'views', 'assets')));
+    
+    // Register HTML template routes directly on Express (bypassing NestJS global prefix)
+    // These routes are accessible without /api prefix for direct browser access
+    this.setupTemplateRoutes(expressApp);
+  }
+
+  private setupTemplateRoutes(expressApp: any): void {
+    const path = require('path');
+    const viewsPath = path.join(process.cwd(), 'src', 'views');
+    
+    // Signup page
+    expressApp.get('/auth/signup', (req: any, res: any) => {
+      res.render('auth/signup', {
+        formData: req.query,
+        errors: [],
+      });
+    });
+
+    // Login page
+    expressApp.get('/auth/login', (req: any, res: any) => {
+      res.render('auth/login', {
+        formData: req.query,
+        errors: [],
+        success: req.query.success || null,
+      });
+    });
+
+    // Forgot password page
+    expressApp.get('/auth/forgot-password', (req: any, res: any) => {
+      res.render('auth/forgot-password', {
+        formData: req.query,
+        errors: [],
+      });
+    });
+
+    // Reset password page
+    expressApp.get('/auth/reset-password', (req: any, res: any) => {
+      res.render('auth/reset-password', {
+        query: req.query,
+        errors: [],
+      });
     });
   }
 

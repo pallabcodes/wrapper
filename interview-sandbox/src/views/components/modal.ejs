@@ -1,0 +1,80 @@
+<% 
+  // Modal component with Tailwind CSS
+  // Usage: <%- include('../components/modal', { 
+  //   id: 'exampleModal',
+  //   title: 'Example Modal',
+  //   body: '<p>Modal content</p>',
+  //   footer: '<button>Close</button>'
+  // }) %>
+  
+  const modalId = typeof id !== 'undefined' ? id : 'defaultModal';
+  const modalTitle = typeof title !== 'undefined' ? title : 'Modal';
+  const modalBody = typeof body !== 'undefined' ? body : '';
+  const modalFooter = typeof footer !== 'undefined' ? footer : '';
+  const size = typeof size !== 'undefined' ? size : 'max-w-md'; // 'max-w-sm', 'max-w-md', 'max-w-lg', 'max-w-xl'
+%>
+
+<!-- Modal Overlay -->
+<div id="<%= modalId %>" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-lg shadow-xl <%= size %> w-full max-h-[90vh] overflow-y-auto">
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between p-6 border-b border-gray-200">
+      <h3 class="text-xl font-semibold text-gray-800"><%= modalTitle %></h3>
+      <button onclick="closeModal('<%= modalId %>')" class="text-gray-400 hover:text-gray-600 transition">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+    
+    <!-- Modal Body -->
+    <div class="p-6">
+      <%- modalBody %>
+    </div>
+    
+    <% if (modalFooter) { %>
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
+        <%- modalFooter %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+  // Modal functions
+  function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+  
+  function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+  }
+  
+  // Close modal when clicking outside
+  document.getElementById('<%= modalId %>')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeModal('<%= modalId %>');
+    }
+  });
+  
+  // Close modal on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('<%= modalId %>');
+      if (modal && !modal.classList.contains('hidden')) {
+        closeModal('<%= modalId %>');
+      }
+    }
+  });
+  
+  // Expose functions globally
+  window['openModal_<%= modalId %>'] = () => openModal('<%= modalId %>');
+  window['closeModal_<%= modalId %>'] = () => closeModal('<%= modalId %>');
+</script>
