@@ -1,0 +1,49 @@
+---
+alwaysApply: false
+---
+
+# CI Enforcement
+
+Continuous Integration requirements and quality gates that must pass before code can be merged.
+
+## Required Checks
+
+1. Typecheck must pass with strict TypeScript mode enabled.
+2. Lint must pass with zero new warnings or errors.
+3. Tests must pass with coverage at or above 85% for lines and branches.
+4. Build must succeed with zero errors and warnings.
+5. Documentation presence required: README and examples must compile.
+6. API surface diffs reviewed and approved before merging.
+7. Dead code and cycle detection must pass (no circular dependencies).
+8. SBOM (Software Bill of Materials) and SCA (Software Composition Analysis) scans must pass.
+9. Secret scan must pass (no secrets committed to code).
+
+## Coverage Thresholds
+
+1. Coverage goal: 85% or higher for lines and branches where practical.
+2. Performance budgets defined per service and tested in load tests before release.
+3. Coverage reports must be generated and reviewed in CI.
+
+## CI Commands
+
+1. Typecheck: `turbo run typecheck`
+2. Lint: `turbo run lint`
+3. Tests with coverage: `turbo run test`
+4. Build: `turbo run build`
+5. Docs validation: Script validates README and examples per package.
+6. API diff: Script compares exported types from `src/index.ts` files.
+7. Dead code and cycles: Script runs analyzer across tsconfig paths.
+8. SBOM and SCA: Script invokes scanners on lock files and outputs SBOM.
+9. Secret scan: Script runs secret scanner on code diff.
+
+## Failure Policy
+
+1. Any failed check blocks merge to main branch.
+2. Exceptions require principal engineer approval and a follow-up issue with owner and remediation date.
+3. Temporary exceptions must be tracked and resolved within sprint.
+
+## Integration with Review Process
+
+1. CI checks run automatically on all pull requests.
+2. Review checklist (REVIEW_SCRUTINY.mdc) complements automated checks.
+3. Both automated and manual review must pass before approval.

@@ -5,7 +5,6 @@ import { ServiceRegistry } from '../utils/service-registry';
 
 @Injectable()
 export class HealthCheckService {
-  private readonly logger = new Logger(HealthCheckService.name);
 
   constructor(
     private readonly healthMonitor: HealthMonitor,

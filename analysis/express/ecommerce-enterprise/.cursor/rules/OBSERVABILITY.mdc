@@ -1,0 +1,76 @@
+---
+alwaysApply: false
+---
+
+# Observability
+
+Comprehensive observability standards for logging, metrics, tracing, and debugging in production systems.
+
+## Logging Schema
+
+1. Structured logs with consistent fields: timestamp, level, message, requestId, userId, errorCode, correlationId.
+2. Include request ID in all log entries for request correlation across services.
+3. Include user ID when available and applicable for user-centric debugging.
+4. Log errors with sufficient context to reproduce the issue.
+5. Avoid logging secrets, passwords, tokens, or sensitive PII data.
+
+## Error Taxonomy
+
+1. Define canonical error codes and classes for consistent error handling.
+2. Map validation errors, authentication errors, RBAC errors, and transport errors to standardized codes.
+3. Provide user-safe messages for external APIs and internal debug details for logs.
+4. Use standard error envelope format: `{ code, message, details, correlationId }`.
+5. Align error formatting with Nest.js Zod helpers where applicable.
+
+## Metrics and Instrumentation
+
+1. Emit counters and histograms for key operational paths.
+2. Track throughput, latency (p50/p95/p99), error rates, and business metrics.
+3. Use consistent metric naming: `service.operation.status` (e.g., `api.users.create.success`).
+4. Sample metrics appropriately to avoid cardinality explosion.
+
+## Distributed Tracing
+
+1. Propagate trace context across async boundaries and service calls.
+2. Use distributed tracing standards (OpenTelemetry, OpenTracing) for cross-service correlation.
+3. Sample traces for hot paths to balance observability with performance.
+4. Include span annotations for critical operations and decision points.
+
+## PII and Data Handling
+
+1. Define PII handling rules: redaction and hashing where required by policy.
+2. Never log full credit card numbers, SSNs, passwords, or authentication tokens.
+3. Use structured redaction helpers for sensitive fields.
+4. Document data retention policies per data class.
+
+## Diagnostics and Debugging
+
+1. Prefer feature flags over quick patches for production debugging.
+2. Add lightweight diagnostics endpoints behind authentication when needed.
+3. Provide playbooks for common incidents and debugging procedures.
+4. Mean time to diagnose (MTTD) target: under 30 minutes on average.
+
+## Log Levels
+
+1. Use appropriate log levels: ERROR for failures, WARN for recoverable issues, INFO for important events, DEBUG for detailed debugging.
+2. Avoid excessive logging in hot paths. Use sampling or conditional logging.
+3. Structured logging preferred over string concatenation.
+
+## Correlation and Context
+
+1. Propagate correlation IDs across service boundaries via headers.
+2. Include correlation ID in all error responses for support ticket correlation.
+3. Use request context objects to carry correlation and user context through call chains.
+
+## Dashboards and Visualization
+
+1. Standard dashboards for throughput, latency, errors, and business metrics.
+2. Tracing views for critical paths and request flows.
+3. Log views with request ID and user ID correlation capabilities.
+4. Alert on SLO violations and error rate spikes.
+
+## Performance Impact
+
+1. Minimize logging overhead in hot paths. Use async logging where possible.
+2. Sample high-volume logs to reduce storage and processing costs.
+3. Use log aggregation and analysis tools (e.g., ELK, Splunk, Cloud Logging).

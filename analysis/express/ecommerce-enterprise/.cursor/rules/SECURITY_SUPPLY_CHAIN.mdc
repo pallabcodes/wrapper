@@ -1,0 +1,58 @@
+---
+alwaysApply: true
+---
+
+# Security and Supply Chain
+
+Mandatory security standards for production systems. All code must comply with these security requirements.
+
+## Threat Modeling
+
+1. Identify assets, entry points, and trust boundaries for each service.
+2. Document primary threats and corresponding mitigations.
+3. Review threat model on significant architectural changes.
+4. Update threat model when new attack vectors are identified.
+
+## Supply Chain Security
+
+1. Generate Software Bill of Materials (SBOM) for each release.
+2. Run Software Composition Analysis (SCA) scans on dependencies and lock files.
+3. Pin dependency versions and track security updates on a regular cadence.
+4. Monitor for known vulnerabilities in dependencies (CVE tracking).
+
+## Integrity and Secrets Management
+
+1. Sign commits and tags where supported (GPG signing).
+2. Run secret scans on all code changes (pre-commit and CI).
+3. Use minimum permissions for tokens and deploy keys (principle of least privilege).
+4. Never commit secrets, API keys, or credentials to version control.
+5. Use environment variables or secret managers for all sensitive configuration.
+
+## Dependency Policy
+
+1. Prefer well-maintained libraries with clear licenses and active maintenance.
+2. Audit critical dependencies monthly for security updates.
+3. Replace unmaintained dependencies with maintained alternatives.
+4. Document rationale for critical dependency choices.
+5. Keep dependencies up to date with security patches.
+
+## Security Scanning
+
+1. Run static analysis security testing (SAST) in CI pipeline.
+2. Run dependency vulnerability scans before each release.
+3. Scan container images for vulnerabilities if using containers.
+4. Review and remediate security findings before merging to main.
+
+## Authentication and Authorization
+
+1. Use strong authentication mechanisms (JWT with RS256/ES256, OAuth 2.0).
+2. Implement proper authorization checks on all protected endpoints.
+3. Rotate tokens and credentials regularly.
+4. Use secure defaults for cookies: httpOnly, sameSite, secure flags.
+
+## Input Validation and Output Encoding
+
+1. Validate all inputs at API boundaries.
+2. Sanitize outputs to prevent injection attacks (XSS, SQL injection, etc.).
+3. Use parameterized queries for database operations.
+4. Enforce rate limiting and input size limits.

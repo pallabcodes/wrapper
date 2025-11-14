@@ -1,0 +1,66 @@
+---
+alwaysApply: false
+---
+
+# Principal Engineer Review Checklist
+
+Use this checklist before opening pull requests. All items must pass to meet Google production-grade quality standards.
+
+## Readability and Maintainability
+
+1. Names are explicit, discoverable, and follow project conventions.
+2. Control flow is shallow with early returns (maximum 3 levels nesting).
+3. Comments explain rationale, invariants, or caveats only. No narrative comments.
+
+## Debuggability and Observability
+
+1. Errors carry structured context and clear actionable messages.
+2. Logs include request ID and user ID when available for correlation.
+3. Traces exist for critical paths and metrics cover core operational signals.
+4. Mean time to diagnose (MTTD) target: under 30 minutes on average.
+
+## Type Safety and Contracts
+
+1. Zero type errors and no `any` types in published code.
+2. Public API types are minimal, intentional, and well-documented.
+3. Validators and schemas compose correctly under strict TypeScript mode.
+
+## Performance and Scalability
+
+1. Hot paths avoid needless allocations and repeated work.
+2. Async boundaries are explicit and streaming applies backpressure.
+3. Caching and idempotency applied where appropriate.
+4. Database queries are indexed and avoid N+1 patterns.
+
+## Security and Privacy
+
+1. No secrets in code. Use environment variables or secret managers only.
+2. Tokens and cookies follow secure defaults and rotation policies.
+3. Inputs validated and outputs sanitized where needed.
+4. Authentication and authorization checks present on all protected endpoints.
+
+## Package Boundaries and Developer Experience
+
+1. No deep imports across package internals. Import only from public `src/index.ts`.
+2. Use `forRoot` and `forFeature` patterns for configurable Nest.js modules.
+3. Examples and documentation are accurate, minimal, and typed.
+
+## Architecture and Design
+
+1. Code follows architectural boundaries (domain, application, infrastructure layers).
+2. Side effects isolated behind interfaces.
+3. Composition preferred over inheritance.
+4. No circular dependencies in dependency graph.
+
+## Testing and Documentation
+
+1. Unit tests cover core logic and edge cases.
+2. Integration tests for public APIs where practical.
+3. Documentation updated in the same pull request as code changes.
+4. Examples compile and demonstrate real-world usage.
+
+## See Also
+
+1. `.cursor/rules/CI_ENFORCEMENT.mdc` (automated checks)
+2. `.cursor/rules/CODE_STANDARDS.mdc` (mandatory code standards)
+3. `.cursor/rules/ARCHITECTURE_RULES.mdc` (architectural principles)

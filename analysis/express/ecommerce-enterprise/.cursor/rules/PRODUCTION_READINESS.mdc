@@ -1,0 +1,94 @@
+---
+alwaysApply: false
+---
+
+# Production Readiness
+
+Comprehensive production readiness standards covering reliability, observability, resilience, and operational excellence.
+
+## Service Level Objectives (SLOs)
+
+1. Availability target per service: 99.9% or higher monthly uptime.
+2. Latency budgets: Document p50, p95, p99 goals per endpoint and track in dashboards.
+3. Error rate budget: Define as a fraction of total requests and monitor continuously.
+4. Define SLOs for latency and availability for all user-facing APIs.
+
+## Reliability and Resilience
+
+1. Set timeouts for all remote calls with documented defaults.
+2. Retries use capped exponential backoff and only for idempotent operations.
+3. Circuit breakers protect against repeated failures of downstream services.
+4. Support graceful shutdown: handle SIGTERM and SIGINT signals properly.
+5. Health and readiness endpoints return status for dependencies (database, cache, external APIs).
+
+## Observability
+
+1. Structured logs with consistent fields: timestamp, level, message, requestId, userId, errorCode.
+2. Include request ID and user ID in logs when available for correlation.
+3. Metrics required: throughput, latency (p50/p95/p99), error rates, and business metrics.
+4. Tracing for critical paths using distributed tracing standards.
+5. PII handling: Define redaction and hashing rules. Never log secrets or sensitive data.
+6. Logs avoid secrets and reduce noisy payloads. Use sampling for high-volume endpoints.
+
+## Error Handling
+
+1. Define canonical error codes and classes for consistent error taxonomy.
+2. Map validation, auth, RBAC, and transport errors to standardized codes.
+3. Provide user-safe messages and internal debug details separately.
+4. Use standard error envelope: code, message, details, correlationId.
+5. Align error formatting with Nest.js Zod helpers where applicable.
+
+## Health and Readiness
+
+1. Health endpoints: `/health` returns service status.
+2. Readiness endpoints: `/ready` returns dependency status (database, cache, etc.).
+3. Liveness probes: Configure for Kubernetes/orchestration platforms.
+4. Instances support graceful shutdown with configurable drain time.
+
+## Progressive Delivery and Rollout
+
+1. Use canary deployments and gradual rollouts for risky changes.
+2. Feature flags gate new behavior behind configuration.
+3. Rollback plan documented for each deployment with clear steps.
+4. Zero downtime deployments targeted through deployment scripts.
+
+## Alerts and Monitoring
+
+1. Page on sustained SLO burn above policy thresholds.
+2. Ticket on single burn events that recover automatically.
+3. Noise limits enforced on alert rules to prevent alert fatigue.
+4. Standard dashboards for throughput, latency, errors, and business metrics.
+5. Tracing views for critical paths and log views with request ID correlation.
+
+## Chaos Engineering and Drills
+
+1. Allow controlled fault injection in non-production environments.
+2. Run recovery drills quarterly to validate resilience.
+3. Track time to detect (TTD) and time to restore (TTR) metrics.
+
+## Backward Compatibility
+
+1. Backward compatible changes prioritized for all public APIs.
+2. Deprecate before removing. Maintain deprecated APIs for at least two minor versions.
+3. Document breaking changes and migration paths clearly.
+
+## Performance and Scalability
+
+1. Hot paths avoid needless allocations and repeated work.
+2. Async boundaries are explicit. Streaming applies backpressure.
+3. Caching and idempotency applied where appropriate.
+4. Index database queries intentionally. Avoid N+1 query patterns.
+5. Use pagination or cursoring for large lists.
+
+## Security in Production
+
+1. Secrets only from environment variables or secret managers. Never commit secrets.
+2. Tokens signed with strong algorithms (RS256, ES256) and rotated regularly.
+3. Cookies: httpOnly, sameSite=lax (or stricter), secure in non-local environments.
+4. Inputs validated and outputs sanitized where needed.
+
+## Operations
+
+1. Clear rollback plan for each deployment.
+2. Monitor during rollout and after deployment.
+3. Provide playbooks for common incidents and operational runbooks.

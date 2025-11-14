@@ -1,0 +1,56 @@
+---
+alwaysApply: false
+---
+
+# Data Migrations and Management
+
+Standards for database migrations, data retention, privacy, and backup procedures.
+
+## Migration Strategy
+
+1. Use backward-compatible steps following expand-and-contract pattern.
+2. Run migrations before code that depends on new schema changes.
+3. Keep rollback steps for critical changes. Test rollback procedures.
+4. Migrations must be idempotent and safe to re-run.
+
+## Migration Process
+
+1. Review migrations with database owners and principal engineers.
+2. Test migrations in staging with realistic data volumes.
+3. Monitor during rollout and after deployment for performance issues.
+4. Document migration duration and impact on service availability.
+
+## Data Retention and Archiving
+
+1. Define retention policies per data class (user data, logs, metrics, etc.).
+2. Implement archiving workflows for data exceeding retention periods.
+3. Document retention policies and archiving procedures.
+4. Automate retention and archiving where possible.
+
+## Privacy and PII Handling
+
+1. Handle PII (Personally Identifiable Information) with masking and deletion workflows.
+2. Implement data deletion workflows for user data requests (GDPR, CCPA).
+3. Document PII handling procedures and data flow.
+4. Use encryption at rest for sensitive data.
+
+## Backup and Recovery
+
+1. Document backup and restore procedures for critical data.
+2. Run backup and restore drills quarterly to validate procedures.
+3. Test restore procedures in staging environment.
+4. Monitor backup success rates and alert on failures.
+
+## Migration Safety
+
+1. Use transactions for multi-step migrations where supported.
+2. Implement feature flags to control migration rollout.
+3. Monitor migration progress and have rollback plan ready.
+4. Communicate migration schedule to stakeholders.
+
+## Schema Changes
+
+1. Additive changes preferred: add columns, indexes, tables.
+2. Breaking changes require careful planning and coordination.
+3. Deprecate old columns/tables before removal.
+4. Document schema changes in migration files and ADRs.

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { MeshGatewayService } from '../services/mesh-gateway.service';
 
@@ -44,7 +44,7 @@ export class MeshGatewayController {
       serviceName,
       endpoint: body.endpoint,
       method: body.method || 'GET',
-      headers: body.headers,
+      ...(body.headers ? { headers: body.headers } : {}),
     }, body.data);
   }
 }

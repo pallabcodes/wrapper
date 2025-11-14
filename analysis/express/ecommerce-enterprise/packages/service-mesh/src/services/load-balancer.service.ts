@@ -7,7 +7,6 @@ import { LoadBalancerOptions } from '../interfaces/load-balancer-options.interfa
 export class LoadBalancerService {
   private readonly logger = new Logger(LoadBalancerService.name);
   private readonly connectionCounts = new Map<string, number>();
-  private readonly lastUsed = new Map<string, number>();
   private currentIndex = 0;
 
   constructor(private readonly serviceRegistry: ServiceRegistry) {}

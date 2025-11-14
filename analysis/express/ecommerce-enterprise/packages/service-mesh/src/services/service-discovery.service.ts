@@ -1,18 +1,17 @@
 import { Injectable, Inject, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ServiceMeshOptions, ServiceInstance } from '../interfaces/service-mesh-options.interface';
 import { ServiceRegistry } from '../utils/service-registry';
 import { HealthMonitor } from '../utils/health-monitor';
 import * as Consul from 'consul';
 import { Etcd3 } from 'etcd3';
-import IORedis from 'ioredis';
+import { Redis } from 'ioredis';
 
 @Injectable()
 export class ServiceDiscoveryService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ServiceDiscoveryService.name);
   private consul?: Consul.Consul;
   private etcd?: Etcd3;
-  private redis?: IORedis;
+  private redis?: Redis;
   private discoveryType: string;
   private serviceId: string;
   private healthCheckInterval?: NodeJS.Timeout;
@@ -80,7 +79,7 @@ export class ServiceDiscoveryService implements OnModuleInit, OnModuleDestroy {
     }
     this.etcd = new Etcd3({
       hosts: etcdOptions.hosts,
-      auth: etcdOptions.auth,
+      ...(etcdOptions.auth ? { auth: etcdOptions.auth } : {}),
     });
 
     this.logger.log('Etcd discovery initialized');
@@ -91,10 +90,10 @@ export class ServiceDiscoveryService implements OnModuleInit, OnModuleDestroy {
     if (!redisOptions) {
       throw new Error("Redis options not provided");
     }
-    this.redis = new IORedis({
+    this.redis = new Redis({
       host: redisOptions.host,
       port: redisOptions.port,
-      password: redisOptions.password,
+      ...(redisOptions.password ? { password: redisOptions.password } : {}),
     });
 
     this.logger.log('Redis discovery initialized');

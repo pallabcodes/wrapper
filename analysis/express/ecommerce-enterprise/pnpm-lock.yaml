@@ -2150,6 +2150,9 @@ importers:
         specifier: ^3.11.0
         version: 3.17.0
     devDependencies:
+      '@types/consul':
+        specifier: ^2.0.0
+        version: 2.0.0
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.11
@@ -8676,6 +8679,13 @@ packages:
     dependencies:
       '@types/node': 20.19.11
 
+  /@types/consul@2.0.0:
+    resolution: {integrity: sha512-IyvUaJNOrU+X/Zh46/zwwUPHOEULuC4zod8KNUDElBqN8d9XwtPdyvEeHBZ/HPmkWN9EqR4KbfnzQuRLlWt9+Q==}
+    deprecated: This is a stub types definition. consul provides its own type definitions, so you do not need this installed.
+    dependencies:
+      consul: 0.40.0
+    dev: true
+
   /@types/cookiejar@2.1.5:
     resolution: {integrity: sha512-he+DHOWReW0nghN24E1WUqM0efK4kI9oTqDm6XmK8ZPe2djZ90BSNdGnIyCLzCPw7/pogPlGbzI2wHGGmi4O/Q==}
 
@@ -11231,7 +11241,6 @@ packages:
     deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     dependencies:
       papi: 0.29.1
-    dev: false
 
   /content-disposition@0.5.4:
     resolution: {integrity: sha512-FveZTNuGw04cxlAiWbzi6zTAL/lhehaWbTtgluJh4/E95DqMwTmha3KZN1aAWA8cFIhHzMZUvLevkw5Rqk+tSQ==}
@@ -17684,7 +17693,6 @@ packages:
   /papi@0.29.1:
     resolution: {integrity: sha512-Y9ipSMfWuuVFO3zY9PlxOmEg+bQ7CeJ28sa9/a0veYNynLf9fwjR3+3fld5otEy7okUaEOUuCHVH62MyTmACXQ==}
     deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
-    dev: false
 
   /param-case@2.1.1:
     resolution: {integrity: sha512-eQE845L6ot89sk2N8liD8HAuH4ca6Vvr7VWAWwt7+kvvG5aBcPmmphQ68JsEG2qa9n1TykS2DLeMt363AAH8/w==}

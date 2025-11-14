@@ -1,0 +1,51 @@
+---
+alwaysApply: false
+---
+
+# Ownership and Review Process
+
+Standards for code ownership, review routing, and pull request expectations.
+
+## Code Ownership
+
+1. Use CODEOWNERS file to route reviews to maintainers and principal engineers.
+2. Each package must list owners in CODEOWNERS file.
+3. Ownership implies accountability for quality, releases, and maintenance.
+4. Owners are responsible for reviewing changes and maintaining package health.
+
+## Review Triggers
+
+1. Large diffs above threshold (e.g., 500+ lines) require principal engineer review.
+2. Breaking changes require design review before code implementation.
+3. Security-sensitive changes require security review from security team.
+4. Architectural changes require architecture review and ADR updates.
+
+## Pull Request Expectations
+
+1. **Scope**: PRs are focused and limited to a single feature or fix.
+2. **Commits**: Commits are descriptive with clear messages explaining what and why.
+3. **Checklists**: PR template checklists must be completed before review.
+4. **Linked Issues**: Link related issues and ADRs where applicable.
+5. **Description**: PR description explains context, approach, and testing.
+
+## Review Process
+
+1. All PRs require at least one approval from code owner.
+2. Principal engineer approval required for breaking changes and large diffs.
+3. Security review required for authentication, authorization, and data handling changes.
+4. CI checks must pass before approval and merge.
+
+## Ownership Responsibilities
+
+1. Maintain code quality and test coverage.
+2. Review and approve changes to owned packages.
+3. Respond to issues and support requests.
+4. Plan and execute releases for owned packages.
+5. Update documentation and examples.
+
+## Review Best Practices
+
+1. Review for correctness, clarity, and adherence to standards.
+2. Request changes when standards are not met or clarity is insufficient.
+3. Approve when code meets quality standards and is ready for production.
+4. Provide constructive feedback and suggestions for improvement.

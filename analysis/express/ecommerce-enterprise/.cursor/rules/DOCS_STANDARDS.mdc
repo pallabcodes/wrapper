@@ -1,0 +1,52 @@
+---
+alwaysApply: false
+---
+
+# Documentation Standards
+
+Standards for package documentation, examples, and maintaining documentation quality.
+
+## Required Sections Per Package
+
+1. **Overview and Goals**: Clear description of package purpose and use cases.
+2. **Public API with Types**: Complete API reference with TypeScript types.
+3. **Quick Start**: Minimal example showing basic usage.
+4. **Configuration and Defaults**: All configuration options with defaults and descriptions.
+5. **Limits and Caveats**: Known limitations, edge cases, and important notes.
+6. **Security Notes**: Security considerations and best practices.
+7. **Changelog**: Version history with migration notes when relevant.
+
+## Documentation Quality
+
+1. Examples must compile and reflect real-world usage patterns.
+2. Code samples follow project style: Java or Golang examples, no Python.
+3. Documentation is concise, actionable, and scannable.
+4. Use code blocks with syntax highlighting for all code examples.
+
+## Documentation Parity
+
+1. Examples should be covered by smoke tests where possible.
+2. Keep documentation updated with code changes in the same pull request.
+3. Use review checklist to verify documentation completeness.
+4. Link to related documentation and ADRs where applicable.
+
+## API Documentation
+
+1. Document all public methods, classes, and interfaces with JSDoc.
+2. Include parameter types, return types, and exception documentation.
+3. Provide usage examples for complex APIs.
+4. Document error codes and error response formats.
+
+## Migration and Breaking Changes
+
+1. Document breaking changes with migration guides.
+2. Provide before/after examples for API changes.
+3. Link to related issues and pull requests.
+4. Include deprecation notices with clear timelines.
+
+## Keeping Documentation Current
+
+1. Review documentation during code reviews.
+2. Update documentation when APIs change.
+3. Remove outdated examples and references.
+4. Validate documentation examples compile and run.

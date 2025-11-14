@@ -73,7 +73,9 @@ export class MeshGatewayService {
       const duration = (Date.now() - startTime) / 1000;
       this.metrics.recordServiceCall(options.serviceName, options.method || 'GET', 'error', duration);
       
-      this.logger.error(`Service call failed: ${error.message}`, error.stack);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Service call failed: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -85,13 +87,18 @@ export class MeshGatewayService {
   ): Promise<T> {
     const url = `${instance.protocol}://${instance.host}:${instance.port}${options.endpoint}`;
     
-    const requestConfig = {
+    const requestConfig: {
+      method: string;
+      url: string;
+      timeout: number;
+      headers: Record<string, string>;
+    } = {
       method: options.method || 'GET',
       url,
       timeout: options.timeout || 5000,
       headers: {
         'Content-Type': 'application/json',
-        ...options.headers,
+        ...(options.headers || {}),
       },
     };
 

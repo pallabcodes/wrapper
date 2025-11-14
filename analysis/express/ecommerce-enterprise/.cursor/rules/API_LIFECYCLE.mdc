@@ -1,0 +1,79 @@
+---
+alwaysApply: false
+---
+
+# API Lifecycle and Release Management
+
+Standards for API versioning, deprecation, release management, and change documentation.
+
+## API Versioning
+
+1. Public APIs are versioned using semantic versioning (major.minor.patch).
+2. Changes categorized as major (breaking), minor (additive), or patch (bug fixes).
+3. Backward compatibility required for minor and patch releases.
+4. Additive options and new types preferred over breaking changes.
+
+## Versioning Strategy
+
+1. Follow semantic versioning: major for breaking changes, minor for additive features, patch for bug fixes.
+2. Public API changes that break compatibility require a major version bump.
+3. Additive features and backward-compatible changes use a minor version.
+4. Bug fixes and internal improvements use a patch version.
+
+## Deprecation Flow
+
+1. Mark deprecated APIs with clear replacement path and timeline in changelog.
+2. Deprecate in documentation and code with `@deprecated` annotations.
+3. Maintain deprecated APIs for at least two minor versions before removal.
+4. Remove deprecated items only in a major version release.
+5. Provide migration examples and clear upgrade paths.
+
+## API Review Criteria
+
+1. API surface must be minimal and consistent across endpoints.
+2. Names must be explicit, predictable, and follow RESTful conventions.
+3. Types must be strong, discoverable, and well-documented.
+4. Public API types must be intentional and minimal.
+
+## Documentation Requirements
+
+1. Update API documentation on every change in the same pull request.
+2. Provide examples for new features and endpoints.
+3. Note breaking changes and migration steps in changelog.
+4. Include request/response schemas and error codes.
+
+## Changelog Management
+
+1. Maintain a changelog per package with sections: Added, Changed, Fixed, Removed, Deprecated, Security.
+2. Link to related issues and pull requests in changelog entries.
+3. Keep entries concise, actionable, and user-focused.
+4. Update changelog in the same PR that introduces changes.
+
+## Release Checklist
+
+1. All CI checks pass: typecheck, lint, tests, build, security scans.
+2. Documentation and examples updated and reviewed.
+3. Version bump and changelog prepared and reviewed.
+4. Tags and release notes created with clear descriptions.
+5. Breaking changes documented with migration guides.
+
+## Release Process
+
+1. Version bumps committed in dedicated release PRs.
+2. Release tags follow semantic versioning: `v1.2.3`.
+3. Release notes include summary of changes and upgrade instructions.
+4. Breaking changes require design review before implementation.
+
+## Backward Compatibility
+
+1. Prioritize backward compatibility for all public APIs.
+2. Use expand-and-contract pattern for schema changes.
+3. Support multiple API versions simultaneously when needed.
+4. Document compatibility guarantees and support windows.
+
+## API Design Principles
+
+1. RESTful conventions: proper HTTP methods, status codes, and resource naming.
+2. Consistent error response format across all endpoints.
+3. Pagination for list endpoints using cursor-based or offset-based patterns.
+4. Rate limiting and quota management for public APIs.

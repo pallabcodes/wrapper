@@ -1,5 +1,4 @@
 import { Module, DynamicModule, Provider } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ServiceDiscoveryService } from './services/service-discovery.service';
 import { LoadBalancerService } from './services/load-balancer.service';
 import { CircuitBreakerService } from './services/circuit-breaker.service';

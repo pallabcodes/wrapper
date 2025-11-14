@@ -1,0 +1,79 @@
+---
+alwaysApply: false
+---
+
+# Team Context and Client Expectations
+
+Context about the team environment, client expectations, and working norms for delivering Google production-grade quality.
+
+## Environment and Workflow
+
+1. Monorepo-first workflows with pnpm and turbo. Always run services from the root directory.
+2. Production deploys use a single root command: `npm run deploy:production`.
+3. Development uses standard start scripts: `npm start`, `pnpm dev`, or `npm run dev:local` from root.
+4. Never run services with `node index.js` during development.
+
+## Role and Ownership
+
+1. Role: SDE-3 backend engineer delivering to top-tier product organizations.
+2. Accountability: Type safety, developer experience, production readiness, and scalability across packages.
+3. End-to-end ownership: Design, implementation, tests, documentation, and build integrity.
+4. Use CODEOWNERS to route reviews to maintainers and principal engineers.
+
+## Client Profile
+
+1. Partners include Google, Stripe, PayPal, Airbnb, and similar top-tier product companies.
+2. Deliverables must meet internal-team standards and be production-worthy on day one.
+3. Every line of code reviewed by principal engineers for clarity, rigor, and maintainability.
+4. Code must feel native to enterprise internal standards.
+
+## Quality Expectations
+
+1. Production-level quality: Performance, reliability, security, and observability considered from day one.
+2. Zero type errors and no `any` in published code. Strict TypeScript mode everywhere.
+3. Readability, maintainability, and debuggability prioritized. Mean time to diagnose under 30 minutes.
+4. Security reviews: No secrets in code, strong token practices, secure cookie defaults.
+5. Backward compatibility prioritized. Deprecate before removing.
+
+## Communication and Delivery
+
+1. Commit and PR messages: Clear, scoped, and justify decisions with context.
+2. Documentation: Concise, actionable, examples reflect real-world usage.
+3. Changes ship with CI gates: typecheck, lint, tests, build, security scans.
+4. PR scope: Focused and limited. Large diffs require principal review.
+
+## Style and Examples
+
+1. Code examples: Java or Golang only. Never use Python.
+2. No hyphens or emoji in code, comments, or documentation.
+3. Prefer explicit naming over abbreviations. Avoid one or two-letter identifiers.
+4. Use early returns, shallow nesting, avoid broad try-catch blocks.
+
+## Decision Principles
+
+1. Favor strong typing over cleverness. Prefer clarity over brevity.
+2. Prefer composition over inheritance. Isolate side effects behind interfaces.
+3. Keep package boundaries clean. No deep imports across internal dists.
+4. Public APIs must be typed, minimal, and discoverable.
+
+## Review Standards
+
+1. Code readability and maintainability prioritized in reviews.
+2. Tests and examples demonstrate real usage patterns.
+3. Request changes when clarity is insufficient or standards are not met.
+4. Breaking changes require design review before code implementation.
+5. Security-sensitive changes require security review.
+
+## Client Fit
+
+1. Public APIs and documentation must feel native to enterprise internal standards.
+2. Defaults are secure and pragmatic. Configuration is explicit and discoverable.
+3. Example integrations demonstrate auth + RBAC together with typed developer experience.
+4. Non-experimental tone and predictable behavior throughout.
+
+## Review Triggers
+
+1. Large diffs above threshold require principal engineer review.
+2. Breaking changes require design review before implementation.
+3. Security-sensitive changes require security review.
+4. PR checklists must be completed before review.

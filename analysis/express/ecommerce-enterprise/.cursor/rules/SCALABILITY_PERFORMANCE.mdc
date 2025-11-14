@@ -1,0 +1,65 @@
+---
+alwaysApply: false
+---
+
+# Scalability and Performance
+
+Performance budgets, optimization patterns, and scalability guidelines for production systems.
+
+## Performance Budgets and Targets
+
+1. Set latency budgets per endpoint: document p50, p95, p99 goals.
+2. Define memory and CPU budgets per service and endpoint.
+3. Define throughput targets and error budgets per endpoint.
+4. Keep allocations minimal on hot paths. Avoid JSON stringify loops in tight flows.
+5. Document performance budgets in service documentation and track in dashboards.
+
+## Async Patterns and I/O
+
+1. Prefer async I/O and avoid blocking CPU on event loop.
+2. Use batching and caching for chatty dependencies.
+3. Avoid synchronous blocking operations in request handlers.
+4. Streaming uses backpressure-aware patterns: Observables or async iterators.
+
+## External Service Calls
+
+1. Make external calls time-bounded with timeouts and retries.
+2. Use circuit breakers for repeated failures.
+3. Apply backpressure in streaming flows to prevent memory issues.
+4. Use connection pooling and keep-alive for HTTP clients.
+
+## Data Access and Storage
+
+1. Index database queries intentionally. Avoid full table scans.
+2. Avoid N+1 query patterns. Use eager loading or batch queries.
+3. Use idempotency keys for write endpoints when needed.
+4. Prefer pagination or cursoring for large lists. Avoid loading entire datasets.
+
+## Caching Strategies
+
+1. Apply caching where appropriate: frequently accessed, expensive to compute data.
+2. Use cache invalidation strategies to maintain consistency.
+3. Document cache TTLs and invalidation policies.
+4. Monitor cache hit rates and adjust strategies based on metrics.
+
+## Testing and Measurement
+
+1. Add benchmarks for critical utilities when practical.
+2. Load test critical endpoints or flows before release.
+3. Profile under realistic load and capture flame graphs.
+4. Track performance regressions in CI where feasible.
+5. Monitor performance metrics in production dashboards.
+
+## Resource Management
+
+1. Monitor memory usage and garbage collection patterns.
+2. Use object pooling for high-frequency allocations where beneficial.
+3. Clean up resources properly: close connections, clear timers, etc.
+4. Set appropriate resource limits (memory, CPU) for containers/processes.
+
+## Scalability Patterns
+
+1. Design for horizontal scaling: stateless services where possible.
+2. Use message queues for async processing and decoupling.
+3. Implement rate limiting and quota management for public APIs.
+4. Use CDN and edge caching for static assets and API responses.

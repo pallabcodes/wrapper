@@ -17,7 +17,7 @@ export class HealthMonitor {
     }
   }
 
-  async checkServiceHealth(serviceName: string, instances: ServiceInstance[]): Promise<ServiceInstance[]> {
+  async checkServiceHealth(_serviceName: string, instances: ServiceInstance[]): Promise<ServiceInstance[]> {
     const healthChecks = instances.map(async (instance) => {
       const isHealthy = await this.checkHealth(instance);
       return { ...instance, health: isHealthy ? 'healthy' as const : 'unhealthy' as const };

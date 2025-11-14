@@ -11,7 +11,7 @@ export async function bootstrapExpress(): Promise<express.Express> {
     return cachedApp;
   }
 
-  const expressInstance = express();
+  const expressInstance = express.default();
   const adapter = new ExpressAdapter(expressInstance);
   const app = await NestFactory.create(AppModule, adapter as any);
   await app.init();

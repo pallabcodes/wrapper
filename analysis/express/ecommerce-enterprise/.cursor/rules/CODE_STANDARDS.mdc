@@ -1,0 +1,82 @@
+---
+alwaysApply: true
+---
+
+# Code Standards
+
+Mandatory code quality and style standards for production-grade Nest.js code. All code must pass these standards before review.
+
+## Type Safety
+
+1. Zero `any` types in published source code. Use `unknown` with type narrowing or specific interfaces.
+2. Strict TypeScript mode required across all packages. Exact optional property types must be respected.
+3. Public API types must be intentional, minimal, and well-documented.
+4. Use type-only imports when importing types: `import type { ... }`.
+
+## Naming and Structure
+
+1. Descriptive names for all variables, functions, and classes. No single or two-letter names except loop indices.
+2. Exports must be intentional through `src/index.ts` files only. No accidental exports.
+3. One module per file where reasonable. Keep files focused and cohesive.
+4. Avoid abbreviations. Prefer explicit names over cleverness.
+
+## Control Flow
+
+1. Prefer early returns over deep nesting. Maximum nesting depth: 3 levels.
+2. Avoid broad try-catch blocks. Catch only where meaningful error handling exists.
+3. No silent error swallowing. All errors must be logged or propagated with context.
+4. Keep functions short and focused with low cyclomatic complexity.
+
+## Comments and Documentation
+
+1. Only add comments for non-obvious rationale, invariants, or caveats.
+2. Avoid narrative comments that restate code. Code should be self-documenting.
+3. Keep comments concise and actionable.
+4. Document public APIs with JSDoc comments including parameter and return types.
+
+## Imports and Dependencies
+
+1. No deep imports across package internals. Import only from public `src/index.ts`.
+2. Group and order imports consistently: external, internal, types.
+3. No unused exports or unreachable code. Remove dead code immediately.
+4. No redundancy: remove duplicate logic, unify helpers, avoid code duplication.
+
+## Testing Standards
+
+1. Unit tests required for core logic and utilities.
+2. Contract or integration tests for public APIs when practical.
+3. Tests must be deterministic and well-named with structure mirroring code.
+4. Coverage thresholds defined in repo scripts must pass (minimum 85% lines and branches).
+
+## Build and Type Checking
+
+1. Typecheck must pass in CI and locally with zero errors or warnings.
+2. Packages must build with zero errors and warnings.
+3. Artifacts must not import another package's internal dist files.
+4. Lint must pass with no new warnings.
+
+## Error Handling and Diagnosability
+
+1. Use typed errors where practical with clear error hierarchies.
+2. Prefer clear messages and actionable context in all errors.
+3. Mean time to diagnose issues must be under 30 minutes on average.
+4. Use Nest.js Zod helpers for API error formatting when applicable.
+
+## Code Examples Policy
+
+1. Example snippets must be in Java or Golang. Never use Python.
+2. No emoji or hyphens in code, comments, or documentation.
+3. Examples must compile and reflect real-world usage patterns.
+
+## Maintainability Principles
+
+1. Isolate side effects behind interfaces. Keep business logic pure where possible.
+2. Prefer composition over inheritance.
+3. Keep modules small and focused with single responsibility.
+4. Track technical debt in issues with owners and dates.
+
+## Review Criteria
+
+1. Ask: Is this code obvious to a new teammate in three months?
+2. Check naming, error paths, and tests first.
+3. Request changes when clarity is insufficient.

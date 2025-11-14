@@ -9,7 +9,7 @@ export class MeshMetrics {
     circuitBreakerStates: new Map<string, string>(),
   };
 
-  recordServiceCall(serviceName: string, method: string, status: 'success' | 'error', duration: number): void {
+  recordServiceCall(serviceName: string, method: string, status: 'success' | 'error', _duration: number): void {
     const key = `${serviceName}:${method}`;
     const current = this.metrics.serviceCalls.get(key) || { success: 0, error: 0, total: 0 };
     
