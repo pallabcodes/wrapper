@@ -1,0 +1,48 @@
+Hexagonal Architecture Structure
+================================
+
+src/
+├── domain/                    ← CORE: Pure business logic (zero dependencies)
+│   ├── entities/              ← Business objects (User, Order)
+│   ├── value-objects/         ← Immutable values (Email, Money)
+│   ├── domain-services/       ← Complex business logic
+│   └── ports/                 ← Interfaces (what we need)
+│       ├── input/             ← Use case interfaces
+│       └── output/            ← Repository/service interfaces
+│
+├── application/               ← USE CASES: Orchestration layer
+│   ├── use-cases/             ← Business workflows (one per file)
+│   ├── dto/                   ← Data Transfer Objects
+│   ├── mappers/               ← Convert Entity ↔ DTO ↔ Model
+│   └── services/              ← Orchestrate multiple use cases
+│
+├── infrastructure/            ← EXTERNAL WORLD: Implementations
+│   ├── persistence/           ← Database adapters (Sequelize)
+│   ├── http/                  ← HTTP clients (external APIs)
+│   ├── messaging/             ← Queue adapters (BullMQ)
+│   ├── file-system/           ← File storage (local, S3)
+│   └── external/              ← Third-party services (Stripe)
+│
+├── presentation/              ← API LAYER: User interaction
+│   ├── http/                  ← REST controllers
+│   ├── websocket/             ← WebSocket gateways
+│   └── dto/                   ← API request/response DTOs
+│
+└── common/                    ← SHARED: Utilities
+    ├── bootstrap/             ← Application startup
+    ├── config/                ← Configuration
+    ├── decorators/            ← Custom decorators
+    ├── filters/               ← Exception filters
+    ├── guards/                ← Auth guards
+    ├── interceptors/          ← Request/response interceptors
+    ├── logger/                ← Logging utilities
+    ├── pipes/                 ← Validation pipes
+    └── utils/                 ← Helper functions
+
+Dependency Flow:
+================
+Presentation → Application → Domain
+Infrastructure → Application → Domain
+
+Key Rule: Dependencies point INWARD toward Domain.
+Domain has ZERO dependencies.

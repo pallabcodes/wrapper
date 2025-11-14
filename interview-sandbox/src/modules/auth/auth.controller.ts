@@ -20,11 +20,15 @@ import { AuthGuard } from '@nestjs/passport';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Public } from '@common/decorators/public.decorator';
+import { AuthResponseMapper } from './mappers/auth-response.mapper';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly responseMapper: AuthResponseMapper,
+  ) {}
 
   @Public()
   @Post('register')
@@ -33,7 +37,8 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 409, description: 'User already exists' })
   async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+    const result = await this.authService.register(registerDto);
+    return this.responseMapper.toCreateResponse(result);
   }
 
   @Public()
@@ -43,17 +48,23 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+    const result = await this.authService.login(loginDto);
+    return this.responseMapper.toLoginResponse(result);
   }
 
   @Public()
   @Post('verify-email')
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.OK) // Success response: 200 OK
+  // Swagger documentation only (does NOT control actual HTTP status codes):
   @ApiOperation({ summary: 'Verify email with OTP' })
   @ApiResponse({ status: 200, description: 'Email verified successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired OTP' }) // Documented for Swagger, but actual 400 comes from service throwing BadRequestException
   async verifyEmail(@Body() verifyOtpDto: VerifyOtpDto) {
-    return this.authService.verifyEmail(verifyOtpDto);
+    // Controller only handles SUCCESS path
+    // All error handling (400, 404, etc.) happens in authService.verifyEmail()
+    // If service throws BadRequestException/NotFoundException, NestJS automatically sends 400/404
+    const result = await this.authService.verifyEmail(verifyOtpDto);
+    return this.responseMapper.toSuccessMessageResponse('Email verified successfully', result);
   }
 
   @Public()
@@ -62,7 +73,8 @@ export class AuthController {
   @ApiOperation({ summary: 'Resend OTP code' })
   @ApiResponse({ status: 200, description: 'OTP sent successfully' })
   async resendOtp(@Body() resendOtpDto: ResendOtpDto) {
-    return this.authService.resendOtp(resendOtpDto);
+    await this.authService.resendOtp(resendOtpDto);
+    return this.responseMapper.toSuccessMessageResponse('OTP sent successfully');
   }
 
   @Public()
@@ -71,7 +83,8 @@ export class AuthController {
   @ApiOperation({ summary: 'Request password reset OTP' })
   @ApiResponse({ status: 200, description: 'Password reset OTP sent if email exists' })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(forgotPasswordDto);
+    await this.authService.forgotPassword(forgotPasswordDto);
+    return this.responseMapper.toSuccessMessageResponse('Password reset OTP sent if email exists');
   }
 
   @Public()
@@ -81,7 +94,8 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Password reset successfully' })
   @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    return this.authService.resetPassword(resetPasswordDto);
+    await this.authService.resetPassword(resetPasswordDto);
+    return this.responseMapper.toSuccessMessageResponse('Password reset successfully');
   }
 
   @Public()
@@ -91,7 +105,8 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Tokens refreshed successfully' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
-    return this.authService.refreshToken(refreshTokenDto);
+    const tokens = await this.authService.refreshToken(refreshTokenDto);
+    return this.responseMapper.toRefreshTokenResponse(tokens);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -101,7 +116,8 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'User profile retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getCurrentUser(@CurrentUser() user: { id: number }) {
-    return this.authService.getCurrentUser(user.id);
+    const result = await this.authService.getCurrentUser(user.id);
+    return this.responseMapper.toReadResponse(result);
   }
 
   @Public()
@@ -121,14 +137,14 @@ export class AuthController {
   async googleAuthCallback(@CurrentUser() user: { id: number; email: string; name: string }) {
     // Generate tokens for the authenticated user
     const tokens = await this.authService.generateTokensForUser(user.id, user.email);
-    return {
+    return this.responseMapper.toOAuthResponse({
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
       },
       tokens,
-    };
+    });
   }
 
   @Public()
@@ -148,14 +164,14 @@ export class AuthController {
   async facebookAuthCallback(@CurrentUser() user: { id: number; email: string; name: string }) {
     // Generate tokens for the authenticated user
     const tokens = await this.authService.generateTokensForUser(user.id, user.email);
-    return {
+    return this.responseMapper.toOAuthResponse({
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
       },
       tokens,
-    };
+    });
   }
 }
 

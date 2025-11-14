@@ -14,13 +14,17 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody
 import { FileService } from './file.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { FileResponseMapper } from './mappers/file-response.mapper';
 
 @ApiTags('Files')
 @Controller('files')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class FileController {
-  constructor(private readonly fileService: FileService) {}
+  constructor(
+    private readonly fileService: FileService,
+    private readonly responseMapper: FileResponseMapper,
+  ) {}
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
@@ -43,14 +47,16 @@ export class FileController {
     @CurrentUser() user: { id: number },
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.fileService.uploadFile(user.id, file);
+    const result = await this.fileService.uploadFile(user.id, file);
+    return this.responseMapper.toCreateResponse(result);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get user files' })
   @ApiResponse({ status: 200, description: 'Files retrieved successfully' })
   async getUserFiles(@CurrentUser() user: { id: number }) {
-    return this.fileService.getUserFiles(user.id);
+    const result = await this.fileService.getUserFiles(user.id);
+    return this.responseMapper.toReadResponse(result);
   }
 
   @Delete(':id')
@@ -61,7 +67,8 @@ export class FileController {
     @CurrentUser() user: { id: number },
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.fileService.deleteFile(user.id, id);
+    const result = await this.fileService.deleteFile(user.id, id);
+    return this.responseMapper.toDeleteResponse(result || id);
   }
 }
 

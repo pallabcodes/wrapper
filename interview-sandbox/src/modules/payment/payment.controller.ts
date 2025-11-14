@@ -13,11 +13,15 @@ import { PaymentService } from './payment.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
+import { PaymentResponseMapper } from './mappers/payment-response.mapper';
 
 @ApiTags('Payments')
 @Controller('payments')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(
+    private readonly paymentService: PaymentService,
+    private readonly responseMapper: PaymentResponseMapper,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post('create')
@@ -30,11 +34,12 @@ export class PaymentController {
     @CurrentUser() user: { id: number },
     @Body() body: { amount: number; currency?: string },
   ) {
-    return this.paymentService.createPayment(
+    const result = await this.paymentService.createPayment(
       user.id,
       body.amount,
       body.currency || 'USD',
     );
+    return this.responseMapper.toCreateResponse(result);
   }
 
   @Public()
@@ -46,7 +51,8 @@ export class PaymentController {
     @Body() payload: unknown,
     @Headers('stripe-signature') signature: string,
   ) {
-    return this.paymentService.handleWebhook(payload, signature);
+    const result = await this.paymentService.handleWebhook(payload, signature);
+    return this.responseMapper.toWebhookResponse(result);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -55,7 +61,8 @@ export class PaymentController {
   @ApiOperation({ summary: 'Get payment history' })
   @ApiResponse({ status: 200, description: 'Payment history retrieved successfully' })
   async getPaymentHistory(@CurrentUser() user: { id: number }) {
-    return this.paymentService.getPaymentHistory(user.id);
+    const result = await this.paymentService.getPaymentHistory(user.id);
+    return this.responseMapper.toReadResponse(result);
   }
 }
 

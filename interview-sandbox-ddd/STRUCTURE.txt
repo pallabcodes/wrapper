@@ -1,0 +1,65 @@
+Domain-Driven Design (DDD) Structure
+=====================================
+
+src/
+├── shared/                  ← SHARED KERNEL: Common code across contexts
+│   ├── domain/             ← Shared domain concepts
+│   ├── infrastructure/      ← Shared infrastructure
+│   └── kernel/             ← Shared utilities
+│
+├── contexts/                ← BOUNDED CONTEXTS: Separate business domains
+│   ├── auth/               ← Authentication & Authorization
+│   │   ├── domain/
+│   │   │   ├── aggregates/ ← Aggregates (UserAggregate)
+│   │   │   ├── entities/   ← Entities (Otp, SocialAuth)
+│   │   │   ├── value-objects/ ← Value Objects (Email, Password)
+│   │   │   ├── domain-services/ ← Domain Services
+│   │   │   ├── events/     ← Domain Events
+│   │   │   └── repositories/ ← Repository interfaces
+│   │   ├── application/
+│   │   │   ├── use-cases/  ← Use cases (RegisterUser, LoginUser)
+│   │   │   ├── dto/        ← Data Transfer Objects
+│   │   │   ├── mappers/    ← Entity ↔ DTO mappers
+│   │   │   └── services/   ← Application Services
+│   │   ├── infrastructure/
+│   │   │   ├── persistence/ ← Database implementations
+│   │   │   ├── external/   ← External service adapters
+│   │   │   └── messaging/   ← Event handlers
+│   │   └── presentation/
+│   │       ├── http/       ← REST controllers
+│   │       ├── dto/        ← API DTOs
+│   │       └── websocket/   ← WebSocket gateways
+│   │
+│   ├── user/               ← User Management
+│   ├── file/               ← File Management
+│   ├── payment/            ← Payment Processing
+│   └── notification/       ← Notifications
+│
+└── common/                  ← CROSS-CUTTING CONCERNS
+    ├── bootstrap/           ← Application startup
+    ├── config/             ← Configuration
+    ├── decorators/          ← Custom decorators
+    ├── filters/             ← Exception filters
+    ├── guards/              ← Auth guards
+    ├── interceptors/      ← Interceptors
+    └── logger/             ← Logging
+
+Key Concepts:
+=============
+- Bounded Contexts: Separate domains (auth, user, payment)
+- Aggregates: Groups of entities (UserAggregate contains User + Otps)
+- Entities: Objects with identity (User, Otp, Payment)
+- Value Objects: Immutable values (Email, Password, Money)
+- Domain Events: Important happenings (UserRegisteredEvent)
+- Repositories: Data access interfaces (IUserRepository)
+
+Dependency Flow:
+================
+Presentation → Application → Domain
+Infrastructure → Application → Domain
+
+Communication Between Contexts:
+================================
+- Domain Events (recommended)
+- Shared Kernel (sparingly)
+- Anti-Corruption Layer (translation)

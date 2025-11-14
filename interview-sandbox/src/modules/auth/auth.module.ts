@@ -10,6 +10,7 @@ import { User } from '../../database/models/user.model';
 import { Otp } from '../../database/models/otp.model';
 import { SocialAuth } from '../../database/models/social-auth.model';
 import { createAuthModules } from '@common/utils/module-helpers';
+import { AuthResponseMapper } from './mappers/auth-response.mapper';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { createAuthModules } from '@common/utils/module-helpers';
     ...createAuthModules(), // JWT + Passport in one line
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, JwtStrategy, GoogleStrategy, FacebookStrategy],
+  providers: [AuthService, AuthRepository, AuthResponseMapper, JwtStrategy, GoogleStrategy, FacebookStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}

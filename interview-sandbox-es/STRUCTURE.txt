@@ -1,0 +1,78 @@
+Event Sourcing Architecture Structure
+====================================
+
+src/
+├── shared/                  ← SHARED: Common code
+│   ├── domain/             ← Shared domain concepts
+│   ├── infrastructure/      ← Shared infrastructure
+│   └── kernel/             ← Shared utilities
+│
+├── events/                  ← EVENT DEFINITIONS: All domain events
+│   ├── auth/               ← Auth-related events
+│   │   ├── user-created.event.ts
+│   │   ├── user-email-changed.event.ts
+│   │   └── user-password-changed.event.ts
+│   ├── user/               ← User-related events
+│   ├── file/               ← File-related events
+│   ├── payment/            ← Payment-related events
+│   └── notification/       ← Notification-related events
+│
+├── modules/                 ← FEATURE MODULES: Organized by feature
+│   ├── auth/               ← Authentication module
+│   │   ├── domain/         ← Domain layer
+│   │   │   └── aggregates/ ← Aggregates (rebuild from events)
+│   │   ├── application/     ← Application layer
+│   │   │   ├── commands/   ← Commands (produce events)
+│   │   │   └── queries/    ← Queries (read projections)
+│   │   ├── infrastructure/  ← Infrastructure layer
+│   │   │   ├── event-store/ ← Event store implementation
+│   │   │   ├── projections/ ← Projection builders
+│   │   │   └── read-models/ ← Read model repositories
+│   │   └── presentation/   ← Presentation layer
+│   │       └── http/       ← REST controllers
+│   │
+│   ├── user/               ← User Management module
+│   ├── file/               ← File Management module
+│   ├── payment/            ← Payment Processing module
+│   └── notification/       ← Notification module
+│
+├── event-store/             ← EVENT STORE: Central event storage
+│   ├── event-store.service.ts ← Event store service
+│   ├── event-store.repository.ts ← Event store repository
+│   ├── event-stream.ts      ← Event stream implementation
+│   └── snapshot.service.ts  ← Snapshot service
+│
+├── projections/              ← PROJECTIONS: Read models from events
+│   ├── handlers/            ← Projection handlers
+│   └── read-models/         ← Read model definitions
+│
+└── common/                   ← CROSS-CUTTING CONCERNS
+    ├── bootstrap/           ← Application startup
+    ├── config/             ← Configuration
+    ├── decorators/          ← Custom decorators
+    ├── filters/             ← Exception filters
+    ├── guards/              ← Auth guards
+    ├── interceptors/        ← Interceptors
+    └── logger/             ← Logging
+
+Key Concepts:
+=============
+- Events: Immutable records of what happened
+- Event Store: Database that stores all events
+- Aggregates: Entities rebuilt from events
+- Commands: Produce events
+- Projections: Build read models from events
+- Snapshots: Performance optimization
+
+Event Flow:
+===========
+Command → Aggregate → Events → Event Store → Projections → Read Models
+
+Benefits:
+=========
+- Complete history
+- Time travel
+- Audit trail
+- Debugging
+- Flexibility
+

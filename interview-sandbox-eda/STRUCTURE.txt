@@ -1,0 +1,83 @@
+Event-Driven Architecture (EDA) Structure
+========================================
+
+src/
+├── shared/                  ← SHARED: Common code
+│   ├── domain/             ← Shared domain concepts
+│   ├── infrastructure/      ← Shared infrastructure
+│   └── kernel/             ← Shared utilities
+│
+├── events/                  ← EVENT DEFINITIONS: All events
+│   ├── auth/               ← Auth-related events
+│   │   ├── user-registered.event.ts
+│   │   ├── user-logged-in.event.ts
+│   │   └── otp-verified.event.ts
+│   ├── user/               ← User-related events
+│   ├── file/               ← File-related events
+│   ├── payment/            ← Payment-related events
+│   └── notification/       ← Notification-related events
+│
+├── modules/                 ← FEATURE MODULES: Organized by feature
+│   ├── auth/               ← Authentication module
+│   │   ├── domain/         ← Domain layer
+│   │   ├── application/    ← Application layer (publishes events)
+│   │   │   ├── commands/   ← Commands
+│   │   │   ├── queries/    ← Queries
+│   │   │   └── services/   ← Application services
+│   │   ├── infrastructure/  ← Infrastructure layer
+│   │   │   ├── persistence/ ← Database adapters
+│   │   │   ├── external/   ← External service adapters
+│   │   │   └── event-handlers/ ← Event handlers (consumers)
+│   │   └── presentation/   ← Presentation layer
+│   │       ├── http/       ← REST controllers
+│   │       └── dto/        ← API DTOs
+│   │
+│   ├── user/               ← User Management module
+│   ├── file/               ← File Management module
+│   ├── payment/            ← Payment Processing module
+│   └── notification/       ← Notification module
+│
+├── event-bus/               ← EVENT BUS: Central event system
+│   ├── event-bus.service.ts ← Event bus implementation
+│   ├── event-handler.decorator.ts ← @EventHandler decorator
+│   ├── event-publisher.service.ts ← Event publisher
+│   └── event-store/         ← Event store (optional)
+│
+├── messaging/               ← MESSAGING INFRASTRUCTURE
+│   ├── queues/              ← Message queues (BullMQ, RabbitMQ)
+│   ├── streams/             ← Event streams (Kafka, Redis Streams)
+│   └── adapters/            ← Messaging adapters
+│
+└── common/                   ← CROSS-CUTTING CONCERNS
+    ├── bootstrap/           ← Application startup
+    ├── config/             ← Configuration
+    ├── decorators/          ← Custom decorators
+    ├── filters/             ← Exception filters
+    ├── guards/              ← Auth guards
+    ├── interceptors/        ← Interceptors
+    └── logger/             ← Logging
+
+Key Concepts:
+=============
+- Events: Something important that happened
+- Event Producers: Services that publish events
+- Event Consumers: Services that listen to events
+- Event Bus: Central system that routes events
+- Event Handlers: React to events
+
+Event Flow:
+===========
+Producer → Event Bus → Consumers (Handlers)
+
+Communication:
+==============
+Modules communicate via events, not direct calls
+
+Benefits:
+=========
+- Loose coupling
+- Scalability
+- Asynchronous processing
+- Resilience
+- Flexibility
+
