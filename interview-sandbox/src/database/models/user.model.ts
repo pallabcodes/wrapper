@@ -9,6 +9,8 @@ import {
   UpdatedAt,
   HasMany,
 } from 'sequelize-typescript';
+// Circular dependency prevention: Arrow functions in decorators defer evaluation
+// e.g., @HasMany(() => Otp) evaluates Otp lazily, preventing circular imports
 import { Otp } from './otp.model';
 import { SocialAuth } from './social-auth.model';
 import { File } from './file.model';

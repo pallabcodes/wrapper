@@ -34,5 +34,19 @@ export default () => ({
     name: process.env.APP_NAME || 'Interview Sandbox API',
     env: process.env.NODE_ENV || 'development',
   },
+  cors: {
+    origin: process.env.CORS_ORIGIN || '*',
+    credentials: process.env.CORS_CREDENTIALS === 'true',
+  },
+  logger: {
+    level: process.env.LOG_LEVEL || 'info',
+    enableFileLogging: process.env.LOG_FILE_ENABLED !== 'false',
+    enableConsoleLogging: process.env.LOG_CONSOLE_ENABLED !== 'false',
+    logDirectory: process.env.LOG_DIRECTORY || 'logs',
+    maxFiles: process.env.LOG_MAX_FILES || '14d', // Keep logs for 14 days by default
+    maxSize: process.env.LOG_MAX_SIZE || '20m',
+    enableScheduledDeletion: process.env.LOG_SCHEDULED_DELETION === 'true', // Opt-out by default
+    deletionSchedule: process.env.LOG_DELETION_SCHEDULE || '1w', // 1 week, 1 month, etc.
+  },
 });
 

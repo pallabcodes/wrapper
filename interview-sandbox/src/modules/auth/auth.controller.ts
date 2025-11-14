@@ -17,9 +17,9 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Public } from '../../common/decorators/public.decorator';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { Public } from '@common/decorators/public.decorator';
 
 @ApiTags('Authentication')
 @Controller('auth')

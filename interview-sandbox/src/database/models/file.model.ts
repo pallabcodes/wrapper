@@ -9,6 +9,7 @@ import {
   BelongsTo,
   CreatedAt,
 } from 'sequelize-typescript';
+// Circular dependency prevention: Arrow function in @BelongsTo(() => User) defers evaluation
 import { User } from './user.model';
 
 @Table({

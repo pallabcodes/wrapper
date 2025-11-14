@@ -4,14 +4,19 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
-  Logger,
+  Inject,
+  Optional,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiResponse, ValidationError } from '../dto/api-response.dto';
+import { LoggerService } from '../logger/logger.service';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(HttpExceptionFilter.name);
+  constructor(
+    @Optional() @Inject(LoggerService)
+    private readonly logger?: LoggerService,
+  ) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -49,10 +54,21 @@ export class HttpExceptionFilter implements ExceptionFilter {
       errors,
     };
 
-    this.logger.error(
-      `${request.method} ${request.url} - ${status} - ${message}`,
-      exception instanceof Error ? exception.stack : undefined,
-    );
+    // Properly log error with stack trace
+    if (this.logger) {
+      if (exception instanceof Error) {
+        this.logger.logError(exception, `${request.method} ${request.url} - ${status} - ${message}`, {
+          method: request.method,
+          url: request.url,
+          status,
+        });
+      } else {
+        this.logger.error(`${request.method} ${request.url} - ${status} - ${message}`, undefined, 'HttpExceptionFilter');
+      }
+    } else {
+      // Fallback to console if logger not available
+      console.error(`${request.method} ${request.url} - ${status} - ${message}`, exception instanceof Error ? exception.stack : '');
+    }
 
     response.status(status).json(errorResponse);
   }

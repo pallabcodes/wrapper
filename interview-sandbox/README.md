@@ -38,11 +38,20 @@ A production-ready NestJS application built for a 2-hour interview assignment, d
 
 ## Prerequisites
 
+### For Docker Mode (Recommended)
 - Node.js >= 18.0.0
-- MySQL >= 8.0
+- Docker & Docker Compose
+- npm or yarn
+
+### For Standalone Mode
+- Node.js >= 18.0.0
+- MySQL >= 8.0 (installed locally)
+- Redis >= 7.0 (optional, only needed for BullMQ/background jobs)
 - npm or yarn
 
 ## Installation
+
+### Quick Start with Docker (Recommended)
 
 1. Clone the repository:
 ```bash
@@ -55,24 +64,84 @@ cd interview-sandbox
 npm install
 ```
 
-3. Set up environment variables:
+3. Run setup script (creates .env file):
 ```bash
-cp .env.example .env
+npm run setup
+```
+
+4. Start everything (Docker services + application):
+```bash
+npm run dev
+```
+
+This will:
+- Start MySQL and Redis containers
+- Wait for services to be ready
+- Start the NestJS application in development mode
+
+### Standalone Mode (Without Docker)
+
+If you prefer to run without Docker using locally installed MySQL and Redis:
+
+1. **Install dependencies:**
+```bash
+npm install
+```
+
+2. **Setup environment:**
+```bash
+npm run setup
+# Edit .env with your local MySQL credentials
+```
+
+3. **Check if services are running:**
+```bash
+npm run check:services
+```
+
+4. **Create database:**
+```bash
+npm run db:create
+```
+
+5. **Start the application:**
+```bash
+npm run start:dev
+```
+
+Or use the all-in-one standalone command:
+```bash
+npm run dev:standalone
+```
+
+**Note:** 
+- MySQL is **required** - the app won't start without it
+- Redis is **optional** - only needed for BullMQ background jobs (email/payment processing)
+- Core features (auth, users, files, payments) work without Redis
+
+### Manual Setup
+
+1. Clone and install dependencies (same as above)
+
+2. Set up environment variables:
+```bash
+npm run setup
+# Or manually: cp .env.example .env
 # Edit .env with your database credentials
 ```
 
-4. Create the database:
-```sql
-CREATE DATABASE interview_db;
-```
-
-5. Run migrations (if available):
+3. Start Docker services (MySQL and Redis):
 ```bash
-# Sequelize will auto-sync models in development
-# For production, use migrations
+npm run docker:up
 ```
 
-6. Start the application:
+4. Create the database:
+```bash
+npm run db:create
+# Or manually: CREATE DATABASE interview_db;
+```
+
+5. Start the application:
 ```bash
 # Development
 npm run start:dev
@@ -81,6 +150,34 @@ npm run start:dev
 npm run build
 npm run start:prod
 ```
+
+### Available Scripts
+
+**Setup & Configuration:**
+- `npm run setup` - Create .env file from template
+- `npm run check:services` - Check if MySQL and Redis are running
+
+**Docker Commands:**
+- `npm run docker:up` - Start MySQL and Redis containers
+- `npm run docker:down` - Stop Docker containers
+- `npm run docker:logs` - View Docker container logs
+
+**Database:**
+- `npm run db:create` - Create the database
+
+**Development:**
+- `npm run dev` - Start Docker services and application (all-in-one, requires Docker)
+- `npm run dev:standalone` - Start application with local MySQL/Redis (standalone mode)
+- `npm run start:dev` - Start application in watch mode
+- `npm run start:debug` - Start application in debug mode
+- `npm run start:prod` - Start production server
+
+**Build & Quality:**
+- `npm run build` - Build for production
+- `npm run test` - Run unit tests
+- `npm run test:e2e` - Run end-to-end tests
+- `npm run lint` - Lint code
+- `npm run format` - Format code
 
 ## Environment Variables
 
@@ -200,23 +297,28 @@ The application handles graceful shutdown:
 - Closes database connections
 - 30-second timeout for forced shutdown
 
-## Development
+## Development Workflow
 
 ```bash
-# Watch mode
-npm run start:dev
+# Start development environment (Docker + app)
+npm run dev
 
-# Build
-npm run build
+# Or start services separately
+npm run docker:up      # Start MySQL and Redis
+npm run db:create      # Create database
+npm run start:dev      # Start app in watch mode
 
-# Production mode
-npm run start:prod
+# Stop services
+npm run docker:down
 
-# Lint
-npm run lint
+# View logs
+npm run docker:logs
 
-# Format
-npm run format
+# Code quality
+npm run lint           # Lint code
+npm run format         # Format code
+npm run test           # Run tests
+npm run test:e2e       # Run e2e tests
 ```
 
 ## License

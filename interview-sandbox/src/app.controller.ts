@@ -19,4 +19,29 @@ export class AppController {
       docs: '/api-docs',
     };
   }
+
+  @Public()
+  @Get('health')
+  @ApiOperation({ summary: 'Health check endpoint' })
+  @ApiResponse({ status: 200, description: 'Service is healthy' })
+  getHealth(): { status: string; timestamp: string; uptime: number } {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    };
+  }
+
+  @Public()
+  @Get('ready')
+  @ApiOperation({ summary: 'Readiness check endpoint' })
+  @ApiResponse({ status: 200, description: 'Service is ready' })
+  @ApiResponse({ status: 503, description: 'Service is not ready' })
+  async getReady(): Promise<{
+    status: string;
+    database: string;
+    timestamp: string;
+  }> {
+    return this.appService.checkReadiness();
+  }
 }
