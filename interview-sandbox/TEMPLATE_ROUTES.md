@@ -1,108 +1,124 @@
-# Template Routes - View HTML Templates
+# Template Routes Reference
 
-## 🌐 Available Template Routes
+This document lists all template routes (EJS views) registered in the application.
 
-All template routes are **GET** endpoints that render HTML forms. The API prefix is `/api`, but template routes are **outside** the API prefix for direct browser access.
+## Public Routes (No Authentication Required)
 
-### Authentication Templates
+### Authentication Pages
 
-| Route | Description | Template File |
-|-------|-------------|---------------|
-| `GET /auth/signup` | Registration/Signup page | `auth/signup.ejs` |
-| `GET /auth/login` | Login page with OAuth buttons | `auth/login.ejs` |
-| `GET /auth/forgot-password` | Password reset request page | `auth/forgot-password.ejs` |
-| `GET /auth/reset-password` | Password reset form (with OTP) | `auth/reset-password.ejs` |
+| Route | Method | Template | Description | Redirects |
+|-------|--------|----------|-------------|-----------|
+| `/auth/login` | GET | `auth/login.ejs` | Login page | - |
+| `/auth/register` | GET | `auth/register.ejs` | Registration page | - |
+| `/auth/signup` | GET | Redirect | Legacy signup route | → `/auth/register` |
+| `/auth/forgot-password` | GET | `auth/forgot-password.ejs` | Forgot password page | - |
+| `/auth/reset-password` | GET | `auth/reset-password.ejs` | Reset password page | - |
+| `/auth/logout` | GET | Redirect | Logout handler (clears cookies) | → `/landing` |
+| `/auth/realtime` | GET | Redirect | Common mistake redirect | → `/realtime` |
 
-### Query Parameters
+### Public Pages
 
-All routes accept query parameters that are passed to templates:
+| Route | Method | Template | Description | Notes |
+|-------|--------|----------|-------------|-------|
+| `/` | GET | HTML snippet | Root endpoint | Client-side auth check, redirects to `/dashboard` or `/landing` |
+| `/landing` | GET | `landing.ejs` | Landing/home page | Public welcome page |
+| `/realtime` | GET | `realtime.ejs` | Realtime features page | Public page showcasing WebSocket features |
+| `/health` | GET | `health.ejs` | Health status page | If `Accept: application/json`, redirects to `/api/health` |
 
-- **Signup**: `?email=user@example.com&name=John` - Pre-fill form fields
-- **Login**: `?email=user@example.com&success=Message` - Pre-fill email, show success message
-- **Forgot Password**: `?email=user@example.com` - Pre-fill email
-- **Reset Password**: `?email=user@example.com` - Pre-fill email field
+### Utility Routes
 
-### Example URLs
+| Route | Method | Response | Description |
+|-------|--------|----------|-------------|
+| `/favicon.ico` | GET | 204 No Content | Prevents 404 errors for favicon requests |
+| `/.well-known/appspecific/com.chrome.devtools.json` | GET | 204 No Content | Chrome DevTools route |
+
+## Protected Routes (Authentication Required)
+
+These routes use `requireAuth` middleware and redirect to `/auth/login` if not authenticated.
+
+### User Pages
+
+| Route | Method | Template | Description | User Data |
+|-------|--------|----------|-------------|-----------|
+| `/dashboard` | GET | `dashboard.ejs` | Main dashboard | `req.user` (from JWT) |
+| `/auth/profile` | GET | `auth/profile.ejs` | User profile page | `req.user` (from JWT) |
+
+### Example CRUD Pages
+
+| Route | Method | Template | Description | User Data |
+|-------|--------|----------|-------------|-----------|
+| `/examples/students` | GET | `examples/students.ejs` | Students CRUD page | `req.user` (from JWT) |
+| `/examples/courses` | GET | `examples/courses.ejs` | Courses CRUD page | `req.user` (from JWT) |
+
+## Authentication Middleware
+
+The `requireAuth` middleware:
+- Checks for JWT token in:
+  1. `Authorization: Bearer <token>` header
+  2. `accessToken` cookie
+  3. `token` query parameter
+- Verifies token validity
+- Attaches `req.user` with `{ id, email, role }` if valid
+- Redirects to `/auth/login?redirect=<originalUrl>` if not authenticated
+- Returns 401 JSON for API requests (`Accept: application/json`)
+
+## Route Organization
+
+All template routes are registered in:
+- **File**: `src/common/bootstrap/app-bootstrap.service.ts`
+- **Method**: `setupTemplateRoutes(expressApp)`
+- **Engine**: EJS (configured in `setupViewEngine()`)
+- **Views Directory**: `src/views/`
+- **Static Assets**: `/assets` → `src/views/assets/`
+
+## Template Structure
 
 ```
-http://localhost:3000/auth/signup
-http://localhost:3000/auth/login
-http://localhost:3000/auth/login?success=Registration successful!
-http://localhost:3000/auth/forgot-password
-http://localhost:3000/auth/reset-password?email=user@example.com
+src/views/
+├── layouts/
+│   └── base.ejs              # Base layout (header, footer)
+├── partials/
+│   ├── header.ejs            # Navigation header
+│   ├── footer.ejs            # Footer
+│   ├── form-input.ejs        # Reusable form input component
+│   └── oauth-buttons.ejs     # Social login buttons
+├── components/
+│   ├── table.ejs             # Reusable table component
+│   └── crud-list.ejs          # Generic CRUD list component
+├── auth/
+│   ├── login.ejs             # Login page
+│   ├── register.ejs          # Registration page
+│   ├── forgot-password.ejs   # Forgot password
+│   ├── reset-password.ejs    # Reset password
+│   └── profile.ejs           # User profile (protected)
+├── examples/
+│   ├── students.ejs          # Students CRUD (protected)
+│   └── courses.ejs           # Courses CRUD (protected)
+├── landing.ejs               # Landing page
+├── realtime.ejs              # Realtime features page
+├── dashboard.ejs              # Dashboard (protected)
+└── health.ejs                 # Health status page
 ```
 
-## 📋 Route Details
+## Quick Reference
 
-### Signup Page
-- **Route**: `GET /auth/signup`
-- **Purpose**: User registration form
-- **Features**: 
-  - Email, password, name fields
-  - Form validation
-  - AJAX submission to `/api/auth/register`
-  - Redirects to login on success
+### Public Routes
+- `/` - Root (client-side redirect)
+- `/landing` - Landing page
+- `/auth/login` - Login
+- `/auth/register` - Register
+- `/auth/forgot-password` - Forgot password
+- `/auth/reset-password` - Reset password
+- `/realtime` - Realtime features
+- `/health` - Health check
 
-### Login Page
-- **Route**: `GET /auth/login`
-- **Purpose**: User authentication
-- **Features**:
-  - Email/password login
-  - Remember me checkbox
-  - OAuth buttons (Google, Facebook)
-  - Forgot password link
-  - Signup link
+### Protected Routes (Require Authentication)
+- `/dashboard` - Dashboard
+- `/auth/profile` - User profile
+- `/examples/students` - Students CRUD
+- `/examples/courses` - Courses CRUD
 
-### Forgot Password Page
-- **Route**: `GET /auth/forgot-password`
-- **Purpose**: Request password reset OTP
-- **Features**:
-  - Email input
-  - AJAX submission to `/api/auth/forgot-password`
-  - Redirects to reset-password on success
-
-### Reset Password Page
-- **Route**: `GET /auth/reset-password`
-- **Purpose**: Reset password with OTP code
-- **Features**:
-  - Email, OTP code, new password fields
-  - Password confirmation
-  - AJAX submission to `/api/auth/reset-password`
-  - Redirects to login on success
-
-## 🎨 Design System Features
-
-All templates include:
-- ✅ **Design Tokens** - CSS custom properties
-- ✅ **Light/Dark Mode** - Theme toggle in header
-- ✅ **Responsive Design** - Mobile-first approach
-- ✅ **Tailwind CSS** - Utility-first styling
-- ✅ **Font Awesome Icons** - Professional icons
-
-## 🚀 Quick Start
-
-1. **Start the server**:
-   ```bash
-   npm run start:dev
-   ```
-
-2. **View templates**:
-   - Open browser: `http://localhost:3000/auth/signup`
-   - Or use any of the routes listed above
-
-3. **Test theme toggle**:
-   - Click the moon/sun icon in the header
-   - Theme preference is saved in localStorage
-
-## 📝 Notes
-
-- All template routes are **public** (no authentication required)
-- Templates use AJAX to submit forms to JSON API endpoints
-- Form submissions go to `/api/auth/*` endpoints (POST routes)
-- Templates are server-side rendered with EJS
-- Design system tokens automatically adapt to light/dark mode
-
----
-
-**Status**: ✅ All routes are ready and accessible!
-
+### Redirects
+- `/auth/signup` → `/auth/register`
+- `/auth/realtime` → `/realtime`
+- `/auth/logout` → `/landing` (after clearing tokens)

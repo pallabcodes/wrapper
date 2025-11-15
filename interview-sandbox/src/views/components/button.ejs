@@ -1,0 +1,126 @@
+<% 
+  // Reusable Button Component
+  // Usage: <%- include('../components/button', {
+  //   type: 'submit',
+  //   variant: 'primary', // 'primary', 'secondary', 'outline', 'ghost', 'danger', 'success'
+  //   size: 'base', // 'sm', 'base', 'lg'
+  //   fullWidth: false,
+  //   disabled: false,
+  //   loading: false,
+  //   icon: 'fas fa-save',
+  //   iconPosition: 'left', // 'left', 'right'
+  //   content: 'Save'
+  // }) %>
+  
+  const buttonType = typeof type !== 'undefined' ? type : 'button';
+  const buttonVariant = typeof variant !== 'undefined' ? variant : 'primary';
+  const buttonSize = typeof size !== 'undefined' ? size : 'base';
+  const buttonFullWidth = typeof fullWidth !== 'undefined' ? fullWidth : false;
+  const buttonDisabled = typeof disabled !== 'undefined' ? disabled : false;
+  const buttonLoading = typeof loading !== 'undefined' ? loading : false;
+  const buttonIcon = typeof icon !== 'undefined' ? icon : '';
+  const buttonIconPosition = typeof iconPosition !== 'undefined' ? iconPosition : 'left';
+  const buttonContent = typeof content !== 'undefined' ? content : 'Button';
+  const buttonId = typeof id !== 'undefined' ? id : '';
+  const buttonClass = typeof className !== 'undefined' ? className : '';
+  const buttonOnclick = typeof onclick !== 'undefined' ? onclick : '';
+  
+  const sizeClasses = {
+    sm: 'px-3 py-1.5 text-sm',
+    base: 'px-4 py-2',
+    lg: 'px-5 py-3 text-lg'
+  };
+  
+  const variantClasses = {
+    primary: {
+      bg: 'var(--color-primary-600)',
+      hover: 'var(--color-primary-700)',
+      active: 'var(--color-primary-800)',
+      text: 'var(--text-inverse)',
+      border: 'var(--color-primary-600)'
+    },
+    secondary: {
+      bg: 'var(--color-neutral-600)',
+      hover: 'var(--color-neutral-700)',
+      active: 'var(--color-neutral-800)',
+      text: 'var(--text-inverse)',
+      border: 'var(--color-neutral-600)'
+    },
+    outline: {
+      bg: 'transparent',
+      hover: 'var(--bg-secondary)',
+      active: 'var(--bg-tertiary)',
+      text: 'var(--color-primary-600)',
+      border: 'var(--color-primary-600)'
+    },
+    ghost: {
+      bg: 'transparent',
+      hover: 'var(--bg-secondary)',
+      active: 'var(--bg-tertiary)',
+      text: 'var(--text-primary)',
+      border: 'transparent'
+    },
+    danger: {
+      bg: 'var(--color-error)',
+      hover: 'var(--color-error-dark)',
+      active: '#b91c1c',
+      text: 'var(--text-inverse)',
+      border: 'var(--color-error)'
+    },
+    success: {
+      bg: 'var(--color-success)',
+      hover: 'var(--color-success-dark)',
+      active: '#047857',
+      text: 'var(--text-inverse)',
+      border: 'var(--color-success)'
+    }
+  };
+  
+  const variant = variantClasses[buttonVariant];
+  const isDisabled = buttonDisabled || buttonLoading;
+%>
+
+<button
+  type="<%= buttonType %>"
+  <% if (buttonId) { %>id="<%= buttonId %>"<% } %>
+  <% if (isDisabled) { %>disabled<% } %>
+  <% if (buttonOnclick) { %>onclick="<%= buttonOnclick %>"<% } %>
+  class="
+    inline-flex items-center justify-center space-x-2
+    font-medium rounded-design-lg transition-design
+    focus:outline-none focus:ring-2 focus:ring-offset-2
+    <%= sizeClasses[buttonSize] %>
+    <%= buttonFullWidth ? 'w-full' : '' %>
+    <%= buttonClass %>
+    <%= isDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer' %>
+    <%= buttonVariant === 'outline' || buttonVariant === 'ghost' ? 'border' : '' %>
+  "
+  style="
+    background-color: <%= variant.bg %>;
+    color: <%= variant.text %>;
+    border-color: <%= variant.border %>;
+    <% if (buttonVariant === 'outline' || buttonVariant === 'ghost') { %>
+      border-width: 1px;
+    <% } %>
+  "
+  onmouseover="if (!this.disabled) { this.style.backgroundColor='<%= variant.hover %>'; }"
+  onmouseout="if (!this.disabled) { this.style.backgroundColor='<%= variant.bg %>'; }"
+  onmousedown="if (!this.disabled) { this.style.backgroundColor='<%= variant.active %>'; }"
+  onmouseup="if (!this.disabled) { this.style.backgroundColor='<%= variant.hover %>'; }"
+  onfocus="this.style.boxShadow='0 0 0 3px var(--color-primary-100)';"
+  onblur="this.style.boxShadow='none';"
+>
+  <% if (buttonLoading) { %>
+    <i class="fas fa-spinner fa-spin"></i>
+    <span>Loading...</span>
+  <% } else { %>
+    <% if (buttonIcon && buttonIconPosition === 'left') { %>
+      <i class="<%= buttonIcon %>"></i>
+    <% } %>
+    <span><%= buttonContent %></span>
+    <% if (buttonIcon && buttonIconPosition === 'right') { %>
+      <i class="<%= buttonIcon %>"></i>
+    <% } %>
+  <% } %>
+</button>
+

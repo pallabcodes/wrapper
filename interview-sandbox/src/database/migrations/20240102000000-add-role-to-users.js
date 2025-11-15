@@ -12,7 +12,11 @@ module.exports = {
 
   async down(queryInterface, Sequelize) {
     await queryInterface.removeColumn('users', 'role');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_users_role";');
+    // PostgreSQL-specific: Drop ENUM type if using PostgreSQL
+    const dialect = queryInterface.sequelize.getDialect();
+    if (dialect === 'postgres') {
+      await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_users_role";');
+    }
   },
 };
 

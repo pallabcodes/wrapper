@@ -1,0 +1,44 @@
+<% 
+  var localId = typeof id !== 'undefined' ? id : '';
+  var localName = typeof name !== 'undefined' ? name : localId;
+  var localType = typeof type !== 'undefined' ? type : 'text';
+  var localLabel = typeof label !== 'undefined' ? label : '';
+  var localPlaceholder = typeof placeholder !== 'undefined' ? placeholder : '';
+  var localValue = typeof value !== 'undefined' ? value : '';
+  var localRequired = typeof required !== 'undefined' ? required : false;
+  var localAutocomplete = typeof autocomplete !== 'undefined' ? autocomplete : '';
+  var localIcon = typeof icon !== 'undefined' ? icon : '';
+  var localErrorId = localId + 'Error';
+  var localIconId = localId + 'Icon';
+%>
+<div class="mb-3">
+  <% if (localLabel) { %>
+    <label for="<%= localId %>" class="form-label fw-semibold small mb-2" style="color: var(--text-primary);">
+      <%= localLabel %>
+    </label>
+  <% } %>
+  <div class="position-relative">
+    <input 
+      type="<%= localType %>" 
+      id="<%= localId %>" 
+      name="<%= localName %>" 
+      placeholder="<%= localPlaceholder %>" 
+      <% if (localValue) { %>value="<%= localValue %>"<% } %> 
+      <% if (localRequired) { %>required<% } %>
+      <% if (localAutocomplete) { %>autocomplete="<%= localAutocomplete %>"<% } %>
+      class="form-control <%= localIcon ? 'pe-5' : 'pe-3' %> ps-3 py-2"
+      style="border-color: var(--border-medium); background-color: var(--bg-secondary); color: var(--text-primary); transition: all 0.2s ease;<% if (localIcon) { %> padding-right: 4rem !important;<% } %>"
+      onfocus="this.style.borderColor='var(--color-primary-600)';"
+      onblur="this.style.borderColor='var(--border-medium)';"
+    >
+    <% if (localIcon) { %>
+      <div class="position-absolute top-50 end-0 translate-middle-y d-flex align-items-center px-2" style="right: 1.75rem; color: var(--text-tertiary); pointer-events: none;">
+        <i class="<%= localIcon %>" style="font-size: 1.125rem;"></i>
+      </div>
+    <% } %>
+    <div id="<%= localIconId %>" class="position-absolute top-50 end-0 translate-middle-y d-flex align-items-center opacity-0" style="right: 1.25rem; pointer-events: none; transition: opacity 0.3s ease;">
+      <i class="fas fa-check-circle small" style="color: var(--color-success);"></i>
+    </div>
+  </div>
+  <div id="<%= localErrorId %>" class="mt-1 small opacity-0" style="color: var(--color-error); transition: all 0.3s ease; transform: translateY(-10px);"></div>
+</div>

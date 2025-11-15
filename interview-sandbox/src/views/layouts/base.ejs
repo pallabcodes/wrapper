@@ -3,52 +3,166 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= typeof title !== 'undefined' ? title : 'Interview Sandbox' %></title>
+  <meta name="description" content="Enterprise-grade platform with real-time capabilities, authentication, and scalable infrastructure">
+  <title><%= typeof title !== 'undefined' ? title : 'Platform' %></title>
   
-  <!-- Design System CSS -->
+  <!-- Critical CSS - Inline to prevent FOUC (Enterprise-grade) -->
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    html, body {
+      overflow-x: hidden;
+      max-width: 100vw;
+      margin: 0;
+      padding: 0;
+    }
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f9fafb;
+      --bg-tertiary: #f3f4f6;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --text-tertiary: #9ca3af;
+      --text-inverse: #ffffff;
+      --border-light: #e5e7eb;
+      --border-medium: #d1d5db;
+      --color-primary-600: #2563eb;
+      --color-primary-700: #1d4ed8;
+      --color-primary-50: #eff6ff;
+      --color-success: #10b981;
+      --color-error: #ef4444;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    }
+    [data-theme='dark'] {
+      --bg-primary: #111827;
+      --bg-secondary: #1f2937;
+      --bg-tertiary: #374151;
+      --text-primary: #f9fafb;
+      --text-secondary: #d1d5db;
+      --text-tertiary: #9ca3af;
+      --border-light: #374151;
+      --border-medium: #4b5563;
+    }
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      font-size: 16px;
+    }
+    /* Premium typography */
+    h1, h2, h3, h4, h5, h6 {
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+    /* Smooth transitions */
+    a, button, input, select, textarea {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    /* Focus states for accessibility */
+    *:focus-visible {
+      outline: 2px solid var(--color-primary-600);
+      outline-offset: 2px;
+    }
+    /* Auth sidebar gradient - critical for preventing FOUC */
+    @media (min-width: 768px) {
+      .auth-sidebar-gradient {
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 50%, #1e3a8a 100%) !important;
+      }
+    }
+    /* Premium animations */
+    @keyframes shimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    /* Loading state */
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+  </style>
+  
+  <!-- Preload critical assets -->
+  <link rel="preload" href="/assets/design-system.css" as="style">
+  
+  <!-- Bootstrap 5.3 CSS - Load synchronously to prevent FOUC -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  
+  <!-- Design System CSS - Load synchronously to prevent FOUC -->
   <link rel="stylesheet" href="/assets/design-system.css">
   
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Font Awesome -->
+  <!-- Font Awesome - Load synchronously to prevent icon glitches (critical for UI) -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   
-  <!-- Theme Toggle Script -->
-  <script src="/assets/theme-toggle.js"></script>
+  <!-- Google Fonts - Load synchronously for consistent typography (fonts are critical for design) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <% if (typeof styles !== 'undefined') { %>
     <%- styles %>
   <% } %>
 </head>
-<body class="min-h-screen flex flex-col" style="background-color: var(--bg-primary); color: var(--text-primary);">
+<body class="min-vh-100 d-flex flex-column overflow-x-hidden" style="background-color: var(--bg-primary); color: var(--text-primary);">
   <%- include('../partials/header') %>
 
-  <main class="flex-1">
+  <main class="flex-grow-1 w-100 d-flex flex-column">
     <% if (typeof errors !== 'undefined' && errors && errors.length > 0) { %>
-      <div class="container mx-auto px-4 mt-4">
-        <div class="px-4 py-3 rounded-design-lg border" role="alert" style="background-color: var(--color-error-light); border-color: var(--color-error); color: var(--color-error-dark);">
-          <ul class="list-disc list-inside space-y-1">
-            <% errors.forEach(function(error) { %>
-              <li><%= error %></li>
-            <% }); %>
-          </ul>
-        </div>
+      <div class="container px-4 mt-4">
+        <%- include('../components/alert', {
+          type: 'error',
+          title: 'Error',
+          message: errors.length === 1 ? errors[0] : '<ul class="list-unstyled mb-0">' + errors.map(e => '<li>' + e + '</li>').join('') + '</ul>',
+          dismissible: true
+        }) %>
       </div>
     <% } %>
 
     <% if (typeof success !== 'undefined' && success) { %>
-      <div class="container mx-auto px-4 mt-4">
-        <div class="px-4 py-3 rounded-design-lg border" role="alert" style="background-color: var(--color-success-light); border-color: var(--color-success); color: var(--color-success-dark);">
-          <%= success %>
-        </div>
+      <div class="container px-4 mt-4">
+        <%- include('../components/alert', {
+          type: 'success',
+          message: success,
+          dismissible: true
+        }) %>
       </div>
     <% } %>
 
-    <%- body %>
+    <div class="flex-grow-1">
+      <%- body %>
+    </div>
   </main>
 
   <%- include('../partials/footer') %>
+
+  <!-- Bootstrap 5.3 JS Bundle - Load at end of body -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  
+  <!-- Socket.IO Client - Defer loading -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" defer></script>
+  
+  <!-- Theme Toggle Script - Defer loading -->
+  <script src="/assets/theme-toggle.js" defer></script>
 
   <% if (typeof scripts !== 'undefined') { %>
     <%- scripts %>

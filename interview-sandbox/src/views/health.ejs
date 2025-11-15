@@ -1,0 +1,68 @@
+<div class="min-vh-100 d-flex align-items-center justify-content-center p-4" style="background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%); padding-top: 5rem !important;">
+  <div class="w-100" style="max-width: 28rem;">
+    <div class="text-center mb-4">
+      <h1 class="fs-3 fw-bold mb-2" style="color: var(--text-primary);">System Health</h1>
+      <p class="small mb-0" style="color: var(--text-secondary);">Service status and metrics</p>
+    </div>
+
+    <div class="rounded-3 border p-4" style="background-color: var(--bg-primary); border-color: var(--border-light) !important; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <span class="small" style="color: var(--text-secondary);">Status</span>
+        <span id="statusBadge" class="badge bg-success">Healthy</span>
+      </div>
+      
+      <div class="mb-3">
+        <p class="small mb-1" style="color: var(--text-tertiary);">Timestamp</p>
+        <p id="timestamp" class="mb-0 fw-medium" style="color: var(--text-primary);">--</p>
+      </div>
+      
+      <div class="mb-3">
+        <p class="small mb-1" style="color: var(--text-tertiary);">Uptime</p>
+        <p id="uptime" class="mb-0 fw-medium" style="color: var(--text-primary);">--</p>
+      </div>
+      
+      <div class="d-grid gap-2 mt-4">
+        <a href="/api/health" class="btn btn-outline-primary btn-sm" target="_blank" style="border-color: var(--color-primary-600); color: var(--color-primary-600);">View JSON Response</a>
+        <a href="/landing" class="btn btn-sm" style="background-color: var(--bg-secondary); color: var(--text-secondary); border-color: var(--border-medium);">Back to Home</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% 
+  const scriptsContent = `
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        fetch('/api/health')
+          .then(r => r.json())
+          .then(data => {
+            if (data.data) {
+              const health = data.data;
+              document.getElementById('statusBadge').textContent = health.status === 'ok' ? 'Healthy' : health.status;
+              document.getElementById('statusBadge').className = health.status === 'ok' ? 'badge bg-success' : 'badge bg-danger';
+              document.getElementById('timestamp').textContent = new Date(health.timestamp).toLocaleString();
+              const uptimeSeconds = Math.floor(health.uptime);
+              const hours = Math.floor(uptimeSeconds / 3600);
+              const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+              const seconds = uptimeSeconds % 60;
+              document.getElementById('uptime').textContent = hours > 0 
+                ? \`\${hours}h \${minutes}m \${seconds}s\`
+                : minutes > 0 
+                ? \`\${minutes}m \${seconds}s\`
+                : \`\${seconds}s\`;
+            }
+          })
+          .catch(() => {
+            document.getElementById('statusBadge').textContent = 'Error';
+            document.getElementById('statusBadge').className = 'badge bg-danger';
+          });
+      });
+    </script>
+  `;
+%>
+<%- include('layouts/base', { 
+  title: 'System Health - Platform',
+  body: '',
+  scripts: scriptsContent
+}) %>
+

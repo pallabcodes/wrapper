@@ -1,0 +1,210 @@
+<div class="min-vh-100 p-4" style="background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%); padding-top: 5rem !important;">
+  <div class="container">
+    <div class="mb-4">
+      <h1 class="fs-2 fw-bold mb-2" style="color: var(--text-primary);">Welcome back, <span id="userName">User</span>!</h1>
+      <p class="small mb-0" style="color: var(--text-secondary);">Manage your account and explore platform features</p>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="rounded-3 border p-4 h-100 text-decoration-none" style="background-color: var(--bg-primary); border-color: var(--border-light) !important; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); transition: all 0.2s ease; cursor: pointer;" 
+             onclick="handleNavigateToRealtime()"
+             onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.15)';" 
+             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';">
+          <div class="d-flex align-items-center justify-content-center mb-3 rounded-3" style="width: 3rem; height: 3rem; background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);">
+            <i class="fas fa-bolt text-white"></i>
+          </div>
+          <h3 class="h5 fw-semibold mb-2" style="color: var(--text-primary);">Real-time Features</h3>
+          <p class="small mb-0" style="color: var(--text-secondary);">Live chat and notifications</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="rounded-3 border p-4 h-100 text-decoration-none" style="background-color: var(--bg-primary); border-color: var(--border-light) !important; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); transition: all 0.2s ease; cursor: pointer;" 
+             onclick="handleNavigateToProfile()"
+             onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.15)';" 
+             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';">
+          <div class="d-flex align-items-center justify-content-center mb-3 rounded-3" style="width: 3rem; height: 3rem; background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);">
+            <i class="fas fa-user text-white"></i>
+          </div>
+          <h3 class="h5 fw-semibold mb-2" style="color: var(--text-primary);">Profile</h3>
+          <p class="small mb-0" style="color: var(--text-secondary);">Manage your account</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <a href="/api-docs" target="_blank" class="text-decoration-none">
+          <div class="rounded-3 border p-4 h-100" style="background-color: var(--bg-primary); border-color: var(--border-light) !important; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); transition: all 0.2s ease; cursor: pointer;" 
+               onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.15)';" 
+               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';">
+            <div class="d-flex align-items-center justify-content-center mb-3 rounded-3" style="width: 3rem; height: 3rem; background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);">
+              <i class="fas fa-book text-white"></i>
+            </div>
+            <h3 class="h5 fw-semibold mb-2" style="color: var(--text-primary);">API Docs</h3>
+            <p class="small mb-0" style="color: var(--text-secondary);">View API documentation</p>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="rounded-3 border p-4" style="background-color: var(--bg-primary); border-color: var(--border-light) !important; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+      <h5 class="fw-semibold mb-3" style="color: var(--text-primary);">Quick Actions</h5>
+      <div class="d-flex flex-wrap gap-2">
+        <button type="button" onclick="handleNavigateToRealtime()" class="btn btn-outline-primary btn-sm" style="border-color: var(--color-primary-600); color: var(--color-primary-600);">Go to Realtime</button>
+        <button type="button" onclick="handleNavigateToProfile()" class="btn btn-outline-primary btn-sm" style="border-color: var(--color-primary-600); color: var(--color-primary-600);">Edit Profile</button>
+        <button type="button" onclick="handleNavigateToHealth()" class="btn btn-outline-secondary btn-sm" style="border-color: var(--border-medium); color: var(--text-secondary);">System Health</button>
+      </div>
+    </div>
+
+    <!-- CRUD Examples Section -->
+    <div class="rounded-3 border p-4 mt-4" style="background-color: var(--bg-primary); border-color: var(--border-light) !important; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+      <h5 class="fw-semibold mb-3" style="color: var(--text-primary);">CRUD Examples</h5>
+      <p class="small mb-3" style="color: var(--text-secondary);">Ready-to-use CRUD templates for interview tasks</p>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="/examples/students" class="btn btn-outline-primary btn-sm" style="border-color: var(--color-primary-600); color: var(--color-primary-600);">
+          <i class="fas fa-user-graduate me-2"></i>Students CRUD
+        </a>
+        <a href="/examples/courses" class="btn btn-outline-primary btn-sm" style="border-color: var(--color-primary-600); color: var(--color-primary-600);">
+          <i class="fas fa-book me-2"></i>Courses CRUD
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% 
+  const scriptsContent = `
+    <script>
+      // Check authentication status
+      function checkAuth() {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+          return false;
+        }
+        return token;
+      }
+
+      // Verify token is still valid
+      function verifyToken(token) {
+        return fetch('/api/users/me', {
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        })
+          .then(r => {
+            if (r.ok) {
+              return r.json();
+            }
+            throw new Error('Invalid token');
+          })
+          .then(data => {
+            return data.data !== null && data.data !== undefined;
+          })
+          .catch(() => false);
+      }
+
+      // Navigate to Realtime (public route, but check auth for consistency)
+      function handleNavigateToRealtime() {
+        const token = checkAuth();
+        if (token) {
+          // User is authenticated, navigate directly
+          window.location.href = '/realtime';
+        } else {
+          // Not authenticated, redirect to login
+          window.location.href = '/auth/login?redirect=' + encodeURIComponent('/realtime');
+        }
+      }
+
+      // Navigate to Profile (protected route, requires auth)
+      function handleNavigateToProfile() {
+        const token = checkAuth();
+        if (!token) {
+          // Not authenticated, redirect to login
+          window.location.href = '/auth/login?redirect=' + encodeURIComponent('/auth/profile');
+          return;
+        }
+        
+        // Verify token is still valid before navigating
+        verifyToken(token).then(isValid => {
+          if (isValid) {
+            // Token is valid, navigate to profile
+            window.location.href = '/auth/profile';
+          } else {
+            // Token expired or invalid
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            window.location.href = '/auth/login?redirect=' + encodeURIComponent('/auth/profile') + '&error=session_expired';
+          }
+        }).catch(() => {
+          // Error verifying token
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          window.location.href = '/auth/login?redirect=' + encodeURIComponent('/auth/profile') + '&error=session_expired';
+        });
+      }
+
+      // Navigate to Health (public route, but check auth for consistency)
+      function handleNavigateToHealth() {
+        const token = checkAuth();
+        if (token) {
+          // User is authenticated, verify token and navigate
+          verifyToken(token).then(isValid => {
+            if (isValid) {
+              window.location.href = '/health';
+            } else {
+              // Token expired, but health is public so still allow access
+              // Just clear invalid token
+              localStorage.removeItem('accessToken');
+              localStorage.removeItem('refreshToken');
+              window.location.href = '/health';
+            }
+          }).catch(() => {
+            // Error verifying token, but health is public so still allow access
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            window.location.href = '/health';
+          });
+        } else {
+          // Not authenticated, but health is public so allow access
+          window.location.href = '/health';
+        }
+      }
+
+      // Initialize dashboard
+      document.addEventListener('DOMContentLoaded', function() {
+        const token = checkAuth();
+        if (!token) {
+          window.location.href = '/auth/login';
+          return;
+        }
+        
+        fetch('/api/users/me', {
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        })
+          .then(r => r.json())
+          .then(data => {
+            if (data.data) {
+              const userName = data.data.name || data.data.email || 'User';
+              document.getElementById('userName').textContent = userName;
+            }
+          })
+          .catch(() => {
+            window.location.href = '/auth/login';
+          });
+      });
+
+      // Make functions globally accessible
+      window.handleNavigateToRealtime = handleNavigateToRealtime;
+      window.handleNavigateToProfile = handleNavigateToProfile;
+      window.handleNavigateToHealth = handleNavigateToHealth;
+    </script>
+  `;
+%>
+<%- include('layouts/base', { 
+  title: 'Dashboard - Platform',
+  body: '',
+  scripts: scriptsContent
+}) %>
+

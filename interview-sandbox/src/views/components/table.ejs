@@ -1,9 +1,13 @@
 <% 
-  // Table component with Tailwind CSS
+  // Bootstrap 5 Table component
   // Usage: <%- include('../components/table', { 
   //   headers: ['Name', 'Email', 'Role'],
   //   data: [{ name: 'John', email: 'john@example.com', role: 'user' }],
-  //   columns: ['name', 'email', 'role']
+  //   columns: ['name', 'email', 'role'],
+  //   striped: true,
+  //   hover: true,
+  //   bordered: false,
+  //   emptyMessage: 'No data available'
   // }) %>
   
   const headers = typeof headers !== 'undefined' ? headers : [];
@@ -12,31 +16,44 @@
   const striped = typeof striped !== 'undefined' ? striped : true;
   const hover = typeof hover !== 'undefined' ? hover : true;
   const bordered = typeof bordered !== 'undefined' ? bordered : false;
+  const emptyMessage = typeof emptyMessage !== 'undefined' ? emptyMessage : 'No data available';
+  const compact = typeof compact !== 'undefined' ? compact : false;
+  
+  const tableClass = 'table' + (striped ? ' table-striped' : '') + (hover ? ' table-hover' : '') + (bordered ? ' table-bordered' : '') + (compact ? ' table-sm' : '');
 %>
 
-<div class="overflow-x-auto shadow-md rounded-lg border border-gray-200">
-  <table class="min-w-full divide-y divide-gray-200 <%= hover ? 'divide-y' : '' %>">
+<div class="table-responsive rounded-3 border" style="border-color: var(--border-light) !important; background-color: var(--bg-primary); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+  <table class="<%= tableClass %> mb-0">
     <% if (headers.length > 0) { %>
-      <thead class="bg-gray-800 text-white">
+      <thead style="background-color: var(--bg-secondary);">
         <tr>
           <% headers.forEach(function(header) { %>
-            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"><%= header %></th>
+            <th class="px-4 py-3 small fw-semibold text-uppercase" style="color: var(--text-primary); border-color: var(--border-light);">
+              <%= header %>
+            </th>
           <% }); %>
         </tr>
       </thead>
     <% } %>
-    <tbody class="bg-white divide-y divide-gray-200 <%= striped ? '[&>tr:nth-child(even)]:bg-gray-50' : '' %>">
+    <tbody>
       <% if (data.length === 0) { %>
         <tr>
-          <td colspan="<%= headers.length || columns.length %>" class="px-6 py-4 text-center text-gray-500">
-            No data available
+          <td 
+            colspan="<%= headers.length || columns.length %>" 
+            class="text-center py-5"
+            style="color: var(--text-tertiary);"
+          >
+            <div class="d-flex flex-column align-items-center justify-content-center">
+              <i class="fas fa-inbox fa-2x mb-2" style="color: var(--text-tertiary);"></i>
+              <p class="small mb-0"><%= emptyMessage %></p>
+            </div>
           </td>
         </tr>
       <% } else { %>
         <% data.forEach(function(row, index) { %>
-          <tr class="<%= hover ? 'hover:bg-gray-100 transition' : '' %>">
+          <tr style="background-color: <%= striped && index % 2 === 1 ? 'var(--bg-secondary)' : 'var(--bg-primary)' %>;">
             <% columns.forEach(function(column) { %>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 <%= bordered ? 'border border-gray-200' : '' %>">
+              <td class="px-4 py-3 small" style="color: var(--text-primary); border-color: var(--border-light);">
                 <%= row[column] !== undefined ? row[column] : '' %>
               </td>
             <% }); %>

@@ -5,6 +5,8 @@ import { Sequelize } from 'sequelize-typescript';
 export class AppShutdownHandler {
   private readonly logger = new Logger(AppShutdownHandler.name);
   private readonly shutdownTimeout = 30000; // 30 seconds
+  private static isShuttingDown = false;
+  private static handlersRegistered = false;
 
   private constructor(private readonly app: INestApplication) {
     this.setupSignalHandlers();
@@ -16,8 +18,24 @@ export class AppShutdownHandler {
   }
 
   private setupSignalHandlers(): void {
-    process.on('SIGTERM', () => this.shutdown('SIGTERM'));
-    process.on('SIGINT', () => this.shutdown('SIGINT'));
+    // Prevent duplicate handler registration
+    if (AppShutdownHandler.handlersRegistered) {
+      return;
+    }
+    AppShutdownHandler.handlersRegistered = true;
+
+    process.once('SIGTERM', () => this.shutdown('SIGTERM'));
+    
+    // Handle SIGINT - if already shutting down, force exit immediately
+    process.on('SIGINT', () => {
+      if (AppShutdownHandler.isShuttingDown) {
+        // Second Ctrl+C - force exit immediately
+        console.log('\nForce exit...');
+        process.exit(1);
+      } else {
+        this.shutdown('SIGINT');
+      }
+    });
   }
 
   private setupErrorHandlers(): void {
@@ -33,23 +51,36 @@ export class AppShutdownHandler {
   }
 
   private async shutdown(signal: string): Promise<void> {
-    this.logger.log(`${signal} received. Starting graceful shutdown...`);
+    // Prevent multiple shutdown attempts
+    if (AppShutdownHandler.isShuttingDown) {
+      return;
+    }
+    AppShutdownHandler.isShuttingDown = true;
+
+    // In development watch mode, NestJS sends SIGTERM to restart - this is normal
+    const isWatchMode = process.env.NODE_ENV !== 'production' && process.argv.includes('--watch');
+    
+    // Log immediately (synchronous) so user sees feedback right away
+    if (!isWatchMode) {
+      console.log(`\n${signal} received. Shutting down...`);
+    }
 
     const shutdownTimer = setTimeout(() => {
-      this.logger.error('Forced shutdown after timeout');
+      console.error('\nForced shutdown after timeout');
       process.exit(1);
     }, this.shutdownTimeout);
 
     try {
-      // Close database connections BEFORE closing HTTP server
-      await this.closeDatabaseConnections();
-      await this.closeHttpServer();
+      // Close database and HTTP server in parallel for faster shutdown
+      await Promise.all([
+        this.closeDatabaseConnections(),
+        this.closeHttpServer()
+      ]);
 
       clearTimeout(shutdownTimer);
-      this.logger.log('Graceful shutdown completed');
       process.exit(0);
     } catch (error) {
-      this.logger.error('Error during shutdown:', error);
+      console.error('\nError during shutdown:', error);
       clearTimeout(shutdownTimer);
       process.exit(1);
     }
@@ -57,7 +88,7 @@ export class AppShutdownHandler {
 
   private async closeHttpServer(): Promise<void> {
     await this.app.close();
-    this.logger.log('HTTP server closed');
+    // Don't log here - we'll log a combined message after everything closes
   }
 
   private async closeDatabaseConnections(): Promise<void> {
@@ -68,7 +99,7 @@ export class AppShutdownHandler {
       
       if (sequelize && typeof sequelize.close === 'function') {
         await sequelize.close();
-        this.logger.log('Database connections closed');
+        // Don't log here - we'll log a combined message after everything closes
       } else {
         this.logger.debug('Sequelize connection not available or already closed');
       }

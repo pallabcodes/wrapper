@@ -13,6 +13,7 @@ import { QueueModule } from './modules/queue/queue.module';
 import { LoggerModule } from './common/logger/logger.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { CrudModule } from './modules/crud/crud.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -33,6 +34,7 @@ import configuration from './config/configuration';
     PaymentModule,
     NotificationsModule,
     QueueModule,
+    CrudModule,
   ],
   controllers: [AppController],
   providers: [

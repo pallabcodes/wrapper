@@ -19,7 +19,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
  */
 export function createJwtModule(): DynamicModule {
   return JwtModule.registerAsync({
-    imports: [ConfigModule],
+    imports: [ConfigModule], // Explicit import for factory DI context (best practice, even if ConfigModule is global)
     useFactory: (configService: ConfigService) => {
       const secret = configService.get<string>('jwt.secret');
       const expiresIn = configService.get<string>('jwt.accessTokenExpiration') || '15m';

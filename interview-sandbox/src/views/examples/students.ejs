@@ -1,0 +1,45 @@
+<% 
+  // ============================================================================
+  // GENERIC CRUD PAGE TEMPLATE - Works with ANY entity type
+  // ============================================================================
+  // This is just an EXAMPLE using "Students" - you can use this for:
+  // - Todos, Tasks, Notes, Products, Orders, Users, Categories, etc.
+  // 
+  // To adapt for your entity, simply modify the crudConfig object below:
+  // - title: Display name (e.g., 'Todos', 'Products', 'Tasks')
+  // - entityName: Lowercase singular (e.g., 'todo', 'product', 'task')
+  // - apiEndpoint: Your API endpoint (e.g., '/api/todos', '/api/products')
+  // - headers: Table column headers
+  // - columns: Property names from your API response
+  // - fields: Form fields for create/edit modal
+  // ============================================================================
+  
+  const crudConfig = {
+    title: 'Students',  // Change to: 'Todos', 'Products', 'Tasks', etc.
+    entityName: 'student',  // Change to: 'todo', 'product', 'task', etc.
+    apiEndpoint: '/api/students',  // Change to: '/api/todos', '/api/products', etc.
+    headers: ['Name', 'Email', 'Course', 'Enrolled Date'],
+    columns: ['name', 'email', 'courseName', 'enrolledDate'],
+    fields: [
+      { name: 'name', label: 'Full Name', type: 'text', required: true },
+      { name: 'email', label: 'Email Address', type: 'email', required: true },
+      { name: 'courseId', label: 'Course', type: 'select', required: true, options: [
+        { value: '1', label: 'Computer Science' },
+        { value: '2', label: 'Mathematics' },
+        { value: '3', label: 'Physics' }
+      ]},
+      { name: 'enrolledDate', label: 'Enrolled Date', type: 'date', required: true }
+    ],
+    searchable: true,
+    createButton: true
+  };
+%>
+
+<%- include('../components/crud-list', crudConfig) %>
+
+<%- include('../layouts/base', { 
+  title: 'Students - Platform',
+  body: '',
+  scripts: ''
+}) %>
+

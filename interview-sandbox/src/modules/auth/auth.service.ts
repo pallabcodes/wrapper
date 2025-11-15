@@ -46,18 +46,27 @@ export class AuthService {
       this.configService.get<number>('bcrypt.rounds') || 12,
     );
 
-    // Create user
-    const user = await this.authRepository.createUser({
-      email: registerDto.email,
-      password: hashedPassword,
-      name: registerDto.name,
-      phone: registerDto.phone,
-    });
+    // Generate OTP code and expiration
+    const otpCode = this.generateOtpCode();
+    const expiration = this.configService.get<number>('otp.expiration') || 600000;
+    const expiresAt = new Date(Date.now() + expiration);
 
-    // Generate OTP for email verification
-    const otp = await this.generateOtp(user.id, OtpType.VERIFY);
+    // Create user and OTP atomically (transaction ensures both succeed or both fail)
+    const { user, otp } = await this.authRepository.createUserWithOtp(
+      {
+        email: registerDto.email,
+        password: hashedPassword,
+        name: registerDto.name,
+        phone: registerDto.phone,
+      },
+      {
+        code: otpCode,
+        type: OtpType.VERIFY,
+        expiresAt,
+      },
+    );
 
-    // Generate tokens
+    // Generate tokens (outside transaction - not critical for atomicity)
     const tokens = await this.generateTokens(user.id, user.email, user.role);
 
     // Send real-time notification (non-blocking, won't break if fails)
@@ -81,14 +90,60 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
+    // Bypass login for demo account (for interview/demo purposes)
+    if (loginDto.email === 'demo@gmail.com' && loginDto.password === '123456') {
+      // Find or create demo user
+      let user = await this.authRepository.findUserByEmail('demo@gmail.com');
+      if (!user) {
+        // Create demo user if doesn't exist
+        const hashedPassword = await bcrypt.hash(
+          '123456',
+          this.configService.get<number>('bcrypt.rounds') || 12,
+        );
+        user = await this.authRepository.createUser({
+          email: 'demo@gmail.com',
+          password: hashedPassword,
+          name: 'Demo User',
+          isEmailVerified: true, // Auto-verify demo account
+        });
+      }
+
+      // Generate tokens for demo user
+      const tokens = await this.generateTokens(user.id, user.email, user.role);
+
+      // Send real-time login notification (non-blocking)
+      this.sendNotificationSafely(() => {
+        this.notificationsService?.sendLoginNotification(user.id.toString());
+      });
+
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          isEmailVerified: user.isEmailVerified,
+        },
+        tokens,
+      };
+    }
+
+    // Regular login flow
     // Find user
     const user = await this.authRepository.findUserByEmail(loginDto.email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Get password - use getDataValue to access raw Sequelize data
+    const passwordHash = (user as any).getDataValue ? (user as any).getDataValue('password') : user.password;
+    
+    // Check if user has a password (might be null for OAuth users)
+    if (!passwordHash) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
     // Verify password
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    const isPasswordValid = await bcrypt.compare(loginDto.password, passwordHash);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -133,11 +188,8 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired OTP');
     }
 
-    // Update user
-    await this.authRepository.updateUser(user.id, { isEmailVerified: true });
-
-    // Invalidate used OTP
-    await this.authRepository.invalidateUserOtps(user.id, OtpType.VERIFY);
+    // Invalidate OTPs and update user status atomically (transaction ensures both succeed or both fail)
+    await this.authRepository.verifyEmailWithTransaction(user.id);
 
     // Send real-time notification (non-blocking)
     this.sendNotificationSafely(() => {
@@ -223,11 +275,8 @@ export class AuthService {
       this.configService.get<number>('bcrypt.rounds') || 12,
     );
 
-    // Update user password
-    await this.authRepository.updateUser(user.id, { password: hashedPassword });
-
-    // Invalidate used OTP
-    await this.authRepository.invalidateUserOtps(user.id, OtpType.RESET);
+    // Invalidate OTPs and update password atomically (transaction ensures both succeed or both fail)
+    await this.authRepository.resetPasswordWithTransaction(user.id, hashedPassword);
 
     // Send real-time notification (non-blocking)
     this.sendNotificationSafely(() => {

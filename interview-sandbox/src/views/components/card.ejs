@@ -1,0 +1,87 @@
+<% 
+  // Reusable Card Component
+  // Usage: <%- include('../components/card', {
+  //   title: 'Card Title',
+  //   subtitle: 'Card Subtitle',
+  //   icon: 'fas fa-user',
+  //   footer: '<button>Action</button>',
+  //   padding: 'base', // 'none', 'sm', 'base', 'lg'
+  //   shadow: 'md', // 'none', 'sm', 'md', 'lg'
+  //   bordered: true,
+  //   content: '<p>Card content</p>'
+  // }) %>
+  
+  const cardTitle = typeof title !== 'undefined' ? title : '';
+  const cardSubtitle = typeof subtitle !== 'undefined' ? subtitle : '';
+  const cardIcon = typeof icon !== 'undefined' ? icon : '';
+  const cardFooter = typeof footer !== 'undefined' ? footer : '';
+  const cardPadding = typeof padding !== 'undefined' ? padding : 'base';
+  const cardShadow = typeof shadow !== 'undefined' ? shadow : 'md';
+  const cardBordered = typeof bordered !== 'undefined' ? bordered : true;
+  const cardContent = typeof content !== 'undefined' ? content : '';
+  const cardClass = typeof className !== 'undefined' ? className : '';
+  
+  const paddingClasses = {
+    none: '',
+    sm: 'p-4',
+    base: 'p-6',
+    lg: 'p-8'
+  };
+  
+  const shadowClasses = {
+    none: '',
+    sm: 'shadow-design-sm',
+    md: 'shadow-design-md',
+    lg: 'shadow-design-lg'
+  };
+%>
+
+<div 
+  class="
+    rounded-design-lg transition-design
+    <%= shadowClasses[cardShadow] %>
+    <%= cardBordered ? 'border' : '' %>
+    <%= cardClass %>
+  "
+  style="
+    background-color: var(--bg-primary);
+    <% if (cardBordered) { %>
+      border-color: var(--border-light);
+    <% } %>
+  "
+>
+  <% if (cardTitle || cardSubtitle || cardIcon) { %>
+    <div class="<%= paddingClasses[cardPadding] %> <%= cardContent || cardFooter ? 'border-b' : '' %>" style="border-color: var(--border-light);">
+      <% if (cardIcon || cardTitle) { %>
+        <div class="flex items-center space-x-2">
+          <% if (cardIcon) { %>
+            <i class="<%= cardIcon %>" style="color: var(--color-primary-600);"></i>
+          <% } %>
+          <% if (cardTitle) { %>
+            <h3 class="text-xl font-semibold" style="color: var(--text-primary);">
+              <%= cardTitle %>
+            </h3>
+          <% } %>
+        </div>
+      <% } %>
+      <% if (cardSubtitle) { %>
+        <p class="mt-1 text-sm" style="color: var(--text-secondary);">
+          <%= cardSubtitle %>
+        </p>
+      <% } %>
+    </div>
+  <% } %>
+  
+  <% if (cardContent) { %>
+    <div class="<%= paddingClasses[cardPadding] %>">
+      <%- cardContent %>
+    </div>
+  <% } %>
+  
+  <% if (cardFooter) { %>
+    <div class="<%= paddingClasses[cardPadding] %> border-t flex items-center justify-end space-x-2" style="border-color: var(--border-light);">
+      <%- cardFooter %>
+    </div>
+  <% } %>
+</div>
+
