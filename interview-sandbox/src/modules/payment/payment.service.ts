@@ -1,10 +1,16 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Optional, Inject, Logger } from '@nestjs/common';
 import { PaymentRepository } from './payment.repository';
 import { PaymentStatus } from '../../database/models/payment.model';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PaymentService {
-  constructor(private paymentRepository: PaymentRepository) {}
+  private readonly logger = new Logger(PaymentService.name);
+
+  constructor(
+    private paymentRepository: PaymentRepository,
+    @Optional() @Inject(NotificationsService) private notificationsService?: NotificationsService,
+  ) {}
 
   async createPayment(userId: number, amount: number, currency: string = 'USD') {
     if (amount <= 0) {
@@ -20,6 +26,15 @@ export class PaymentService {
       currency,
       status: PaymentStatus.PENDING,
       transactionId,
+    });
+
+    // Send real-time notification (non-blocking)
+    this.sendNotificationSafely(() => {
+      this.notificationsService?.sendPaymentNotification(
+        userId.toString(),
+        PaymentStatus.PENDING,
+        amount,
+      );
     });
 
     // In a real implementation, you would:
@@ -65,6 +80,15 @@ export class PaymentService {
     const newStatus = statusMap[webhookData.status || ''] || PaymentStatus.PENDING;
     await this.paymentRepository.updateStatus(payment.id, newStatus);
 
+    // Send real-time notification when payment status changes (non-blocking)
+    this.sendNotificationSafely(() => {
+      this.notificationsService?.sendPaymentNotification(
+        payment.userId.toString(),
+        newStatus,
+        payment.amount,
+      );
+    });
+
     return {
       message: 'Webhook processed successfully',
       paymentId: payment.id,
@@ -74,6 +98,19 @@ export class PaymentService {
 
   async getPaymentHistory(userId: number) {
     return this.paymentRepository.findByUserId(userId);
+  }
+
+  /**
+   * Safely send notification without breaking main flow
+   */
+  private sendNotificationSafely(notificationFn: () => void): void {
+    try {
+      if (this.notificationsService) {
+        notificationFn();
+      }
+    } catch (error) {
+      this.logger.warn('Failed to send notification', error);
+    }
   }
 }
 

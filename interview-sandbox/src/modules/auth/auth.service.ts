@@ -4,6 +4,9 @@ import {
   BadRequestException,
   ConflictException,
   NotFoundException,
+  Optional,
+  Inject,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -17,13 +20,17 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { OtpType } from '../../database/models/otp.model';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private authRepository: AuthRepository,
     private jwtService: JwtService,
     private configService: ConfigService,
+    @Optional() @Inject(NotificationsService) private notificationsService?: NotificationsService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -51,7 +58,12 @@ export class AuthService {
     const otp = await this.generateOtp(user.id, OtpType.VERIFY);
 
     // Generate tokens
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
+
+    // Send real-time notification (non-blocking, won't break if fails)
+    this.sendNotificationSafely(() => {
+      this.notificationsService?.sendRegistrationSuccessNotification(user.id.toString(), user.email);
+    });
 
     return {
       user: {
@@ -82,7 +94,12 @@ export class AuthService {
     }
 
     // Generate tokens
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
+
+    // Send real-time login notification (non-blocking)
+    this.sendNotificationSafely(() => {
+      this.notificationsService?.sendLoginNotification(user.id.toString());
+    });
 
     return {
       user: {
@@ -121,6 +138,11 @@ export class AuthService {
 
     // Invalidate used OTP
     await this.authRepository.invalidateUserOtps(user.id, OtpType.VERIFY);
+
+    // Send real-time notification (non-blocking)
+    this.sendNotificationSafely(() => {
+      this.notificationsService?.sendEmailVerifiedNotification(user.id.toString());
+    });
 
     return {
       message: 'Email verified successfully',
@@ -207,6 +229,11 @@ export class AuthService {
     // Invalidate used OTP
     await this.authRepository.invalidateUserOtps(user.id, OtpType.RESET);
 
+    // Send real-time notification (non-blocking)
+    this.sendNotificationSafely(() => {
+      this.notificationsService?.sendPasswordResetNotification(user.id.toString());
+    });
+
     return {
       message: 'Password reset successfully',
     };
@@ -277,8 +304,15 @@ export class AuthService {
     return code;
   }
 
-  private async generateTokens(userId: number, email: string) {
-    const payload = { sub: userId, email };
+  private async generateTokens(userId: number, email: string, role?: string) {
+    // Get user to include role in token if not provided
+    let userRole = role;
+    if (!userRole) {
+      const user = await this.authRepository.findUserById(userId);
+      userRole = user?.role || 'USER';
+    }
+    
+    const payload = { sub: userId, email, role: userRole };
     const accessTokenExpiration = this.configService.get<string>('jwt.accessTokenExpiration') || '15m';
     const refreshTokenExpiration = this.configService.get<string>('jwt.refreshTokenExpiration') || '7d';
 
@@ -298,6 +332,21 @@ export class AuthService {
 
   async generateTokensForUser(userId: number, email: string) {
     return this.generateTokens(userId, email);
+  }
+
+  /**
+   * Safely send notification without breaking main flow
+   * If notification fails, it's logged but doesn't affect the main operation
+   */
+  private sendNotificationSafely(notificationFn: () => void): void {
+    try {
+      if (this.notificationsService) {
+        notificationFn();
+      }
+    } catch (error) {
+      // Log error but don't throw - notifications are non-critical
+      this.logger.warn('Failed to send notification', error);
+    }
   }
 }
 

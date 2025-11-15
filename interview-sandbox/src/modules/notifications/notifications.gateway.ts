@@ -50,8 +50,11 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         client.data.userId = userId;
         this.logger.log(`User ${userId} connected with socket ${client.id}`);
         
-        // Join user-specific room
+        // Join user-specific room (use room instead of socketId for better scalability)
         client.join(`user:${userId}`);
+        
+        // Notify user they're connected
+        client.emit('connected', { userId, timestamp: Date.now() });
       } else {
         client.disconnect();
       }
@@ -92,13 +95,45 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     return { event: 'pong', timestamp: Date.now() };
   }
 
+  // Get online status of users
+  @SubscribeMessage('get-online-status')
+  handleGetOnlineStatus(@ConnectedSocket() client: Socket, @MessageBody() data: { userIds: string[] }) {
+    const onlineStatus: Record<string, boolean> = {};
+    
+    if (data?.userIds && Array.isArray(data.userIds)) {
+      data.userIds.forEach((userId) => {
+        onlineStatus[userId] = this.connectedUsers.has(userId);
+      });
+    }
+    
+    return { event: 'online-status', status: onlineStatus };
+  }
+
+  // Subscribe to user's online status changes
+  @SubscribeMessage('subscribe-user-status')
+  handleSubscribeUserStatus(@ConnectedSocket() client: Socket, @MessageBody() data: { userId: string }) {
+    if (data?.userId) {
+      client.join(`status:${data.userId}`);
+      return { event: 'subscribed', userId: data.userId };
+    }
+  }
+
   // Method to send notification to a specific user
+  // Uses rooms for better scalability (supports multiple devices per user)
   sendToUser(userId: string, event: string, data: unknown) {
-    const socketId = this.connectedUsers.get(userId);
-    if (socketId) {
-      this.server.to(socketId).emit(event, data);
+    const room = `user:${userId}`;
+    const isConnected = this.connectedUsers.has(userId);
+    
+    if (isConnected) {
+      // Use room instead of socketId to support multiple devices
+      const payload = typeof data === 'object' && data !== null
+        ? { ...(data as Record<string, unknown>), timestamp: Date.now() }
+        : { data, timestamp: Date.now() };
+      
+      this.server.to(room).emit(event, payload);
+      this.logger.debug(`Sent ${event} to user ${userId}`);
     } else {
-      this.logger.warn(`User ${userId} is not connected`);
+      this.logger.debug(`User ${userId} is not connected (event: ${event})`);
     }
   }
 

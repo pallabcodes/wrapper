@@ -1,0 +1,10 @@
+import { User } from '../entities/user.entity';
+
+export const USER_REPOSITORY_PORT = Symbol('USER_REPOSITORY_PORT');
+
+export interface UserRepositoryPort {
+  findById(id: string): Promise<User | null>;
+  findAll(): Promise<User[]>;
+  update(id: string, updates: Partial<User>): Promise<User>;
+}
+

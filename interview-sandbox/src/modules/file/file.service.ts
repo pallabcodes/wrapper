@@ -1,13 +1,18 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Optional, Inject, Logger } from '@nestjs/common';
 import { FileRepository } from './file.repository';
+import { NotificationsService } from '../notifications/notifications.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
 @Injectable()
 export class FileService {
   private readonly uploadDir = path.join(process.cwd(), 'uploads');
+  private readonly logger = new Logger(FileService.name);
 
-  constructor(private fileRepository: FileRepository) {
+  constructor(
+    private fileRepository: FileRepository,
+    @Optional() @Inject(NotificationsService) private notificationsService?: NotificationsService,
+  ) {
     // Ensure upload directory exists
     if (!fs.existsSync(this.uploadDir)) {
       fs.mkdirSync(this.uploadDir, { recursive: true });
@@ -41,6 +46,11 @@ export class FileService {
       size: file.size,
     });
 
+    // Send real-time notification (non-blocking)
+    this.sendNotificationSafely(() => {
+      this.notificationsService?.sendFileUploadNotification(userId.toString(), file.originalname);
+    });
+
     return {
       id: fileRecord.id,
       filename: fileRecord.filename,
@@ -72,7 +82,25 @@ export class FileService {
     // Delete file record from database
     await this.fileRepository.delete(fileId);
 
+    // Send real-time notification (non-blocking)
+    this.sendNotificationSafely(() => {
+      this.notificationsService?.sendFileDeletedNotification(userId.toString(), file.filename);
+    });
+
     return { message: 'File deleted successfully' };
+  }
+
+  /**
+   * Safely send notification without breaking main flow
+   */
+  private sendNotificationSafely(notificationFn: () => void): void {
+    try {
+      if (this.notificationsService) {
+        notificationFn();
+      }
+    } catch (error) {
+      this.logger.warn('Failed to send notification', error);
+    }
   }
 }
 

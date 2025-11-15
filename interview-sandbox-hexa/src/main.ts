@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
-import * as session from 'express-session';
 import { ConfigService } from '@nestjs/config';
 
 /**
@@ -10,15 +10,21 @@ import { ConfigService } from '@nestjs/config';
  * 
  * Configures and starts the NestJS application with:
  * - Global validation pipes
- * - Session middleware
  * - Swagger API documentation
  * - CORS (if needed)
+ * - Fastify transport layer
  */
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   
   try {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create<NestFastifyApplication>(
+      AppModule,
+      new FastifyAdapter({
+        logger: true,
+        trustProxy: true,
+      }),
+    );
     const configService = app.get(ConfigService);
 
     // Global validation pipe with transform
@@ -29,27 +35,6 @@ async function bootstrap() {
         transform: true, // Automatically transform payloads to DTO instances
         transformOptions: {
           enableImplicitConversion: true, // Enable implicit type conversion
-        },
-      }),
-    );
-
-    // Configure session for Passport
-    const sessionConfig = configService.get('auth.session', {
-      secret: 'your-session-secret-change-in-production',
-      maxAge: 86400000,
-      httpOnly: true,
-      secure: false,
-    });
-
-    app.use(
-      session({
-        secret: sessionConfig.secret,
-        resave: false,
-        saveUninitialized: false,
-        cookie: {
-          maxAge: sessionConfig.maxAge,
-          httpOnly: sessionConfig.httpOnly,
-          secure: sessionConfig.secure,
         },
       }),
     );
@@ -72,7 +57,7 @@ async function bootstrap() {
     });
 
     const port = process.env.PORT || 3000;
-    await app.listen(port);
+    await app.listen(port, '0.0.0.0');
     
     logger.log(`Application is running on: http://localhost:${port}`);
     logger.log(`Swagger documentation available at: http://localhost:${port}/api`);

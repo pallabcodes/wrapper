@@ -13,12 +13,14 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { FileService } from './file.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { FileResponseMapper } from './mappers/file-response.mapper';
 
 @ApiTags('Files')
 @Controller('files')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class FileController {
   constructor(
@@ -60,8 +62,10 @@ export class FileController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a file' })
+  @Roles('ADMIN', 'MODERATOR') // Example: Only admins and moderators can delete files
+  @ApiOperation({ summary: 'Delete a file (Admin/Moderator only)' })
   @ApiResponse({ status: 200, description: 'File deleted successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin or Moderator role required' })
   @ApiResponse({ status: 404, description: 'File not found' })
   async deleteFile(
     @CurrentUser() user: { id: number },

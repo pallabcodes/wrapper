@@ -60,6 +60,13 @@ export class User extends Model<User> {
   })
   isEmailVerified: boolean;
 
+  @Column({
+    type: DataType.ENUM('USER', 'ADMIN', 'MODERATOR'),
+    defaultValue: 'USER',
+    allowNull: false,
+  })
+  role: 'USER' | 'ADMIN' | 'MODERATOR';
+
   @CreatedAt
   declare createdAt: Date;
 

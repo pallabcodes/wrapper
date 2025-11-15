@@ -50,5 +50,64 @@ export class NotificationsService {
       data: { status, amount },
     });
   }
+
+  // Registration success notification
+  sendRegistrationSuccessNotification(userId: string, email: string) {
+    this.sendToUser(userId, {
+      type: 'success',
+      title: 'Welcome!',
+      message: `Account created successfully. Please verify your email: ${email}`,
+      data: { email },
+    });
+  }
+
+  // Email verified notification
+  sendEmailVerifiedNotification(userId: string) {
+    this.sendToUser(userId, {
+      type: 'success',
+      title: 'Email Verified',
+      message: 'Your email has been verified successfully!',
+    });
+  }
+
+  // Login notification (security)
+  sendLoginNotification(userId: string, ipAddress?: string) {
+    this.sendToUser(userId, {
+      type: 'info',
+      title: 'New Login',
+      message: `You logged in successfully${ipAddress ? ` from ${ipAddress}` : ''}`,
+      data: { ipAddress, timestamp: Date.now() },
+    });
+  }
+
+  // File upload notification
+  sendFileUploadNotification(userId: string, filename: string) {
+    this.sendToUser(userId, {
+      type: 'success',
+      title: 'File Uploaded',
+      message: `File "${filename}" uploaded successfully`,
+      data: { filename },
+    });
+  }
+
+  // File deleted notification
+  sendFileDeletedNotification(userId: string, filename: string) {
+    this.sendToUser(userId, {
+      type: 'info',
+      title: 'File Deleted',
+      message: `File "${filename}" deleted successfully`,
+      data: { filename },
+    });
+  }
+
+  // Custom notification
+  sendCustomNotification(userId: string, type: 'info' | 'success' | 'warning' | 'error', title: string, message: string, data?: unknown) {
+    this.sendToUser(userId, {
+      type,
+      title,
+      message,
+      data,
+    });
+  }
 }
 
