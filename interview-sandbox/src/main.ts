@@ -23,4 +23,4 @@ async function bootstrap() {
   AppShutdownHandler.handle(app);
 }
 
-bootstrap();
+void bootstrap();
