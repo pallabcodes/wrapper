@@ -1,12 +1,21 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { CqrsModule } from '@nestjs/cqrs';
+import { AuthModule } from './modules/auth/auth.module';
 
 /**
  * Event Sourcing App Module
- * 
+ *
  * Demonstrates provider patterns in Event Sourcing context
  */
 @Module({
-  imports: [],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    CqrsModule,
+    AuthModule,
+  ],
   providers: [
     // useClass: Event store implementation
     {

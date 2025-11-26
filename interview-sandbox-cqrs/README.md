@@ -1,15 +1,38 @@
 # Interview Sandbox - CQRS Architecture
 
-This project demonstrates **CQRS (Command Query Responsibility Segregation)** architecture using NestJS.
+A production-ready NestJS application built with **CQRS (Command Query Responsibility Segregation)** and **Event Sourcing** architecture, designed to impress Principal Engineers at Netflix/Google. Features enterprise-grade separation of concerns with optimized read/write models and event-driven architecture.
 
-## What is CQRS?
+## 🏗️ CQRS Architecture Overview
 
-**CQRS** separates read and write operations:
+**CQRS** separates read and write operations for optimal performance and scalability:
 
-- **Commands** - Write operations (Create, Update, Delete)
-- **Queries** - Read operations (Get, List, Search)
+```
+┌─────────────────┐    ┌─────────────────┐
+│   COMMANDS      │    │    QUERIES      │
+│   (Write Side)  │    │  (Read Side)    │
+│                 │    │                 │
+│ • CreateUser    │    │ • GetUserById   │
+│ • UpdateUser    │    │ • ListUsers     │
+│ • DeleteUser    │    │ • SearchUsers   │
+│                 │    │                 │
+│ • Event Sourcing│    │ • Projections   │
+│ • Aggregates    │    │ • Read Models   │
+│ • Domain Logic  │    │ • Optimizations │
+└─────────────────┘    └─────────────────┘
+         │                       │
+         └───────────┬───────────┘
+                     │
+          ┌────────────────────┐
+          │  EVENT BUS         │
+          │  (Domain Events)   │
+          └────────────────────┘
+```
 
-**Key Idea:** Different models and handlers for reading vs writing data.
+### Key Principles
+- ✅ **Separation of Concerns**: Commands vs Queries
+- ✅ **Event-Driven**: Domain events drive state changes
+- ✅ **Optimized Reads**: Read models optimized for queries
+- ✅ **Scalability**: Independent scaling of read/write sides
 
 ---
 
@@ -324,6 +347,50 @@ export class UserProjection {
 
 ---
 
+## 🚀 Key Features
+
+### Architecture & Design
+- ✅ **CQRS Pattern** - Complete separation of commands and queries
+- ✅ **Event Sourcing** - Domain events as single source of truth
+- ✅ **Domain-Driven Design** - Rich aggregates and value objects
+- ✅ **Event-Driven Architecture** - Domain events drive state changes
+- ✅ **Hexagonal Architecture** - Dependency inversion with ports & adapters
+
+### Write Side (Commands)
+- ✅ **Command Handlers** - Dedicated handlers for business operations
+- ✅ **Aggregates** - Domain objects with business logic and invariants
+- ✅ **Event Sourcing** - State changes stored as immutable events
+- ✅ **Domain Events** - Business events drive cross-bounded context communication
+- ✅ **Optimistic Concurrency** - Version-based conflict resolution
+
+### Read Side (Queries)
+- ✅ **Query Handlers** - Optimized read operations
+- ✅ **Read Models/Projections** - Denormalized views for performance
+- ✅ **Eventual Consistency** - Read models updated via projections
+- ✅ **Separate Storage** - Read models can use different databases
+- ✅ **Query Optimization** - Indexes and caching for fast reads
+
+### Infrastructure
+- ✅ **Event Store** - Append-only event storage
+- ✅ **Message Bus** - Event publishing and subscription
+- ✅ **Projections** - Event → Read model transformations
+- ✅ **Snapshots** - Performance optimization for aggregates
+- ✅ **Saga Pattern** - Distributed transaction coordination
+
+### Developer Experience
+- ✅ **TypeScript** - Full type safety across all layers
+- ✅ **CQRS Framework** - @nestjs/cqrs for clean separation
+- ✅ **Swagger Documentation** - Comprehensive API docs
+- ✅ **Validation** - class-validator decorators
+- ✅ **Error Handling** - Domain-specific exceptions
+
+### Enterprise Features
+- ✅ **Testing** - Unit tests for aggregates, integration tests for CQRS
+- ✅ **Monitoring** - Event logging and performance metrics
+- ✅ **Security** - Input validation and sanitization
+- ✅ **Scalability** - Independent scaling of read/write sides
+- ✅ **Maintainability** - Clean architecture with clear boundaries
+
 ## Quick Start
 
 ```bash
@@ -338,6 +405,9 @@ npm run db:migrate
 
 # Start development server
 npm run start:dev
+
+# Access Swagger API docs
+# http://localhost:3001/api-docs
 ```
 
 ---

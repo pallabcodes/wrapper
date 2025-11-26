@@ -56,11 +56,12 @@ async function bootstrap() {
       credentials: true,
     });
 
-    const port = process.env.PORT || 3000;
+    const port = process.env.PORT || 3005;
     await app.listen(port, '0.0.0.0');
-    
-    logger.log(`Application is running on: http://localhost:${port}`);
-    logger.log(`Swagger documentation available at: http://localhost:${port}/api`);
+
+    logger.log(`🚀 Hexagonal Architecture application is running on: http://localhost:${port}`);
+    logger.log(`📚 Swagger documentation: http://localhost:${port}/api`);
+    logger.log(`🏗️ Architecture: Domain ↔ Application ↔ Infrastructure (Ports & Adapters)`);
   } catch (error) {
     logger.error('Failed to start application', error instanceof Error ? error.stack : String(error));
     process.exit(1);

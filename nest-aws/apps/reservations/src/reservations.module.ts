@@ -5,6 +5,8 @@ import { ReservationsController } from './reservations.controller';
 import {
   DatabaseModule,
   LoggerModule,
+  SecurityModule,
+  CacheModuleConfig,
   AUTH_SERVICE,
   PAYMENTS_SERVICE,
   HealthModule,
@@ -24,6 +26,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       { name: ReservationDocument.name, schema: ReservationSchema },
     ]),
     LoggerModule,
+    SecurityModule,
+    CacheModuleConfig,
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
@@ -33,6 +37,12 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         PAYMENTS_HOST: Joi.string().required(),
         AUTH_PORT: Joi.number().required(),
         PAYMENTS_PORT: Joi.number().required(),
+        REDIS_HOST: Joi.string().default('localhost'),
+        REDIS_PORT: Joi.number().default(6379),
+        CACHE_TTL: Joi.number().default(300),
+        CACHE_MAX_ITEMS: Joi.number().default(1000),
+        CORS_ORIGIN: Joi.string().default('http://localhost:3000'),
+        NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
       }),
     }),
     ClientsModule.registerAsync([

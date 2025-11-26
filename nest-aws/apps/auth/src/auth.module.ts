@@ -1,18 +1,27 @@
 import { Module } from '@nestjs/common';
-import { HealthModule, LoggerModule } from '@app/common';
+import {
+  HealthModule,
+  LoggerModule,
+  SecurityModule,
+  CacheModuleConfig,
+  DatabaseModule
+} from '@app/common';
 import { JwtModule } from '@nestjs/jwt';
 import * as Joi from 'joi';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersModule } from './users/users.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { LocalStategy } from './strategies/local.strategy';
+import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [
     UsersModule,
     LoggerModule,
+    SecurityModule,
+    CacheModuleConfig,
+    DatabaseModule,
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
@@ -21,6 +30,12 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         JWT_EXPIRATION: Joi.string().required(),
         HTTP_PORT: Joi.number().required(),
         TCP_PORT: Joi.number().required(),
+        REDIS_HOST: Joi.string().default('localhost'),
+        REDIS_PORT: Joi.number().default(6379),
+        CACHE_TTL: Joi.number().default(300),
+        CACHE_MAX_ITEMS: Joi.number().default(1000),
+        CORS_ORIGIN: Joi.string().default('http://localhost:3000'),
+        NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
       }),
     }),
     JwtModule.registerAsync({
@@ -35,6 +50,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     HealthModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy],
 })
 export class AuthModule {}

@@ -1,18 +1,30 @@
 import { Module } from '@nestjs/common';
-import { EventEmitterModule } from './event-bus/event-emitter.module';
+import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { AuthModule } from './modules/auth/auth.module';
 import { LazyLoadingModule } from './common/lazy-loading/lazy-loading.module';
 import { NotificationLazyModule } from './modules/notification/notification-lazy.module';
 
 /**
  * Event-Driven Architecture App Module
- * 
- * Demonstrates provider patterns in EDA context
+ *
+ * Production-ready EDA (Event-Driven Architecture) application
+ * with domain events, event handlers, and asynchronous processing
  */
 @Module({
   imports: [
-    EventEmitterModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    // Event Emitter for domain events
+    EventEmitterModule.forRoot({
+      wildcard: true,
+      delimiter: '.',
+      maxListeners: 20,
+    }),
+    AuthModule,
     LazyLoadingModule,
-    
+
     // Lazy module loaded conditionally
     NotificationLazyModule.forRootAsync({
       useFactory: async () => {
@@ -23,27 +35,33 @@ import { NotificationLazyModule } from './modules/notification/notification-lazy
     }),
   ],
   providers: [
-    // useClass: Event handler registry
+    // Event-Driven Architecture Infrastructure
+
+    // Event Handler Registry - manages event subscriptions
     {
       provide: 'EVENT_HANDLER_REGISTRY',
       useClass: class EventHandlerRegistry {
-        private handlers = new Map();
+        private handlers = new Map<string, Function[]>();
 
-        register(event: string, handler: any) {
-          this.handlers.set(event, handler);
+        register(eventType: string, handler: Function): void {
+          if (!this.handlers.has(eventType)) {
+            this.handlers.set(eventType, []);
+          }
+          this.handlers.get(eventType)!.push(handler);
+          console.log(`📝 Registered handler for event: ${eventType}`);
         }
 
-        get(event: string) {
-          return this.handlers.get(event);
+        getHandlers(eventType: string): Function[] {
+          return this.handlers.get(eventType) || [];
         }
 
-        getAll() {
-          return Array.from(this.handlers.entries());
+        getAllHandlers(): Map<string, Function[]> {
+          return new Map(this.handlers);
         }
       },
     },
 
-    // useValue: Event bus configuration
+    // Event Bus Configuration
     {
       provide: 'EVENT_BUS_CONFIG',
       useValue: {
@@ -52,19 +70,53 @@ import { NotificationLazyModule } from './modules/notification/notification-lazy
         delimiter: '.',
         newListener: false,
         removeListener: false,
+        verbose: process.env.NODE_ENV === 'development',
       },
     },
 
-    // useFactory: Create event bus with configuration
+    // Domain Event Publisher
+    {
+      provide: 'DOMAIN_EVENT_PUBLISHER',
+      useFactory: (eventEmitter: any, config: any) => {
+        return {
+          publish: async (event: any) => {
+            console.log(`📡 Publishing domain event: ${event.eventType}`, {
+              aggregateId: event.aggregateId,
+              timestamp: event.timestamp,
+            });
+
+            // Publish to event emitter
+            eventEmitter.emit(event.eventType, event);
+
+            // In production, this could also publish to:
+            // - Message queues (RabbitMQ, Kafka)
+            // - Event streams
+            // - External event buses
+          },
+          publishAll: async (events: any[]) => {
+            for (const event of events) {
+              await this.publish(event);
+            }
+          },
+        };
+      },
+      inject: ['CUSTOM_EVENT_BUS', 'EVENT_BUS_CONFIG'],
+    },
+
+    // Custom Event Bus Implementation
     {
       provide: 'CUSTOM_EVENT_BUS',
       useFactory: (config: any) => {
         return {
           emit: (event: string, data: any) => {
-            console.log(`[EventBus] Emitting ${event}:`, data);
+            if (config.verbose) {
+              console.log(`[EventBus] Emitting ${event}:`, data);
+            }
           },
           on: (event: string, handler: Function) => {
-            console.log(`[EventBus] Registered listener for ${event}`);
+            if (config.verbose) {
+              console.log(`[EventBus] Registered listener for ${event}`);
+            }
           },
           config,
         };
@@ -72,17 +124,36 @@ import { NotificationLazyModule } from './modules/notification/notification-lazy
       inject: ['EVENT_BUS_CONFIG'],
     },
 
-    // useExisting: Alias for event handler registry
+    // Event Store (for event sourcing if needed)
     {
-      provide: 'HANDLER_REGISTRY',
-      useExisting: 'EVENT_HANDLER_REGISTRY',
+      provide: 'EVENT_STORE',
+      useFactory: () => {
+        const events: any[] = [];
+        return {
+          append: async (streamId: string, eventData: any[]) => {
+            const eventsWithMetadata = eventData.map(event => ({
+              ...event,
+              streamId,
+              storedAt: new Date(),
+              sequenceNumber: events.length + 1,
+            }));
+            events.push(...eventsWithMetadata);
+            console.log(`💾 Stored ${eventData.length} events for stream: ${streamId}`);
+          },
+          getEvents: async (streamId: string) => {
+            return events.filter(e => e.streamId === streamId);
+          },
+          getAllEvents: () => events,
+        };
+      },
     },
   ],
   exports: [
     'EVENT_HANDLER_REGISTRY',
-    'HANDLER_REGISTRY',
+    'DOMAIN_EVENT_PUBLISHER',
     'EVENT_BUS_CONFIG',
     'CUSTOM_EVENT_BUS',
+    'EVENT_STORE',
   ],
 })
 export class AppModule {}

@@ -4,7 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { DIModule } from './common/di/di.module';
 import { WorkerThreadsModule } from './infrastructure/external/worker-threads/worker-threads.module';
 import { CacheModule } from './common/configurable/configurable-cache.module';
-import { AuthModule } from './infrastructure/persistence/auth/auth.module';
+import { ApplicationModule } from './application/application.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import authConfig from './common/config/auth.config';
 
@@ -35,7 +35,7 @@ import authConfig from './common/config/auth.config';
     // Regular module imports
     DIModule,
     WorkerThreadsModule,
-    AuthModule,
+    ApplicationModule,
     
     // Configurable module with options
     CacheModule.forRoot({

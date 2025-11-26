@@ -1,16 +1,26 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { CqrsModule } from '@nestjs/cqrs';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BootstrapModule } from './common/bootstrap/bootstrap.module';
 import { ScopedServicesModule } from './common/scopes/scoped-services.module';
+import { AuthModule } from './contexts/auth/auth.module';
 
 /**
- * DDD App Module
- * 
- * Demonstrates provider patterns in Domain-Driven Design context
+ * DDD App Module - Domain-Driven Design
+ *
+ * Production-ready DDD application with bounded contexts and clean architecture
  */
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    CqrsModule,
+    EventEmitterModule.forRoot(),
     BootstrapModule,
     ScopedServicesModule,
+    AuthModule,
   ],
   providers: [
     // useClass: Domain service

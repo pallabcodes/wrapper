@@ -6,4 +6,7 @@ export * from './decorators';
 export * from './dto';
 export * from './models';
 export * from './health';
+export * from './security';
+export * from './cache';
+export * from './swagger';
 export * from './types';

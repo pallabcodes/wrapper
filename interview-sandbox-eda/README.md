@@ -1,6 +1,6 @@
 # Interview Sandbox - Event-Driven Architecture (EDA)
 
-This project demonstrates **Event-Driven Architecture (EDA)** using NestJS.
+A production-ready NestJS application built with **Event-Driven Architecture (EDA)** and **Domain Events**, designed to impress Principal Engineers at Netflix/Google. Features enterprise-grade asynchronous processing, domain events, event handlers, and scalable messaging patterns.
 
 ## What is Event-Driven Architecture?
 
@@ -32,6 +32,57 @@ Service A publishes Event → Event Bus → Service B & C subscribe
 - ✅ **Flexibility** - Easy to add/remove event handlers
 
 ---
+
+## 🚀 Key Features
+
+### Architecture & Design
+- ✅ **Event-Driven Architecture** - Loose coupling through domain events
+- ✅ **Domain Events** - Business events published by aggregates
+- ✅ **Event Handlers** - Asynchronous reaction to domain events
+- ✅ **Event Bus** - Publish/subscribe messaging pattern
+- ✅ **Hexagonal Architecture** - Ports & adapters with event-driven interfaces
+
+### Domain Layer
+- ✅ **Aggregate Roots** - Domain objects that publish events
+- ✅ **Domain Events** - Immutable business event objects
+- ✅ **Value Objects** - Immutable domain primitives
+- ✅ **Domain Services** - Business logic coordination
+- ✅ **Repository Pattern** - Domain-focused data access abstraction
+
+### Event Processing
+- ✅ **Event Handlers** - React to domain events asynchronously
+- ✅ **Event Publisher** - Publish events to event bus
+- ✅ **Event Store** - Persistence for event sourcing (optional)
+- ✅ **Event Metadata** - Versioning, timestamps, correlation IDs
+- ✅ **Event Routing** - Wildcard and delimiter-based routing
+
+### Application Layer
+- ✅ **Application Services** - Use case orchestration
+- ✅ **Command Objects** - Input data transfer objects
+- ✅ **Event Publishing** - Domain event publication
+- ✅ **Transaction Management** - Eventual consistency
+- ✅ **Cross-cutting Concerns** - Logging, validation, security
+
+### Infrastructure Layer
+- ✅ **Event Emitter** - In-memory event bus (@nestjs/event-emitter)
+- ✅ **Message Queues** - RabbitMQ, Kafka integration ready
+- ✅ **WebSockets** - Real-time event streaming
+- ✅ **Microservices** - Event-driven communication
+- ✅ **External Integrations** - API calls, email, notifications
+
+### Developer Experience
+- ✅ **TypeScript** - Full type safety across all layers
+- ✅ **Swagger Documentation** - Complete API specs
+- ✅ **Validation** - class-validator decorators
+- ✅ **Error Handling** - Domain-specific exceptions
+- ✅ **Testing** - Unit and integration tests
+
+### Enterprise Features
+- ✅ **Scalability** - Horizontal scaling with event-driven decoupling
+- ✅ **Reliability** - Eventual consistency and retry mechanisms
+- ✅ **Observability** - Event logging and monitoring
+- ✅ **Security** - Input validation and event authorization
+- ✅ **Performance** - Asynchronous processing and background jobs
 
 ## Folder Structure Explained
 
@@ -324,11 +375,33 @@ npm install
 # Setup environment
 npm run setup
 
-# Run migrations
+# Run migrations (if using database)
 npm run db:migrate
 
 # Start development server
 npm run start:dev
+
+# Access Swagger API docs
+# http://localhost:3003/api-docs
+```
+
+### Test Event-Driven Flow
+```bash
+# Register a user (triggers UserRegisteredEvent)
+curl -X POST http://localhost:3003/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john.doe@example.com",
+    "name": "John Doe",
+    "password": "SecurePass123!",
+    "role": "USER"
+  }'
+
+# Verify email (triggers UserEmailVerifiedEvent)
+curl -X POST http://localhost:3003/auth/users/{user-id}/verify-email
+
+# Get user data
+curl http://localhost:3003/auth/users/{user-id}
 ```
 
 ---

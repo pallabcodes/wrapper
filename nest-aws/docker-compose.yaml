@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   reservations:
     build:
@@ -11,6 +13,12 @@ services:
       - '3000:3000'
     volumes:
       - .:/usr/src/app
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - sleepr
+
   auth:
     build:
       context: .
@@ -23,6 +31,12 @@ services:
       - '3001:3001'
     volumes:
       - .:/usr/src/app
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - sleepr
+
   payments:
     build:
       context: .
@@ -31,8 +45,15 @@ services:
     command: pnpm run start:dev payments
     env_file:
       - ./apps/payments/.env
+    ports:
+      - '3003:3003'
     volumes:
       - .:/usr/src/app
+    depends_on:
+      - redis
+    networks:
+      - sleepr
+
   notifications:
     build:
       context: .
@@ -41,7 +62,55 @@ services:
     command: pnpm run start:dev notifications
     env_file:
       - ./apps/notifications/.env
+    ports:
+      - '3004:3004'
     volumes:
       - .:/usr/src/app
+    depends_on:
+      - redis
+    networks:
+      - sleepr
+
   mongo:
-    image: mongo
+    image: mongo:6.0
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: sleepr
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    networks:
+      - sleepr
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:7.0-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: redis-server --appendonly yes --requirepass password
+    volumes:
+      - redis_data:/data
+    networks:
+      - sleepr
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  mongo_data:
+  redis_data:
+
+networks:
+  sleepr:
+    driver: bridge

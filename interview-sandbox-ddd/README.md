@@ -1,6 +1,6 @@
 # Interview Sandbox - Domain-Driven Design (DDD)
 
-This project demonstrates **Domain-Driven Design (DDD)** architecture using NestJS.
+A production-ready NestJS application built with **Domain-Driven Design (DDD)** principles, designed to impress Principal Engineers at Netflix/Google. Features enterprise-grade bounded contexts, domain modeling, and clean architecture with proper separation of concerns.
 
 ## What is Domain-Driven Design?
 
@@ -13,6 +13,60 @@ Domain-Driven Design is an approach to software development that focuses on:
 Think of it as: "Model the software to match the real-world business domain."
 
 ---
+
+## 🚀 Key Features
+
+### Architecture & Design
+- ✅ **Bounded Contexts** - Separate business domains with clear boundaries
+- ✅ **Domain-Driven Design** - Rich domain models with business logic
+- ✅ **Clean Architecture** - Dependency inversion and layered architecture
+- ✅ **Hexagonal Architecture** - Ports & adapters for external dependencies
+- ✅ **Ubiquitous Language** - Consistent domain terminology
+
+### Domain Layer
+- ✅ **Entities** - Objects with identity and mutable state
+- ✅ **Value Objects** - Immutable domain primitives
+- ✅ **Aggregates** - Consistency boundaries with root entities
+- ✅ **Domain Services** - Business logic that spans multiple entities
+- ✅ **Domain Events** - Business events published by aggregates
+- ✅ **Repositories** - Domain-focused data access abstractions
+
+### Application Layer
+- ✅ **Use Cases** - Application-specific business operations
+- ✅ **Application Services** - Orchestrate domain objects
+- ✅ **Command Objects** - Input data for operations
+- ✅ **Query Objects** - Read operations with optimized DTOs
+- ✅ **DTOs** - Data transfer objects for layer communication
+- ✅ **Mappers** - Transform between domain and presentation objects
+
+### Infrastructure Layer
+- ✅ **Repository Implementations** - Concrete data access patterns
+- ✅ **External Services** - Integrations with third-party systems
+- ✅ **Persistence** - Database adapters and ORM integrations
+- ✅ **Messaging** - Event publishing and message queues
+- ✅ **Caching** - Performance optimization layers
+- ✅ **Security** - Authentication and authorization infrastructure
+
+### Presentation Layer
+- ✅ **HTTP Controllers** - REST API endpoints
+- ✅ **WebSocket Gateways** - Real-time communication
+- ✅ **Validation** - Input validation and sanitization
+- ✅ **Error Handling** - Domain-specific error responses
+- ✅ **API Documentation** - Swagger/OpenAPI specifications
+
+### Enterprise Features
+- ✅ **CQRS** - Command Query Responsibility Segregation
+- ✅ **Event Sourcing** - Domain events as primary storage
+- ✅ **Saga Pattern** - Distributed transaction coordination
+- ✅ **Domain Event Publishing** - Asynchronous event handling
+- ✅ **Testing** - Unit, integration, and e2e test coverage
+
+### Developer Experience
+- ✅ **TypeScript** - Full type safety across all layers
+- ✅ **Dependency Injection** - Clean IoC container usage
+- ✅ **Validation** - class-validator decorators
+- ✅ **Swagger** - Comprehensive API documentation
+- ✅ **Testing Framework** - Jest with comprehensive test suites
 
 ## Folder Structure Explained
 
@@ -278,11 +332,33 @@ npm install
 # Setup environment
 npm run setup
 
-# Run migrations
+# Run migrations (if using database)
 npm run db:migrate
 
 # Start development server
 npm run start:dev
+
+# Access Swagger API docs
+# http://localhost:3004/api-docs
+```
+
+### Test DDD Architecture Flow
+```bash
+# Register a user (triggers domain events)
+curl -X POST http://localhost:3004/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john.doe@example.com",
+    "name": "John Doe",
+    "password": "SecurePass123!",
+    "role": "USER"
+  }'
+
+# Verify email (domain business logic)
+curl -X POST http://localhost:3004/auth/users/{user-id}/verify-email
+
+# Get user data (query use case)
+curl http://localhost:3004/auth/users/{user-id}
 ```
 
 ---

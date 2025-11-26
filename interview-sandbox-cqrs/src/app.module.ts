@@ -1,35 +1,26 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { CqrsModule } from '@nestjs/cqrs';
 import { AuthModule } from './modules/auth/auth.module';
 import { CircuitBreakerModule } from './common/circuit-breaker/circuit-breaker.module';
 
 /**
  * CQRS App Module
- * 
- * Demonstrates provider patterns in CQRS architecture context
+ *
+ * Production-ready CQRS (Command Query Responsibility Segregation) architecture
+ * with event sourcing and separate read/write models
  */
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    CqrsModule,
     AuthModule,
     CircuitBreakerModule,
   ],
   providers: [
-    // useClass: Command/Query handlers
-    {
-      provide: 'COMMAND_HANDLER_REGISTRY',
-      useClass: class CommandHandlerRegistry {
-        private handlers = new Map();
-
-        register(command: string, handler: any) {
-          this.handlers.set(command, handler);
-        }
-
-        get(command: string) {
-          return this.handlers.get(command);
-        }
-      },
-    },
-
-    // useValue: CQRS configuration
+    // CQRS Infrastructure configuration
     {
       provide: 'CQRS_CONFIG',
       useValue: {
@@ -37,45 +28,53 @@ import { CircuitBreakerModule } from './common/circuit-breaker/circuit-breaker.m
         enableProjections: true,
         readWriteSeparation: true,
         eventStore: {
-          type: 'in-memory', // or 'database', 'eventstore'
+          type: 'in-memory', // Production: 'database' or 'eventstore-db'
         },
+        snapshotInterval: 100,
       },
     },
 
-    // useFactory: Create CQRS bus based on config
+    // Event Store for write side (commands)
     {
-      provide: 'COMMAND_BUS',
+      provide: 'EVENT_STORE',
       useFactory: (config: any) => {
-        if (config.enableEventSourcing) {
+        if (config.eventStore.type === 'in-memory') {
           return {
-            execute: async (command: any) => {
-              console.log('Executing command with event sourcing:', command);
-              // Event sourcing implementation
+            append: async (streamId: string, events: any[]) => {
+              console.log(`📝 Appended ${events.length} events to stream ${streamId}`);
+              events.forEach(event => {
+                console.log(`  ${event.eventType}:`, event.aggregateId);
+              });
             },
-          };
-        } else {
-          return {
-            execute: async (command: any) => {
-              console.log('Executing command:', command);
-              // Standard implementation
+            getEvents: async (streamId: string) => {
+              console.log(`📖 Loading events for stream ${streamId}`);
+              return []; // In real implementation, load from event store
             },
           };
         }
+        // Add other event store implementations here
+        return {};
       },
       inject: ['CQRS_CONFIG'],
     },
 
-    // useExisting: Alias for query bus
+    // Projection service for read side (queries)
     {
-      provide: 'QUERY_BUS',
-      useExisting: 'COMMAND_BUS', // In real implementation, would be separate
+      provide: 'PROJECTION_SERVICE',
+      useFactory: () => {
+        return {
+          project: async (event: any) => {
+            console.log(`🔄 Projecting event ${event.eventType} to read model`);
+            // In real implementation, update read database
+          },
+        };
+      },
     },
   ],
   exports: [
-    'COMMAND_HANDLER_REGISTRY',
     'CQRS_CONFIG',
-    'COMMAND_BUS',
-    'QUERY_BUS',
+    'EVENT_STORE',
+    'PROJECTION_SERVICE',
   ],
 })
 export class AppModule {}

@@ -12,8 +12,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { AuthService } from '../../infrastructure/persistence/auth/auth.service';
-import { TwoFactorService } from '../../infrastructure/persistence/auth/two-factor.service';
+import { AuthService } from '../../application/services/auth.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Public } from '../../common/decorators/public.decorator';
 import { AuthGuard } from '@nestjs/passport';
@@ -27,16 +26,15 @@ import { AppLoggerService } from '../../common/logger/logger.service';
 import { AuthResponseMapper } from '../mappers/auth-response.mapper';
 
 /**
- * Authentication Controller
- * 
- * Handles:
- * - User registration
- * - User login (local, Google OAuth)
- * - Token refresh
- * - Token invalidation (logout)
- * - 2FA setup and verification
- * - User profile retrieval
- * 
+ * Authentication Controller - Hexagonal Architecture
+ *
+ * Presentation layer that:
+ * - Receives HTTP requests
+ * - Calls application services (use cases)
+ * - Returns HTTP responses
+ *
+ * Does NOT directly call infrastructure services - follows dependency inversion
+ *
  * @class AuthController
  */
 @Controller('auth')
@@ -44,18 +42,20 @@ export class AuthController {
   private readonly logger: AppLoggerService;
 
   constructor(
-    private readonly authService: AuthService,
-    private readonly twoFactorService: TwoFactorService,
+    private readonly authService: AuthService, // Application service
     private readonly responseMapper: AuthResponseMapper,
   ) {
     this.logger = new AppLoggerService('AuthController');
   }
 
   /**
-   * Register new user
-   * 
-   * @param registerDto - Registration data
-   * @returns Promise<AuthResponseDto> - User data and tokens
+   * Register new user - Hexagonal Architecture
+   *
+   * Presentation layer calls application service (use case)
+   * Application service orchestrates domain logic through ports
+   *
+   * @param registerDto - Registration data from HTTP request
+   * @returns Promise<AuthResponseDto> - HTTP response with user data and tokens
    */
   @Public()
   @Post('register')
@@ -64,16 +64,17 @@ export class AuthController {
     this.logger.log(`Registration attempt for email: ${registerDto.email}`);
 
     try {
-      const user = await this.authService.register(
-        registerDto.email,
-        registerDto.password,
-        registerDto.roles,
-      );
-      const tokens = await this.authService.generateTokens(user);
+      // Call application service (use case) - follows hexagonal architecture
+      const result = await this.authService.register({
+        email: registerDto.email,
+        name: registerDto.name || 'User', // Fallback if name not provided
+        password: registerDto.password,
+        role: registerDto.roles?.[0], // Take first role or undefined
+      });
 
-      this.logger.log(`User registered successfully: ${user.id}`);
+      this.logger.log(`User registered successfully: ${result.user.id}`);
       const requestId = req.headers['x-request-id'] as string | undefined;
-      return this.responseMapper.toRegisterResponse(user, tokens, requestId);
+      return this.responseMapper.toRegisterResponse(result.user, result, requestId);
     } catch (error) {
       this.logger.error(`Registration failed for: ${registerDto.email}`, error instanceof Error ? error.stack : String(error));
       throw error;
@@ -81,10 +82,13 @@ export class AuthController {
   }
 
   /**
-   * Login with email and password
-   * 
-   * @param loginDto - Login credentials
-   * @returns Promise<AuthResponseDto> - User data and tokens
+   * Login with email and password - Hexagonal Architecture
+   *
+   * Presentation layer calls application service (use case)
+   * Application service validates credentials through domain logic
+   *
+   * @param loginDto - Login credentials from HTTP request
+   * @returns Promise<AuthResponseDto> - HTTP response with user data and tokens
    */
   @Public()
   @Post('login')
@@ -92,20 +96,19 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto, @Request() req: any): Promise<any> {
     this.logger.log(`Login attempt for email: ${loginDto.email}`);
 
-    const user = await this.authService.validateUser(loginDto.email, loginDto.password);
-    if (!user) {
+    try {
+      // Call application service (use case) - follows hexagonal architecture
+      const result = await this.authService.login({
+        email: loginDto.email,
+        password: loginDto.password,
+      });
+
+      this.logger.log(`Login successful for user: ${result.user.id}`);
+      const requestId = req.headers['x-request-id'] as string | undefined;
+      return this.responseMapper.toLoginResponse(result.user, result, requestId);
+    } catch (error) {
       this.logger.warn(`Failed login attempt for: ${loginDto.email}`);
       throw new UnauthorizedException('Invalid email or password');
-    }
-
-    try {
-      const tokens = await this.authService.generateTokens(user);
-      this.logger.log(`Login successful for user: ${user.id}`);
-      const requestId = req.headers['x-request-id'] as string | undefined;
-      return this.responseMapper.toLoginResponse(user, tokens, requestId);
-    } catch (error) {
-      this.logger.error(`Login failed for: ${loginDto.email}`, error instanceof Error ? error.stack : String(error));
-      throw new BadRequestException('Failed to generate tokens');
     }
   }
 
@@ -154,22 +157,41 @@ export class AuthController {
   }
 
   /**
-   * Get current user profile
-   * 
+   * Get current user profile - Hexagonal Architecture
+   *
+   * Presentation layer calls application service (use case)
+   * Application service retrieves user through domain repository port
+   *
    * @param req - Authenticated request
-   * @returns IUser - Current user profile
+   * @returns Promise<any> - HTTP response with user profile
    */
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  getProfile(@Request() req: IAuthenticatedRequest): any {
+  async getProfile(@Request() req: IAuthenticatedRequest): Promise<any> {
     this.logger.debug(`Profile request for user: ${req.user.id}`);
-    const requestId = req.headers['x-request-id'] as string | undefined;
-    const user = {
-      id: req.user.id,
-      email: req.user.email,
-      roles: req.user.roles,
-    };
-    return this.responseMapper.toProfileResponse(user, requestId);
+
+    try {
+      // Call application service (use case) - follows hexagonal architecture
+      const user = await this.authService.getUserById(req.user.id);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const requestId = req.headers['x-request-id'] as string | undefined;
+      const userProfile = {
+        id: user.id,
+        email: user.email.getValue(),
+        name: user.name,
+        role: user.role,
+        isEmailVerified: user.isEmailVerified,
+      };
+
+      return this.responseMapper.toProfileResponse(userProfile, requestId);
+    } catch (error) {
+      this.logger.error(`Profile request failed for user: ${req.user.id}`, error instanceof Error ? error.stack : String(error));
+      throw error;
+    }
   }
 
   /**

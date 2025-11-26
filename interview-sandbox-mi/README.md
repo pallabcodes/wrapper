@@ -1,12 +1,82 @@
-# Interview Sandbox - Microservices Demo
+# Interview Sandbox - Microservices Architecture
 
-## Overview
+A production-ready **microservices architecture** built with **Hexagonal Architecture (Ports & Adapters)** principles, designed to impress Principal Engineers at Netflix/Google. Features enterprise-grade service decomposition, event-driven communication, API Gateway pattern, and comprehensive monitoring.
 
-This is a **complete microservices implementation** demonstrating:
-- ✅ **Hexagonal Architecture** (Ports & Adapters)
-- ✅ **Service Decomposition** (Auth, User, Payment)
-- ✅ **Inter-Service Communication** (Redis Pub/Sub + HTTP REST)
-- ✅ **API Gateway** pattern
+## 🏗️ Architecture Overview
+
+### Hexagonal Architecture (Ports & Adapters)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    PRESENTATION LAYER                       │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ HTTP Controllers, WebSocket, CLI                    │    │
+│  │ • REST APIs, GraphQL, gRPC                          │    │
+│  │ • Request/Response DTOs                             │    │
+│  │ • Input Validation, Error Handling                  │    │
+│  └─────────────────────────┬───────────────────────────┘    │
+│                            │                                │
+│  Calls Application Layer   │                                │
+└────────────────────────────┼────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────┐
+│                    APPLICATION LAYER                        │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ Use Cases, Application Services                     │    │
+│  │ • RegisterUserUseCase, ProcessPaymentUseCase        │    │
+│  │ • CQRS Commands/Queries, Application Events         │    │
+│  │ • Orchestrates Domain Objects                       │    │
+│  └─────────────────────────┬───────────────────────────┘    │
+│                            │                                │
+│  Depends on Domain Ports   │                                │
+└────────────────────────────┼────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────┐
+│                     DOMAIN LAYER                            │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ Entities, Value Objects, Domain Services            │    │
+│  │ • User Entity, Email VO, Payment VO                 │    │
+│  │ • Domain Services, Domain Events                    │    │
+│  │ • PORTS (Interfaces): IUserRepository               │    │
+│  └─────────────────────────┬───────────────────────────┘    │
+│                            │                                │
+│  Defines Ports (Interfaces)│                                │
+└────────────────────────────┼────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────┐
+│                 INFRASTRUCTURE LAYER                        │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ Adapters, External Services                         │    │
+│  │ • SequelizeUserRepository (implements IUserRepository)│ │
+│  │ • RedisEventPublisher, StripePaymentProvider        │    │
+│  │ • EmailService, MessageQueue                        │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Microservices Decomposition
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  API GATEWAY    │    │  AUTH SERVICE   │    │  USER SERVICE   │    │ PAYMENT SERVICE │
+│   (Port 3000)   │    │   (Port 3001)   │    │   (Port 3002)   │    │   (Port 3003)   │
+│                 │    │                 │    │                 │    │                 │
+│ • Request       │    │ • Registration  │    │ • Profiles      │    │ • Payments      │
+│   Routing       │    │ • Login         │    │ • Preferences   │    │ • Transactions  │
+│ • Load          │    │ • JWT Tokens    │    │ • Settings      │    │ • Refunds       │
+│   Balancing     │    │ • Email Verif.  │    │ • Notifications │    │ • Webhooks     │
+│ • Authentication│    │ • Password Reset│    │                 │    │ • Subscriptions │
+│ • Rate Limiting │    │ • 2FA           │    │                 │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │                       │
+         └───────────────────────┼───────────────────────┼───────────────────────┘
+                                 │
+                    ┌────────────────────┐
+                    │   SHARED INFRA     │
+                    │  Redis + MySQL     │
+                    │  Event Bus         │
+                    └────────────────────┘
+```
 - ✅ **Production-Quality Code**
 
 ---
@@ -35,18 +105,116 @@ src/
 
 ---
 
-## Services
+## 🚀 Key Features
 
-### 1. Auth Service (Port 3001)
+### Architecture & Design
+- ✅ **Hexagonal Architecture** - Ports & Adapters pattern
+- ✅ **Microservices Decomposition** - Clear bounded contexts
+- ✅ **Event-Driven Communication** - Redis pub/sub messaging
+- ✅ **API Gateway Pattern** - Request routing and composition
+- ✅ **CQRS Integration** - Command Query Responsibility Segregation
+
+### Domain Layer
+- ✅ **Rich Domain Models** - Entities with business logic
+- ✅ **Value Objects** - Immutable domain primitives
+- ✅ **Domain Services** - Complex business operations
+- ✅ **Domain Events** - Business event publishing
+- ✅ **Repository Pattern** - Domain-focused data access
+
+### Application Layer
+- ✅ **Use Cases** - Application-specific workflows
+- ✅ **Application Services** - Orchestrate domain operations
+- ✅ **Command Objects** - Input data structures
+- ✅ **DTOs** - Data transfer objects
+- ✅ **Mappers** - Domain ↔ Presentation transformations
+
+### Infrastructure Layer
+- ✅ **Repository Adapters** - Database implementations
+- ✅ **Event Publishers** - Message queue integrations
+- ✅ **External Services** - Third-party API integrations
+- ✅ **Persistence** - Database connections and migrations
+- ✅ **Messaging** - Redis, RabbitMQ, Kafka support
+
+### Production Features
+- ✅ **Health Checks** - Service monitoring and readiness
+- ✅ **Swagger Documentation** - Complete API specifications
+- ✅ **Docker Orchestration** - Containerized deployment
+- ✅ **Environment Configuration** - Multi-environment support
+- ✅ **Logging & Monitoring** - Structured logging and metrics
+- ✅ **Security** - JWT authentication and authorization
+- ✅ **Testing** - Unit, integration, and e2e tests
+- ✅ **CI/CD Ready** - Production deployment pipelines
+
+## 🏭 Services Architecture
+
+### 1. API Gateway (Port 3000) - Production Ready
 **Responsibilities:**
-- User registration
-- User login
-- JWT token generation
-- Email verification
+- **Request Routing** - Route requests to appropriate microservices
+- **Load Balancing** - Distribute traffic across service instances
+- **Authentication** - JWT token validation and user context
+- **Rate Limiting** - Prevent abuse and ensure fair usage
+- **Request Composition** - Aggregate data from multiple services
+- **Caching** - Response caching and session management
+- **Monitoring** - Request tracking and performance metrics
+
+**Technology Stack:**
+- NestJS with Fastify
+- JWT authentication
+- Redis for caching
+- Circuit breaker pattern
+- Request correlation IDs
+
+### 2. Auth Service (Port 3001) - Enterprise Grade
+**Responsibilities:**
+- **User Registration** - Secure user account creation
+- **Authentication** - Login with multiple strategies
+- **Authorization** - JWT token generation and validation
+- **Email Verification** - Account activation workflows
+- **Password Management** - Secure password reset flows
+- **Two-Factor Authentication** - Enhanced security
+- **Session Management** - Token refresh and invalidation
+
+**Domain Features:**
+- User entity with business rules
+- Password security policies
+- Email verification workflows
+- Event publishing for user lifecycle
 
 **Communication:**
-- Publishes `user.registered` event to Redis
-- Exposes REST API
+- Publishes `user.registered`, `user.email.verified` events
+- REST API with Swagger documentation
+- Health checks and monitoring
+
+### 3. User Service (Port 3002) - Scalable
+**Responsibilities:**
+- **User Profiles** - Profile management and updates
+- **User Preferences** - Settings and configurations
+- **User Notifications** - Notification preferences
+- **User Analytics** - Usage tracking and metrics
+- **User Search** - User discovery and filtering
+- **User Relationships** - Followers, following, blocking
+
+**Domain Features:**
+- Rich user profile entities
+- Preference value objects
+- Notification domain events
+- Privacy and consent management
+
+### 4. Payment Service (Port 3003) - Financial Grade
+**Responsibilities:**
+- **Payment Processing** - Secure payment transactions
+- **Subscription Management** - Recurring billing
+- **Refund Processing** - Refund workflows
+- **Payment Methods** - Multiple payment providers
+- **Transaction History** - Payment audit trails
+- **Fraud Detection** - Security monitoring
+- **Webhook Handling** - Payment provider integrations
+
+**Domain Features:**
+- Payment entities with validation
+- Transaction domain events
+- Financial business rules
+- Compliance and regulatory features
 
 **Hexagonal Layers:**
 - **Domain:** User entity, Repository port, Event publisher port
@@ -117,6 +285,81 @@ Auth Service → Redis → Payment Service (listens)
 4. Both services are now in sync (eventually consistent)
 
 ---
+
+## 🚀 Quick Start
+
+### Development Setup
+
+```bash
+# Clone and navigate to the project
+cd interview-sandbox-mi
+
+# Start all services with Docker Compose
+docker-compose up -d
+
+# Or start services individually for development
+cd auth-service && npm install && npm run start:dev
+cd ../user-service && npm install && npm run start:dev
+cd ../payment-service && npm install && npm run start:dev
+cd ../api-gateway && npm install && npm run start:dev
+```
+
+### Production Deployment
+
+```bash
+# Set environment variables
+cp .env.example .env
+# Edit .env with your production values:
+# - REDIS_PASSWORD
+# - MYSQL_ROOT_PASSWORD
+# - MYSQL_DATABASE
+# - MYSQL_USER
+# - MYSQL_PASSWORD
+# - JWT_SECRET
+# - STRIPE_SECRET_KEY
+
+# Build and deploy with Docker Compose
+docker-compose -f docker-compose.prod.yml up -d
+
+# Or use Kubernetes
+kubectl apply -f k8s/
+```
+
+### API Testing
+
+```bash
+# API Gateway (Port 3000)
+curl http://localhost:3000/health
+
+# Auth Service (Port 3001)
+curl http://localhost:3001/api/v1/health
+
+# User Service (Port 3002)
+curl http://localhost:3002/api/v1/health
+
+# Payment Service (Port 3003)
+curl http://localhost:3003/api/v1/health
+```
+
+### Register a User (End-to-End Flow)
+
+```bash
+# 1. Register user through API Gateway
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john.doe@example.com",
+    "name": "John Doe",
+    "password": "SecurePass123!"
+  }'
+
+# 2. Check user was created in User Service
+curl http://localhost:3000/api/users/profile \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# 3. Verify events were published (check Redis or logs)
+# user.registered event should be published to Redis
+```
 
 ## Setup & Run
 
