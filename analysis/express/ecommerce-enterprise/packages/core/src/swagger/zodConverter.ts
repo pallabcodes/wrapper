@@ -7,12 +7,32 @@
 import { z } from 'zod'
 import type { OpenAPISchema } from './types'
 
+// Type for accessing Zod's internal _def property
+interface ZodDef {
+  typeName?: string;
+  shape?: () => Record<string, z.ZodSchema>;
+  checks?: Array<{ kind: string; value?: number }>;
+  type?: z.ZodSchema;
+  values?: string[];
+}
+
+// Helper function to safely access Zod's internal _def property
+const getZodDef = (schema: z.ZodSchema): ZodDef | null => {
+  try {
+    return (schema as unknown as { _def?: ZodDef })._def || null;
+  } catch {
+    return null;
+  }
+};
+
 // Helper function to check if a Zod schema is optional
 const isOptional = (schema: z.ZodSchema): boolean => {
   try {
-    return (schema._def as any).typeName === 'ZodOptional' || 
-           (schema._def as any).typeName === 'ZodNullable' ||
-           (schema._def as any).typeName === 'ZodDefault'
+    const def = getZodDef(schema);
+    if (!def || !def.typeName) return false;
+    return def.typeName === 'ZodOptional' || 
+           def.typeName === 'ZodNullable' ||
+           def.typeName === 'ZodDefault';
   } catch {
     return false
   }
@@ -22,12 +42,13 @@ const isOptional = (schema: z.ZodSchema): boolean => {
 export const zodToOpenAPI = (zodSchema: z.ZodSchema): OpenAPISchema => {
   try {
     // Defensive check for valid Zod schema
-    if (!zodSchema || !zodSchema._def || !(zodSchema._def as any).typeName) {
+    const def = getZodDef(zodSchema);
+    if (!def || !def.typeName) {
       console.warn('Invalid Zod schema provided to zodToOpenAPI:', zodSchema)
       return { type: 'string' }
     }
 
-    const typeName = (zodSchema._def as any).typeName
+    const typeName = def.typeName
 
     if (typeName === 'ZodObject') {
       return convertZodObject(zodSchema)
@@ -67,7 +88,12 @@ export const zodToOpenAPI = (zodSchema: z.ZodSchema): OpenAPISchema => {
 
 const convertZodObject = (zodSchema: z.ZodSchema): OpenAPISchema => {
   try {
-    const shape = (zodSchema as any)._def.shape()
+    const def = getZodDef(zodSchema);
+    if (!def || !def.shape) {
+      return { type: 'object', properties: {} };
+    }
+    
+    const shape = def.shape();
     const properties: Record<string, OpenAPISchema> = {}
     const required: string[] = []
 
@@ -98,8 +124,9 @@ const convertZodString = (zodSchema: z.ZodSchema): OpenAPISchema => {
   const schema: OpenAPISchema = { type: 'string' }
   
   try {
-    if ((zodSchema as any)._def.checks) {
-      (zodSchema as any)._def.checks.forEach((check: { kind: string; value?: number }) => {
+    const def = getZodDef(zodSchema);
+    if (def && def.checks) {
+      def.checks.forEach((check) => {
         if (check.kind === 'email') {
           schema.format = 'email'
         } else if (check.kind === 'uuid') {
@@ -118,9 +145,13 @@ const convertZodString = (zodSchema: z.ZodSchema): OpenAPISchema => {
 
 const convertZodArray = (zodSchema: z.ZodSchema): OpenAPISchema => {
   try {
+    const def = getZodDef(zodSchema);
+    if (!def || !def.type) {
+      return { type: 'array', items: { type: 'string' } };
+    }
     return {
       type: 'array',
-      items: zodToOpenAPI((zodSchema as any)._def.type)
+      items: zodToOpenAPI(def.type)
     }
   } catch (error) {
     console.warn('Error processing ZodArray:', error)
@@ -141,9 +172,13 @@ const convertZodUnion = (_zodSchema: z.ZodSchema): OpenAPISchema => {
 
 const convertZodEnum = (zodSchema: z.ZodSchema): OpenAPISchema => {
   try {
+    const def = getZodDef(zodSchema);
+    if (!def || !def.values) {
+      return { type: 'string' };
+    }
     return {
       type: 'string',
-      enum: (zodSchema as any)._def.values
+      enum: def.values
     }
   } catch (error) {
     console.warn('Error processing ZodEnum:', error)

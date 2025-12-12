@@ -2,53 +2,60 @@ import { Injectable, LoggerService, ConsoleLogger } from '@nestjs/common';
 
 @Injectable()
 export class CustomLoggerService extends ConsoleLogger implements LoggerService {
-  log(message: any, context?: string) {
-    super.log(`[INFO] ${message}`, context);
+  private readonly jsonEnabled = process.env.LOG_JSON !== 'false';
+
+  log(message: any, context?: string, meta?: any) {
+    super.log(this.format('info', message, context, meta), context);
   }
 
-  error(message: any, trace?: string, context?: string) {
-    super.error(`[ERROR] ${message}`, trace, context);
+  error(message: any, trace?: string, context?: string, meta?: any) {
+    super.error(this.format('error', message, context, meta), trace, context);
   }
 
-  warn(message: any, context?: string) {
-    super.warn(`[WARN] ${message}`, context);
+  warn(message: any, context?: string, meta?: any) {
+    super.warn(this.format('warn', message, context, meta), context);
   }
 
-  debug(message: any, context?: string) {
-    super.debug(`[DEBUG] ${message}`, context);
+  debug(message: any, context?: string, meta?: any) {
+    super.debug(this.format('debug', message, context, meta), context);
   }
 
-  verbose(message: any, context?: string) {
-    super.verbose(`[VERBOSE] ${message}`, context);
+  verbose(message: any, context?: string, meta?: any) {
+    super.verbose(this.format('verbose', message, context, meta), context);
   }
 
-  // Additional structured logging methods
   security(message: string, meta?: any, context?: string) {
-    this.warn(`[SECURITY] ${message}`, context || 'Security');
-    if (meta) {
-      this.debug(`Security metadata: ${JSON.stringify(meta)}`, context || 'Security');
-    }
+    this.warn(`[SECURITY] ${message}`, context || 'Security', meta);
   }
 
   audit(action: string, userId: string, resource: string, meta?: any) {
-    this.log(`[AUDIT] ${action} on ${resource} by user ${userId}`, 'Audit');
-    if (meta) {
-      this.debug(`Audit metadata: ${JSON.stringify(meta)}`, 'Audit');
-    }
+    this.log(`[AUDIT] ${action} on ${resource} by user ${userId}`, 'Audit', meta);
   }
 
   performance(operation: string, duration: number, meta?: any) {
     const level = duration > 1000 ? 'warn' : 'log';
-    this[level](`[PERF] ${operation} took ${duration}ms`, 'Performance');
-    if (meta) {
-      this.debug(`Performance metadata: ${JSON.stringify(meta)}`, 'Performance');
-    }
+    this[level](`[PERF] ${operation} took ${duration}ms`, 'Performance', meta);
   }
 
   business(event: string, userId?: string, meta?: any) {
-    this.log(`[BUSINESS] ${event}${userId ? ` (user: ${userId})` : ''}`, 'Business');
-    if (meta) {
-      this.debug(`Business metadata: ${JSON.stringify(meta)}`, 'Business');
+    this.log(`[BUSINESS] ${event}${userId ? ` (user: ${userId})` : ''}`, 'Business', meta);
+  }
+
+  private format(level: string, message: any, context?: string, meta?: any): string {
+    const payload = {
+      level,
+      msg: typeof message === 'string' ? message : JSON.stringify(message),
+      context,
+      correlationId: meta?.correlationId || meta?.traceId,
+      traceId: meta?.traceId,
+      spanId: meta?.spanId,
+      ...meta,
+    };
+
+    if (!this.jsonEnabled) {
+      return `${payload.level} ${payload.msg} ${payload.context || ''} traceId=${payload.traceId || ''} correlationId=${payload.correlationId || ''}`.trim();
     }
+
+    return JSON.stringify(payload);
   }
 }

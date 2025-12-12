@@ -2,6 +2,20 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RetryOptions } from '../interfaces/enterprise-options.interface';
 
+interface CircuitBreakerState {
+  state: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+  failureCount: number;
+  lastFailureTime: number;
+}
+
+interface RetryStats {
+  enabled: boolean;
+  maxAttempts: number;
+  delay: number;
+  backoffMultiplier: number;
+  maxDelay: number;
+}
+
 @Injectable()
 export class RetryService {
   private readonly logger = new Logger(RetryService.name);
@@ -66,7 +80,7 @@ export class RetryService {
     throw lastError!;
   }
 
-  private isRetryableError(error: any): boolean {
+  private isRetryableError(error: unknown): boolean {
     // Define retryable error conditions
     const retryableErrors = [
       'ECONNRESET',
@@ -87,9 +101,10 @@ export class RetryService {
       'RATE_LIMITED',
     ];
 
-    const errorMessage = error.message?.toUpperCase() || '';
-    const errorCode = error.code?.toUpperCase() || '';
-    const errorStatus = error.status || error.statusCode;
+    const errorObj = error as { message?: string; code?: string; status?: number; statusCode?: number; name?: string };
+    const errorMessage = errorObj.message?.toUpperCase() || '';
+    const errorCode = errorObj.code?.toUpperCase() || '';
+    const errorStatus = errorObj.status || errorObj.statusCode;
 
     // Check for retryable error messages
     if (retryableErrors.some(retryableError => 
@@ -115,9 +130,9 @@ export class RetryService {
     }
 
     // Check for specific error types
-    if (error.name === 'TimeoutError' || 
-        error.name === 'NetworkError' ||
-        error.name === 'ConnectionError') {
+    if (errorObj.name === 'TimeoutError' || 
+        errorObj.name === 'NetworkError' ||
+        errorObj.name === 'ConnectionError') {
       return true;
     }
 
@@ -194,10 +209,11 @@ export class RetryService {
     });
   }
 
-  private getCircuitState(key: string): any {
+  private getCircuitState(key: string): CircuitBreakerState {
     // In a real implementation, this would use a shared cache or database
     // For demo purposes, we'll use a simple in-memory store
-    const state = (global as any).circuitBreakerStates || {};
+    const globalStates = (globalThis as { circuitBreakerStates?: Record<string, CircuitBreakerState> }).circuitBreakerStates;
+    const state = globalStates || {};
     return state[key] || {
       state: 'CLOSED',
       failureCount: 0,
@@ -205,14 +221,15 @@ export class RetryService {
     };
   }
 
-  private setCircuitState(key: string, state: any): void {
-    if (!(global as any).circuitBreakerStates) {
-      (global as any).circuitBreakerStates = {};
+  private setCircuitState(key: string, state: CircuitBreakerState): void {
+    const globalObj = globalThis as { circuitBreakerStates?: Record<string, CircuitBreakerState> };
+    if (!globalObj.circuitBreakerStates) {
+      globalObj.circuitBreakerStates = {};
     }
-    (global as any).circuitBreakerStates[key] = state;
+    globalObj.circuitBreakerStates[key] = state;
   }
 
-  getRetryStats(): any {
+  getRetryStats(): RetryStats {
     return {
       enabled: this.options.enabled,
       maxAttempts: this.options.maxAttempts,

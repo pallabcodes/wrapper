@@ -25,6 +25,7 @@
     "noUncheckedIndexedAccess": true,
     "baseUrl": ".",
     "paths": {
+      "@ecommerce-enterprise/*": ["packages/*/src"],
       "@ecommerce-enterprise/core": ["packages/core/src"],
       "@ecommerce-enterprise/shared": ["packages/shared/src"],
       "@ecommerce-enterprise/types": ["packages/types/src"]
@@ -33,14 +34,29 @@
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "incremental": true,
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    "incremental": false
   },
   "include": [
-    "packages/**/src/**/*",
-    "packages/**/*.ts",
-    "apps/**/*",
-    "scripts/**/*",
+    "packages/nest-database/src/**/*",
+    "packages/nest-disaster-recovery/src/**/*",
+    "packages/nest-enterprise-auth/src/**/*",
+    "packages/nest-event-streaming/src/**/*",
+    "packages/nest-microservices-demo/src/**/*",
+    "packages/nest-zod/src/**/*",
+    "packages/node-crypto/src/**/*",
+    "packages/analytics/src/**/*",
+    "packages/nest-cache/src/**/*",
+    "packages/authx/src/**/*",
+    "packages/nest-compliance/src/**/*",
+    "packages/nest-enterprise-rbac/src/**/*",
+    "packages/core/src/**/*",
+    "packages/enterprise-integration/src/**/*",
+    "packages/payment-nest/src/**/*",
+    "packages/notification/src/**/*",
+    "packages/node-streams/src/**/*",
+    "packages/nest-orm/src/**/*",
+    "packages/nest-serverless-api/src/**/*",
+    "packages/nest-mobile-apis/src/**/*",
     "src/types/ambient.d.ts"
   ],
   "exclude": [
@@ -48,7 +64,15 @@
     "dist",
     "coverage",
     "**/*.test.ts",
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "packages/**/demo/**/*",
+    "packages/**/test/**/*",
+    "packages/node-streams/**/*",
+    "packages/payment-nest/**/*",
+    "packages/notification/**/*",
+    "packages/nest-orm/**/*",
+    "packages/nest-serverless-api/**/*",
+    "packages/nest-mobile-apis/**/*"
   ],
   "ts-node": {
     "require": ["tsconfig-paths/register"]

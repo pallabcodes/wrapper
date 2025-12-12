@@ -278,7 +278,7 @@ export class ServiceDiscoveryService implements OnModuleInit, OnModuleDestroy {
       }
       const services = await this.consul.health.service(serviceName);
       
-      return services[0].Service.map((service: any) => ({
+      return services[0].Service.map((service: { ID: string; Service: string; Address: string; Port: number; Meta?: Record<string, unknown> }) => ({
         id: service.ID,
         name: service.Service,
         host: service.Address,

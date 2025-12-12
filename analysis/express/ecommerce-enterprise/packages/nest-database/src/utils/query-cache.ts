@@ -1,17 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { LRUCache } from 'lru-cache';
 import { createHash } from 'crypto';
 
 @Injectable()
 export class QueryCache {
   // private readonly logger = new Logger(QueryCache.name);
-  private readonly cache: LRUCache<string, unknown>;
+  private readonly cache: Map<string, unknown>;
 
   constructor() {
-    this.cache = new LRUCache({
-      max: 1000,
-      ttl: 1000 * 60 * 5, // 5 minutes
-    });
+    this.cache = new Map();
   }
 
   generateKey(sql: string, parameters?: unknown[]): string {
@@ -19,11 +15,17 @@ export class QueryCache {
     return createHash('md5').update(content).digest('hex');
   }
 
-  async get(key: string): Promise<unknown> {
+  async get(key: string): Promise<unknown | undefined> {
     return this.cache.get(key);
   }
 
   async set(key: string, value: unknown, _ttl?: number): Promise<void> {
+    if (this.cache.size >= 1000) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey) {
+        this.cache.delete(firstKey);
+      }
+    }
     this.cache.set(key, value);
   }
 
@@ -44,9 +46,9 @@ export class QueryCache {
   } {
     return {
       size: this.cache.size,
-      max: this.cache.max,
-      ttl: 0, // LRU cache doesn't provide TTL info by default
-      hits: 0, // LRU cache doesn't provide hit/miss stats by default
+      max: 1000,
+      ttl: 0,
+      hits: 0,
       misses: 0,
     };
   }

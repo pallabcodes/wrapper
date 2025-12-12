@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Redis } from 'ioredis';
+import IORedis from 'ioredis';
 import { randomUUID } from 'crypto';
 import { AuthPrincipal } from '../types/auth.types';
 
 @Injectable()
 export class SessionStore {
-  private client?: Redis;
+  private client?: any;
   private ttlSeconds: number;
   private rolling: boolean;
 
@@ -13,7 +13,10 @@ export class SessionStore {
     const url = options.session?.redisUrl;
     this.ttlSeconds = options.session?.ttlSeconds ?? 60 * 60 * 24 * 7;
     this.rolling = options.session?.rolling ?? true;
-    if (url) this.client = new Redis(url);
+    if (url) {
+      const RedisCtor: any = (IORedis as any).default ?? IORedis;
+      this.client = new RedisCtor(url);
+    }
   }
 
   async create(principal: AuthPrincipal): Promise<{ sessionId: string }> {

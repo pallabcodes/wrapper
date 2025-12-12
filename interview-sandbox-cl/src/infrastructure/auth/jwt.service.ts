@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { JwtService as NestJwtService } from '@nestjs/jwt';
 import { JwtPayload } from './jwt.strategy';
-import { AUTH_CONFIG } from '../config/auth.config';
+import { AUTH_CONFIG_TOKEN, AuthConfig } from '../config/auth.config';
+import type { JwtSignOptions } from '@nestjs/jwt';
 
 export interface TokenPair {
   accessToken: string;
@@ -10,7 +11,10 @@ export interface TokenPair {
 
 @Injectable()
 export class JwtService {
-  constructor(private readonly jwtService: NestJwtService) {}
+  constructor(
+    private readonly jwtService: NestJwtService,
+    @Inject(AUTH_CONFIG_TOKEN) private readonly authConfig: AuthConfig,
+  ) {}
 
   async generateTokens(userId: string, email: string, role: string): Promise<TokenPair> {
     const payload: JwtPayload = {
@@ -19,9 +23,12 @@ export class JwtService {
       role,
     };
 
+    const accessOpts: JwtSignOptions = { expiresIn: this.authConfig.JWT.ACCESS_TOKEN_EXPIRATION as any };
+    const refreshOpts: JwtSignOptions = { expiresIn: this.authConfig.JWT.REFRESH_TOKEN_EXPIRATION as any };
+
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, { expiresIn: AUTH_CONFIG.JWT.ACCESS_TOKEN_EXPIRATION }),
-      this.jwtService.signAsync(payload, { expiresIn: AUTH_CONFIG.JWT.REFRESH_TOKEN_EXPIRATION }),
+      this.jwtService.signAsync(payload, accessOpts),
+      this.jwtService.signAsync(payload, refreshOpts),
     ]);
 
     return { accessToken, refreshToken };

@@ -215,7 +215,7 @@ export class EventStreamingService implements EventPublisher, EventSubscriber, O
   }
 
   // Event creation helpers
-  createEvent(type: string, source: string, data: any, metadata?: any): EventMessage {
+  createEvent(type: string, source: string, data: unknown, metadata?: Record<string, unknown>): EventMessage {
     return {
       id: uuidv4(),
       type,
@@ -231,28 +231,28 @@ export class EventStreamingService implements EventPublisher, EventSubscriber, O
   }
 
   // Business event helpers
-  createUserEvent(eventType: string, userId: string, data: any): EventMessage {
+  createUserEvent(eventType: string, userId: string, data: unknown): EventMessage {
     return this.createEvent(eventType, 'user-service', data, {
       userId,
       correlationId: uuidv4(),
     });
   }
 
-  createOrderEvent(eventType: string, orderId: string, data: any): EventMessage {
+  createOrderEvent(eventType: string, orderId: string, data: unknown): EventMessage {
     return this.createEvent(eventType, 'order-service', data, {
       orderId,
       correlationId: uuidv4(),
     });
   }
 
-  createPaymentEvent(eventType: string, paymentId: string, data: any): EventMessage {
+  createPaymentEvent(eventType: string, paymentId: string, data: unknown): EventMessage {
     return this.createEvent(eventType, 'payment-service', data, {
       paymentId,
       correlationId: uuidv4(),
     });
   }
 
-  createInventoryEvent(eventType: string, productId: string, data: any): EventMessage {
+  createInventoryEvent(eventType: string, productId: string, data: unknown): EventMessage {
     return this.createEvent(eventType, 'inventory-service', data, {
       productId,
       correlationId: uuidv4(),
@@ -261,8 +261,8 @@ export class EventStreamingService implements EventPublisher, EventSubscriber, O
 
   // Metrics and health
   async getMetrics(): Promise<EventStreamingMetrics> {
-    if (this.provider && 'getMetrics' in this.provider) {
-      return (this.provider as any).getMetrics();
+    if (this.provider && 'getMetrics' in this.provider && typeof (this.provider as { getMetrics?: () => Promise<EventStreamingMetrics> }).getMetrics === 'function') {
+      return await (this.provider as { getMetrics: () => Promise<EventStreamingMetrics> }).getMetrics();
     }
     
     return {
@@ -278,8 +278,8 @@ export class EventStreamingService implements EventPublisher, EventSubscriber, O
   }
 
   async getHealth(): Promise<EventStreamingHealth> {
-    if (this.provider && 'getHealth' in this.provider) {
-      return (this.provider as any).getHealth();
+    if (this.provider && 'getHealth' in this.provider && typeof (this.provider as { getHealth?: () => Promise<EventStreamingHealth> }).getHealth === 'function') {
+      return await (this.provider as { getHealth: () => Promise<EventStreamingHealth> }).getHealth();
     }
     
     return {

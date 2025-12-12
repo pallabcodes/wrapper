@@ -9,12 +9,12 @@ This project follows **Clean Architecture** (Hexagonal Architecture / Ports & Ad
 ```
 ┌─────────────────────────────────────────┐
 │      PRESENTATION LAYER                 │
-│  (Controllers, HTTP DTOs, Guards)        │
+│  (Controllers, HTTP DTOs, Guards)       │
 └──────────────┬──────────────────────────┘
                │
 ┌──────────────▼──────────────────────────┐
 │      APPLICATION LAYER                  │
-│  (Use Cases, Services, DTOs)           │
+│  (Use Cases, Services, DTOs)            │
 └──────────────┬──────────────────────────┘
                │
 ┌──────────────▼──────────────────────────┐
@@ -25,7 +25,7 @@ This project follows **Clean Architecture** (Hexagonal Architecture / Ports & Ad
 ┌──────────────▼──────────────────────────┐
 │      INFRASTRUCTURE LAYER               │
 │  (Database, External APIs, Adapters)    │
-└──────────────────────────────────────────┘
+└─────────────────────────────────────────┘
 ```
 
 ### Key Principles
@@ -84,6 +84,32 @@ cp .env.example .env
 # Start development server
 npm run start:dev
 ```
+
+## Environment
+
+Set these variables for local and production:
+* JWT_SECRET (required)
+* DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME
+* JWT_ACCESS_EXPIRATION, JWT_REFRESH_EXPIRATION
+* RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX, REQUEST_TIMEOUT_MS
+* CORS_ORIGIN (comma separated allowlist)
+* PASSWORD_MIN_LENGTH, PASSWORD_REQUIRE_UPPERCASE, PASSWORD_REQUIRE_LOWERCASE, PASSWORD_REQUIRE_NUMBER
+* BCRYPT_SALT_ROUNDS
+* METRICS_ENABLED (default: true)
+* METRICS_BUCKETS_MS (comma separated overrides for latency histogram buckets)
+* TRACING_ENABLED (true to enable OpenTelemetry)
+* TRACING_SERVICE_NAME (defaults to interview-sandbox-cl)
+* OTEL_EXPORTER_OTLP_ENDPOINT (defaults to http://localhost:4318/v1/traces)
+* OTEL_EXPORTER_OTLP_HEADERS (comma separated key=value for OTLP auth, optional)
+* LOG_JSON (default: true)
+
+## Database lifecycle
+
+```bash
+npm run db:drop && npm run db:create && npm run db:migrate
+npm run db:seed
+```
+
 
 ## 🚀 Key Features
 
@@ -195,12 +221,23 @@ GET /health/ping
 GET /health/cache
 ```
 
+### Metrics
+* Prometheus text at /health/metrics
+* Counters: http_requests_total and http_requests_errors_total (labels: method, route, status)
+* Histogram: http_request_duration_ms with method/route/status labels and configurable buckets
+* Default process metrics from prom-client plus heap usage gauge
+* Override buckets with METRICS_BUCKETS_MS and disable with METRICS_ENABLED=false
+
 ### Logging
-- **Structured JSON logs** with Winston
-- **File rotation** (daily with size limits)
-- **Multiple log levels** (error, warn, info, debug)
-- **Separate security logs** for audit trails
-- **Performance logs** for slow operations
+* Structured JSON logs with correlationId and traceId
+* Set LOG_JSON=false for plain text output
+* Request logs include method, path, status, duration, correlationId
+* Security, audit, and performance helpers available via CustomLoggerService
+
+### Tracing
+* OpenTelemetry spans for HTTP requests when TRACING_ENABLED=true
+* OTLP HTTP exporter configured via OTEL_EXPORTER_OTLP_ENDPOINT and OTEL_EXPORTER_OTLP_HEADERS
+* Service name defaults to TRACING_SERVICE_NAME or interview-sandbox-cl
 
 ## 🔒 Security Features
 

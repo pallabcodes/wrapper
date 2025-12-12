@@ -92,7 +92,7 @@ export const ProductSchema = BaseEntitySchema.extend({
   stock: z.number().int().min(0).default(0),
   images: z.array(z.string().url()).default([]),
   tags: z.array(z.string()).default([]),
-  specifications: z.record(z.string(), z.any()).optional(),
+  specifications: z.record(z.string(), z.unknown()).optional(),
   dimensions: z.object({
     width: z.number().positive().optional(),
     height: z.number().positive().optional(),
@@ -152,7 +152,7 @@ export const ApiResponseSchema = <T extends z.ZodSchema>(dataSchema: T) =>
     error: z.object({
       code: z.string(),
       message: z.string(),
-      details: z.any().optional(),
+      details: z.unknown().optional(),
     }).optional(),
     metadata: z.object({
       timestamp: z.string().datetime(),
@@ -189,7 +189,7 @@ export const ValidationUtils = {
   /**
    * Create a schema that validates against any of the provided schemas
    */
-  anyOf: <T extends z.ZodSchema[]>(...schemas: T) => z.any().refine(
+  anyOf: <T extends z.ZodSchema[]>(...schemas: T) => z.unknown().refine(
     (val) => schemas.some(schema => {
       try { schema.parse(val); return true; } catch { return false; }
     }),
@@ -203,7 +203,7 @@ export const ValidationUtils = {
     condition: (val: unknown) => boolean,
     trueSchema: T,
     falseSchema: U
-  ) => z.any().refine(
+  ) => z.unknown().refine(
     (val) => {
       const schema = condition(val) ? trueSchema : falseSchema;
       try { schema.parse(val); return true; } catch { return false; }
@@ -312,7 +312,13 @@ export const SchemaCompositionHelpers = {
   pick: <T extends z.ZodObject<z.ZodRawShape>, K extends keyof T['shape']>(
     schema: T,
     keys: K[]
-  ) => schema.pick(keys.reduce((acc, key) => ({ ...acc, [key]: true }), {} as any)),
+  ) => {
+    const mask = keys.reduce((acc, key) => {
+      acc[key] = true as const;
+      return acc;
+    }, {} as { [P in K]: true | undefined });
+    return schema.pick(mask as any);
+  },
 
   /**
    * Omit specific fields from a schema
@@ -320,7 +326,13 @@ export const SchemaCompositionHelpers = {
   omit: <T extends z.ZodObject<z.ZodRawShape>, K extends keyof T['shape']>(
     schema: T,
     keys: K[]
-  ) => schema.omit(keys.reduce((acc, key) => ({ ...acc, [key]: true }), {} as any)),
+  ) => {
+    const mask = keys.reduce((acc, key) => {
+      acc[key] = true as const;
+      return acc;
+    }, {} as { [P in K]: true | undefined });
+    return schema.omit(mask as any);
+  },
 
   /**
    * Create a partial schema

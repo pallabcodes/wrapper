@@ -1,23 +1,34 @@
 import { SetMetadata } from '@nestjs/common';
 
+type MethodDecorator = (
+  target: unknown,
+  propertyKey: string,
+  descriptor: PropertyDescriptor
+) => PropertyDescriptor;
+
+interface CacheService {
+  del: (key: string) => Promise<void>;
+  invalidatePattern: (pattern: string) => Promise<void>;
+}
+
 export interface CacheInvalidateOptions {
-  key?: string | ((args: any[], target: any, propertyKey: string) => string);
-  pattern?: string | ((args: any[], target: any, propertyKey: string) => string);
+  key?: string | ((args: unknown[], target: unknown, propertyKey: string) => string);
+  pattern?: string | ((args: unknown[], target: unknown, propertyKey: string) => string);
   tags?: string[];
   namespace?: string;
-  condition?: (args: any[], target: any, propertyKey: string) => boolean;
+  condition?: (args: unknown[], target: unknown, propertyKey: string) => boolean;
 }
 
 export const CACHE_INVALIDATE_KEY = 'cache:invalidate:key';
 export const CACHE_INVALIDATE_OPTIONS = 'cache:invalidate:options';
 
-export function CacheInvalidate(options: CacheInvalidateOptions = {}) {
-  return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+export function CacheInvalidate(options: CacheInvalidateOptions = {}): MethodDecorator {
+  return (target: unknown, propertyKey: string, descriptor: PropertyDescriptor) => {
     const originalMethod = descriptor.value;
     
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       // Try to get cacheService from the instance
-      const cacheService = (this as any).cacheService;
+      const cacheService = (this as { cacheService?: CacheService }).cacheService;
       
       // Execute original method first
       const result = await originalMethod.apply(this, args);
@@ -78,16 +89,17 @@ export function CacheInvalidate(options: CacheInvalidateOptions = {}) {
       return result;
     };
 
-    SetMetadata(CACHE_INVALIDATE_KEY, options.key)(target, propertyKey, descriptor);
-    SetMetadata(CACHE_INVALIDATE_OPTIONS, options)(target, propertyKey, descriptor);
+    SetMetadata(CACHE_INVALIDATE_KEY, options.key)(target as object, propertyKey, descriptor);
+    SetMetadata(CACHE_INVALIDATE_OPTIONS, options)(target as object, propertyKey, descriptor);
+    return descriptor;
   };
 }
 
-export function CacheInvalidateKey(key: string | ((args: any[], target: any, propertyKey: string) => string)) {
+export function CacheInvalidateKey(key: string | ((args: unknown[], target: unknown, propertyKey: string) => string)) {
   return SetMetadata(CACHE_INVALIDATE_KEY, key);
 }
 
-export function CacheInvalidatePattern(pattern: string | ((args: any[], target: any, propertyKey: string) => string)) {
+export function CacheInvalidatePattern(pattern: string | ((args: unknown[], target: unknown, propertyKey: string) => string)) {
   return SetMetadata('cache:invalidate:pattern', pattern);
 }
 

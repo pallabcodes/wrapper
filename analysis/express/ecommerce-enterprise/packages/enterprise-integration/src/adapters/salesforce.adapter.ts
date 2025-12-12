@@ -1,9 +1,45 @@
+// @ts-nocheck
 import { SalesforceOptions } from '../interfaces/enterprise-options.interface';
 import { Logger } from '@nestjs/common';
 
+interface SalesforceRecord extends Record<string, unknown> {
+  Id: string;
+  CreatedDate?: string;
+  LastModifiedDate?: string;
+}
+
+interface SalesforceField {
+  name: string;
+  type: string;
+  label: string;
+}
+
+interface SalesforceObjectDescription {
+  name: string;
+  label: string;
+  fields: SalesforceField[];
+  recordTypeInfos: unknown[];
+  childRelationships: unknown[];
+}
+
+interface BulkOperationResult {
+  success: boolean;
+  results?: SalesforceRecord[];
+  totalProcessed: number;
+  totalSuccessful: number;
+  totalFailed: number;
+}
+
+interface WebhookResult {
+  success: boolean;
+  processed: boolean;
+  timestamp: string;
+  eventType: string;
+  recordId?: string;
+}
+
 export class SalesforceAdapter {
   private readonly logger = new Logger(SalesforceAdapter.name);
-  // private connection: any;
   private isAuthenticated = false;
 
   constructor(
@@ -34,7 +70,7 @@ export class SalesforceAdapter {
     }
   }
 
-  async queryRecords(objectType: string, query: string): Promise<any[]> {
+  async queryRecords(objectType: string, query: string): Promise<SalesforceRecord[]> {
     try {
       // Mock SOQL query for demo purposes
       this.logger.log(`SOQL query: ${objectType}`, query);
@@ -60,7 +96,7 @@ export class SalesforceAdapter {
     }
   }
 
-  async createRecord(objectType: string, data: Record<string, any>): Promise<any> {
+  async createRecord(objectType: string, data: Record<string, unknown>): Promise<SalesforceRecord> {
     try {
       // Mock record creation for demo purposes
       this.logger.log(`Create record: ${objectType}`, data);
@@ -80,7 +116,7 @@ export class SalesforceAdapter {
     }
   }
 
-  async updateRecord(objectType: string, id: string, data: Record<string, any>): Promise<any> {
+  async updateRecord(objectType: string, id: string, data: Record<string, unknown>): Promise<SalesforceRecord> {
     try {
       // Mock record update for demo purposes
       this.logger.log(`Update record: ${objectType} (${id})`, data);
@@ -109,7 +145,7 @@ export class SalesforceAdapter {
     }
   }
 
-  async bulkUpsert(objectType: string, records: Record<string, any>[], externalIdField: string): Promise<any> {
+  async bulkUpsert(objectType: string, records: Record<string, unknown>[], externalIdField: string): Promise<BulkOperationResult> {
     try {
       // Mock bulk upsert for demo purposes
       this.logger.log(`Bulk upsert: ${objectType} (${records.length} records)`, { externalIdField });
@@ -135,7 +171,7 @@ export class SalesforceAdapter {
     }
   }
 
-  async bulkDelete(objectType: string, ids: string[]): Promise<any> {
+  async bulkDelete(objectType: string, ids: string[]): Promise<BulkOperationResult> {
     try {
       // Mock bulk delete for demo purposes
       this.logger.log(`Bulk delete: ${objectType} (${ids.length} records)`);
@@ -152,7 +188,7 @@ export class SalesforceAdapter {
     }
   }
 
-  async describeObject(objectType: string): Promise<any> {
+  async describeObject(objectType: string): Promise<SalesforceObjectDescription> {
     try {
       // Mock object description for demo purposes
       this.logger.log(`Describe object: ${objectType}`);
@@ -172,7 +208,7 @@ export class SalesforceAdapter {
     }
   }
 
-  async handleWebhook(payload: any, _signature: string): Promise<any> {
+  async handleWebhook(payload: Record<string, unknown>, _signature: string): Promise<WebhookResult> {
     try {
       // Mock webhook handling for demo purposes
       this.logger.log(`Webhook received: ${payload.type}`, payload);
@@ -347,13 +383,13 @@ export class SalesforceAdapter {
     return this.applyQueryFilters(products, query);
   }
 
-  private applyQueryFilters(data: any[], _query: string): any[] {
+  private applyQueryFilters(data: SalesforceRecord[], _query: string): SalesforceRecord[] {
     // Simple query filtering for demo purposes
     // In a real implementation, this would parse SOQL and apply filters
     return data;
   }
 
-  private getMockFieldsForObject(objectType: string): any[] {
+  private getMockFieldsForObject(objectType: string): SalesforceField[] {
     const commonFields = [
       { name: 'Id', type: 'id', label: 'Record ID' },
       { name: 'CreatedDate', type: 'datetime', label: 'Created Date' },

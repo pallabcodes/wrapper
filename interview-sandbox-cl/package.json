@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@fastify/helmet": "^12.0.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
@@ -28,6 +29,12 @@
     "@nestjs/platform-fastify": "^11.1.9",
     "@nestjs/sequelize": "^11.0.1",
     "@nestjs/swagger": "^11.2.1",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.55.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.55.0",
+    "@opentelemetry/resources": "^1.27.0",
+    "@opentelemetry/sdk-node": "^0.55.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
     "@types/bcrypt": "^6.0.0",
     "@types/passport-jwt": "^4.0.1",
     "bcrypt": "^6.0.0",
@@ -38,6 +45,7 @@
     "mysql2": "^3.15.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "prom-client": "^15.1.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "sequelize": "^6.37.7",
@@ -46,6 +54,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
+    "@jest/test-sequencer": "^30.2.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
@@ -74,6 +83,13 @@
       "ts"
     ],
     "rootDir": "src",
+    "moduleNameMapper": {
+      "^@domain/(.*)$": "<rootDir>/domain/$1",
+      "^@application/(.*)$": "<rootDir>/application/$1",
+      "^@infrastructure/(.*)$": "<rootDir>/infrastructure/$1",
+      "^@presentation/(.*)$": "<rootDir>/presentation/$1",
+      "^@common/(.*)$": "<rootDir>/common/$1"
+    },
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
@@ -82,6 +98,15 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "globals": {
+      "ts-jest": {
+        "diagnostics": {
+          "ignoreCodes": [
+            151002
+          ]
+        }
+      }
+    }
   }
 }

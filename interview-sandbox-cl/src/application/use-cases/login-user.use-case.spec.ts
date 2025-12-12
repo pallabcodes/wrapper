@@ -2,6 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { LoginUserUseCase } from './login-user.use-case';
 import { USER_REPOSITORY_PORT } from '@domain/ports/output/user.repository.port';
 import { InvalidCredentialsException } from '@domain/exceptions/invalid-credentials.exception';
+import { AUTH_CONFIG_TOKEN } from '@infrastructure/config/auth.config';
+import { JwtService } from '@infrastructure/auth/jwt.service';
+import { ConfigService } from '@nestjs/config';
+import * as bcrypt from 'bcrypt';
 
 // Mock repository
 const mockUserRepository = {
@@ -24,9 +28,20 @@ describe('LoginUserUseCase', () => {
           provide: USER_REPOSITORY_PORT,
           useValue: mockUserRepository,
         },
+        { provide: JwtService, useValue: mockJwtService },
+        { provide: ConfigService, useValue: { get: jest.fn(() => 'secret') } },
         {
-          provide: 'JwtService' as any,
-          useValue: mockJwtService,
+          provide: AUTH_CONFIG_TOKEN,
+          useValue: {
+            JWT: { SECRET: 'unused', ACCESS_TOKEN_EXPIRATION: '15m', REFRESH_TOKEN_EXPIRATION: '7d' },
+            BCRYPT: { SALT_ROUNDS: 4 },
+            PASSWORD: {
+              MIN_LENGTH: 8,
+              REQUIRE_UPPERCASE: true,
+              REQUIRE_LOWERCASE: true,
+              REQUIRE_NUMBER: true,
+            },
+          },
         },
       ],
     }).compile();
@@ -45,13 +60,15 @@ describe('LoginUserUseCase', () => {
 
     it('should login user successfully and return tokens', async () => {
       // Arrange
+      const hash = await bcrypt.hash('ValidPass123', 4);
       const mockUser = {
         id: 'user-123',
         email: { getValue: () => 'test@example.com' },
         name: 'John Doe',
         role: 'USER',
         isEmailVerified: true,
-        passwordHash: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewfLkIwF/HTQXvGi',
+        isAccountActive: () => true,
+        passwordHash: hash,
       };
 
       mockUserRepository.findByEmail.mockResolvedValue(mockUser);
@@ -94,10 +111,12 @@ describe('LoginUserUseCase', () => {
 
     it('should throw InvalidCredentialsException for wrong password', async () => {
       // Arrange
+      const hash = await bcrypt.hash('ValidPass123', 4);
       const mockUser = {
         id: 'user-123',
         email: { getValue: () => 'test@example.com' },
-        passwordHash: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewfLkIwF/HTQXvGi',
+        isAccountActive: () => true,
+        passwordHash: hash,
       };
 
       mockUserRepository.findByEmail.mockResolvedValue(mockUser);

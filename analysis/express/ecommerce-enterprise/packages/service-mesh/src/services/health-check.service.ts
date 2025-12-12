@@ -42,7 +42,12 @@ export class HealthCheckService {
     instances: ServiceInstance[];
   }>> {
     const allServices = await this.serviceRegistry.getAllServices();
-    const results: Record<string, any> = {};
+    const results: Record<string, {
+      total: number;
+      healthy: number;
+      unhealthy: number;
+      instances: ServiceInstance[];
+    }> = {};
     
     for (const [serviceName] of Object.entries(allServices)) {
       results[serviceName] = await this.checkServiceHealth(serviceName);

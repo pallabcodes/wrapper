@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Redis } from 'ioredis';
+import IORedis from 'ioredis';
 import { randomInt, randomUUID } from 'crypto';
 
 export interface OtpOptions {
@@ -26,7 +26,7 @@ export interface OtpSender {
 
 @Injectable()
 export class OtpService {
-  private client?: Redis;
+  private client?: any;
   private opts: Required<OtpOptions>;
   private sender?: OtpSender;
 
@@ -41,7 +41,10 @@ export class OtpService {
       cooldownSeconds: cfg?.cooldownSeconds ?? 60,
     };
     this.opts = merged;
-    if (merged.redisUrl) this.client = new Redis(merged.redisUrl);
+    if (merged.redisUrl) {
+      const RedisCtor: any = (IORedis as any).default ?? IORedis;
+      this.client = new RedisCtor(merged.redisUrl);
+    }
   }
 
   setSender(sender: OtpSender) {

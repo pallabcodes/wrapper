@@ -5,12 +5,19 @@
  * No classes, no instantiation - just pure functions.
  */
 
-import { eq, and, like, gte, lte, desc, asc, sql, count } from 'drizzle-orm'
-import { db } from '../client'
+import { eq, and, like, gte, lte, desc, asc, sql, count } from 'drizzle-orm';
+import type { PgTableWithColumns } from 'drizzle-orm/pg-core';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+import { db } from '../client';
 
 // ============================================================================
 // TYPES
 // ============================================================================
+
+type DrizzleTable = PgTableWithColumns<any> & {
+  [key: string]: AnyPgColumn | unknown;
+  id: AnyPgColumn;
+};
 
 export interface QueryOptions {
   limit?: number
@@ -19,7 +26,7 @@ export interface QueryOptions {
     field: string
     direction: 'asc' | 'desc'
   }
-  where?: Record<string, any>
+  where?: Record<string, unknown>
 }
 
 export interface RepositoryResult<T> {
@@ -33,8 +40,8 @@ export interface RepositoryResult<T> {
 // ============================================================================
 
 export const createRecord = async <T>(
-  table: any,
-  data: any,
+  table: DrizzleTable,
+  data: Record<string, unknown>,
   tableName: string
 ): Promise<RepositoryResult<T>> => {
   try {
@@ -45,7 +52,7 @@ export const createRecord = async <T>(
     const resultArray = Array.isArray(result) ? result : []
     if (resultArray.length > 0) {
       console.log(`Created ${tableName} record`, { 
-        id: resultArray[0]?.id, 
+        id: resultArray[0]?.['id'], 
         duration 
       })
       return { success: true, data: resultArray[0] as T }
@@ -62,14 +69,15 @@ export const createRecord = async <T>(
 }
 
 export const findRecordById = async <T>(
-  table: any,
+  table: DrizzleTable,
   id: string,
   tableName: string
 ): Promise<RepositoryResult<T>> => {
   try {
-    const startTime = Date.now()
-    const result = await db.select().from(table).where(eq(table.id, id)).limit(1)
-    const duration = Date.now() - startTime
+    const startTime = Date.now();
+    const idCol = (table as any)['id'] as any;
+    const result = await (db as any).select().from(table as any).where(eq(idCol, id as any)).limit(1);
+    const duration = Date.now() - startTime;
     
     const resultArray = Array.isArray(result) ? result : []
     if (resultArray.length > 0) {
@@ -89,40 +97,40 @@ export const findRecordById = async <T>(
 }
 
 export const findRecords = async <T>(
-  table: any,
+  table: DrizzleTable,
   options: QueryOptions = {},
   tableName: string
 ): Promise<RepositoryResult<T[]>> => {
   try {
-    const startTime = Date.now()
-    let query = db.select().from(table)
+    const startTime = Date.now();
+    let query: any = (db as any).select().from(table as any);
     
     // Apply where conditions
     if (options.where) {
       const conditions = buildWhereConditions(table, options.where)
       if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as any
+        query = query.where(and(...conditions))
       }
     }
     
     // Apply ordering
     if (options.orderBy) {
-      const orderField = table[options.orderBy.field as keyof typeof table]
+      const orderField = (table as any)[options.orderBy.field as keyof typeof table] as any;
       if (orderField) {
         if (options.orderBy.direction === 'desc') {
-          query = query.orderBy(desc(orderField)) as any
+          query = query.orderBy(desc(orderField));
         } else {
-          query = query.orderBy(asc(orderField)) as any
+          query = query.orderBy(asc(orderField));
         }
       }
     }
     
     // Apply pagination
     if (options.limit) {
-      query = query.limit(options.limit) as any
+      query = query.limit(options.limit);
     }
     if (options.offset) {
-      query = query.offset(options.offset) as any
+      query = query.offset(options.offset);
     }
     
     const result = await query
@@ -145,19 +153,20 @@ export const findRecords = async <T>(
 }
 
 export const updateRecord = async <T>(
-  table: any,
+  table: DrizzleTable,
   id: string,
-  data: Partial<any>,
+  data: Partial<Record<string, unknown>>,
   tableName: string
 ): Promise<RepositoryResult<T>> => {
   try {
-    const startTime = Date.now()
-    const result = await db
-      .update(table)
+    const startTime = Date.now();
+    const idCol = (table as any)['id'] as any;
+    const result = await (db as any)
+      .update(table as any)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(table.id, id))
-      .returning()
-    const duration = Date.now() - startTime
+      .where(eq(idCol, id as any))
+      .returning();
+    const duration = Date.now() - startTime;
     
     const resultArray = Array.isArray(result) ? result : []
     if (resultArray.length > 0) {
@@ -177,15 +186,16 @@ export const updateRecord = async <T>(
 }
 
 export const deleteRecord = async (
-  table: any,
+  table: DrizzleTable,
   id: string,
   tableName: string
 ): Promise<RepositoryResult<boolean>> => {
   try {
     const startTime = Date.now()
-    const result = await db
-      .delete(table)
-      .where(eq(table.id, id))
+    const idCol = (table as any)['id'] as any;
+    const result = await (db as any)
+      .delete(table as any)
+      .where(eq(idCol, id as any))
       .returning()
     const duration = Date.now() - startTime
     
@@ -207,23 +217,23 @@ export const deleteRecord = async (
 }
 
 export const countRecords = async (
-  table: any,
+  table: DrizzleTable,
   tableName: string,
-  where?: Record<string, any>
+  where?: Record<string, unknown>
 ): Promise<RepositoryResult<number>> => {
   try {
-    const startTime = Date.now()
-    let query = db.select({ count: count() }).from(table)
+    const startTime = Date.now();
+    let query: any = (db as any).select({ count: count() }).from(table as any);
     
     if (where) {
-      const conditions = buildWhereConditions(table, where)
+      const conditions = buildWhereConditions(table, where);
       if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as any
+        query = query.where(and(...conditions as any));
       }
     }
     
-    const result = await query
-    const duration = Date.now() - startTime
+    const result = await query;
+    const duration = Date.now() - startTime;
     
     const resultArray = Array.isArray(result) ? result : []
     const countValue = resultArray[0]?.count || 0
@@ -246,59 +256,76 @@ export const countRecords = async (
 // UTILITY FUNCTIONS
 // ============================================================================
 
-export const buildWhereConditions = (table: any, where: Record<string, any>) => {
-  const conditions = []
+export const buildWhereConditions = (table: DrizzleTable, where: Record<string, unknown>): any[] => {
+  const conditions: any[] = [];
   
   for (const [key, value] of Object.entries(where)) {
-    const field = table[key as keyof typeof table]
+    const field = (table as any)[key];
     if (field && value !== undefined && value !== null) {
       if (typeof value === 'string' && value.includes('%')) {
-        conditions.push(like(field, value))
+        conditions.push(like(field as any, value as any));
       } else {
-        conditions.push(eq(field, value))
+        conditions.push(eq(field as any, value as any));
       }
     }
   }
   
-  return conditions
+  return conditions;
 }
 
 export const buildAdvancedWhereConditions = (
-  table: any,
+  table: DrizzleTable,
   conditions: Array<{
     field: string
     operator: 'eq' | 'like' | 'gte' | 'lte' | 'in'
-    value: any
+    value: unknown
   }>
-) => {
+): any[] => {
   return conditions.map(({ field, operator, value }) => {
-    const tableField = table[field as keyof typeof table]
-    if (!tableField) return null
+    const tableField = (table as any)[field];
+    if (!tableField) return null;
     
     switch (operator) {
       case 'eq':
-        return eq(tableField, value)
+        return eq(tableField as any, value as any);
       case 'like':
-        return like(tableField, value)
+        return like(tableField as any, value as any);
       case 'gte':
-        return gte(tableField, value)
+        return gte(tableField as any, value as any);
       case 'lte':
-        return lte(tableField, value)
+        return lte(tableField as any, value as any);
       case 'in':
-        return sql`${tableField} IN (${value.join(',')})`
+        return sql`${tableField} IN (${(value as any as unknown[]).join(',')})`;
       default:
-        return null
+        return null;
     }
-  }).filter(Boolean)
+  }).filter(Boolean) as any[];
 }
 
 // ============================================================================
 // MONGODB BASE FUNCTIONS (Functional Pattern)
 // ============================================================================
 
+interface MongooseQuery<T = unknown> {
+  sort(sort: Record<string, number>): MongooseQuery<T>
+  limit(limit: number): MongooseQuery<T>
+  skip(offset: number): MongooseQuery<T>
+  lean(): Promise<T[]>
+}
+
+interface MongooseModel {
+  new (data: Record<string, unknown>): {
+    save(): Promise<{ _id: unknown; toObject(): unknown }>;
+  };
+  findById(id: string): Promise<{ toObject(): unknown } | null>;
+  find(filter: Record<string, unknown>): MongooseQuery;
+  findByIdAndUpdate(id: string, data: Record<string, unknown>, options: { new: boolean }): Promise<{ toObject(): unknown } | null>;
+  findByIdAndDelete(id: string): Promise<{ _id: unknown } | null>;
+}
+
 export const createMongoRecord = async <T>(
-  model: any,
-  data: any,
+  model: MongooseModel,
+  data: Record<string, unknown>,
   modelName: string
 ): Promise<RepositoryResult<T>> => {
   try {
@@ -323,7 +350,7 @@ export const createMongoRecord = async <T>(
 }
 
 export const findMongoRecordById = async <T>(
-  model: any,
+  model: MongooseModel,
   id: string,
   modelName: string
 ): Promise<RepositoryResult<T>> => {
@@ -349,14 +376,14 @@ export const findMongoRecordById = async <T>(
 }
 
 export const findMongoRecords = async <T>(
-  model: any,
-  filter: Record<string, any> = {},
+  model: MongooseModel,
+  filter: Record<string, unknown> = {},
   options: QueryOptions = {},
   modelName: string
 ): Promise<RepositoryResult<T[]>> => {
   try {
     const startTime = Date.now()
-    let query = model.find(filter)
+    let query: MongooseQuery<T> = model.find(filter) as MongooseQuery<T>
     
     // Apply ordering
     if (options.orderBy) {
@@ -392,9 +419,9 @@ export const findMongoRecords = async <T>(
 }
 
 export const updateMongoRecord = async <T>(
-  model: any,
+  model: MongooseModel,
   id: string,
-  data: Partial<any>,
+  data: Partial<Record<string, unknown>>,
   modelName: string
 ): Promise<RepositoryResult<T>> => {
   try {
@@ -423,7 +450,7 @@ export const updateMongoRecord = async <T>(
 }
 
 export const deleteMongoRecord = async (
-  model: any,
+  model: MongooseModel,
   id: string,
   modelName: string
 ): Promise<RepositoryResult<boolean>> => {

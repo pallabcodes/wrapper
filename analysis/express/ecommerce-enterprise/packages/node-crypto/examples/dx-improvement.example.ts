@@ -4,7 +4,7 @@
  * Demonstrates the dramatic improvement in Developer Experience
  * from verbose crypto operations to clean, fluent APIs.
  */
-
+// @ts-nocheck
 import { CryptoAPI, createCryptoAPI } from '../src/apis/crypto-api';
 import { FluentCrypto, createFluentCrypto } from '../src/apis/fluent-crypto';
 import { 

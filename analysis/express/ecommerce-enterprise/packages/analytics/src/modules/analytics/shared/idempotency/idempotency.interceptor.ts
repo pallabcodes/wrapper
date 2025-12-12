@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { Observable, of, tap } from 'rxjs';
 import { IDEMPOTENCY } from './idempotency.decorator';
 import { CACHE_STORE } from '../cache/cache.module';
-import type { CacheStore, CacheEntry } from '../cache/types';
+import type { CacheStore, CacheEntry } from '../cache/cache.types';
 
 @Injectable()
 export class IdempotencyInterceptor implements NestInterceptor {

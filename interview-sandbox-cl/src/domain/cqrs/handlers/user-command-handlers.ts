@@ -9,6 +9,7 @@ import {
   DeactivateUserCommand
 } from '../commands/user-commands';
 import type { UserRepositoryPort } from '../../ports/output/user.repository.port';
+import type { AuthConfig } from '../../../infrastructure/config/auth.config';
 
 /**
  * Command Handlers for CQRS write operations
@@ -71,16 +72,32 @@ export class ChangeUserPasswordCommandHandler {
       throw new Error('User not found');
     }
 
-    // Change password (this would add domain event)
-    const updatedUser = await user.changePassword(command.newPassword, {
-      MIN_LENGTH: 8,
-      REQUIRE_UPPERCASE: true,
-      REQUIRE_LOWERCASE: true,
-      REQUIRE_NUMBER: true,
-    });
+    const updatedUser = await user.changePassword(
+      command.newPassword,
+      this.getAuthConfig(),
+    );
 
     // Save updated aggregate
     return await this.userRepository.update(updatedUser);
+  }
+
+  private getAuthConfig(): AuthConfig {
+    return {
+      JWT: {
+        SECRET: 'unused',
+        ACCESS_TOKEN_EXPIRATION: '15m',
+        REFRESH_TOKEN_EXPIRATION: '7d',
+      },
+      BCRYPT: {
+        SALT_ROUNDS: 10,
+      },
+      PASSWORD: {
+        MIN_LENGTH: 8,
+        REQUIRE_UPPERCASE: true,
+        REQUIRE_LOWERCASE: true,
+        REQUIRE_NUMBER: true,
+      },
+    };
   }
 }
 
@@ -120,5 +137,24 @@ export class DeactivateUserCommandHandler {
     const deactivatedUser = user; // In real implementation, this would deactivate the user
 
     return await this.userRepository.update(deactivatedUser);
+  }
+
+  private getAuthConfig(): AuthConfig {
+    return {
+      JWT: {
+        SECRET: 'unused',
+        ACCESS_TOKEN_EXPIRATION: '15m',
+        REFRESH_TOKEN_EXPIRATION: '7d',
+      },
+      BCRYPT: {
+        SALT_ROUNDS: 10,
+      },
+      PASSWORD: {
+        MIN_LENGTH: 8,
+        REQUIRE_UPPERCASE: true,
+        REQUIRE_LOWERCASE: true,
+        REQUIRE_NUMBER: true,
+      },
+    };
   }
 }

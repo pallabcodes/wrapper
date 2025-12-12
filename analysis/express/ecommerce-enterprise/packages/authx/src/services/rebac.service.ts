@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Redis } from 'ioredis';
+import IORedis from 'ioredis';
 
 export interface RelationTuple {
   subject: string; // e.g., user:123
@@ -15,7 +15,7 @@ export interface RebacOptions {
 
 @Injectable()
 export class RebacService {
-  private client?: Redis;
+  private client?: any;
   private ns: string;
   private cacheTtl: number;
   private memory = new Map<string, Set<string>>(); // key(tenant:object#relation) -> subjects
@@ -25,7 +25,10 @@ export class RebacService {
     const url = cfg?.redisUrl;
     this.ns = cfg?.namespace || 'authx:rebac';
     this.cacheTtl = cfg?.cacheTtlSeconds ?? 300;
-    if (url) this.client = new Redis(url);
+    if (url) {
+      const RedisCtor: any = (IORedis as any).default ?? IORedis;
+      this.client = new RedisCtor(url);
+    }
   }
 
   private key(tenant: string, object: string, relation: string) {

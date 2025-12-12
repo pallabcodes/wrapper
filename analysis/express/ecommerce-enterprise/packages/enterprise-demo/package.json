@@ -17,7 +17,7 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/config": "^3.0.0",
     "@nestjs/swagger": "^7.4.0",
-    "@ecommerce-enterprise/enterprise-integration": "file:../enterprise-integration/dist",
+    "@ecommerce-enterprise/enterprise-integration": "workspace:*",
     "@ecommerce-enterprise/nest-zod": "workspace:*",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",

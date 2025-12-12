@@ -1,4 +1,4 @@
-import { IncomingRequest, OutgoingResponse, Serializer, Deserializer } from '@nestjs/microservices';
+import { Serializer, Deserializer } from '@nestjs/microservices';
 
 type Correlated<T> = T & { headers?: Record<string, string> };
 
@@ -11,7 +11,8 @@ export class CorrelationSerializer implements Serializer<Correlated<unknown>, Co
 
 export class CorrelationDeserializer implements Deserializer<Correlated<unknown>, Correlated<unknown>> {
   deserialize(value: Correlated<unknown>, options?: Record<string, unknown>): Correlated<unknown> {
-    return { ...value, headers: { ...(value.headers ?? {}), ...(options?.headers as Record<string, string> | undefined) } };
+    const optionHeaders = (options?.['headers'] as Record<string, string> | undefined) ?? {};
+    return { ...value, headers: { ...(value.headers ?? {}), ...optionHeaders } };
   }
 }
 

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { DatabaseQuery, QueryResult, TransactionOptions } from '../types';
 
 @Injectable()
@@ -42,11 +43,11 @@ export class PrismaService {
     return this.isConnectedFlag;
   }
 
-  async execute<T = any>(query: DatabaseQuery<T>): Promise<QueryResult<T>> {
+  async execute<T = unknown>(query: DatabaseQuery<T>): Promise<QueryResult<T>> {
     const startTime = Date.now();
     
     try {
-      let result: any;
+      let result: T | T[];
       
       switch (query.type) {
         case 'select':
@@ -85,14 +86,14 @@ export class PrismaService {
     }
   }
 
-  async executeTransaction<T = any>(
+  async executeTransaction<T = unknown>(
     queries: DatabaseQuery[],
     options?: TransactionOptions
   ): Promise<T> {
     // const startTime = Date.now();
     
     try {
-      const result = await this.prisma.$transaction(async (tx: any) => {
+      const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         const results = [];
         
         for (const query of queries) {
@@ -117,7 +118,14 @@ export class PrismaService {
   private async executeSelect<T>(query: DatabaseQuery<T>): Promise<T[]> {
     const model = this.getModel(query.table);
     
-    const selectOptions: any = {
+    const selectOptions: {
+      where?: unknown;
+      orderBy?: unknown;
+      select?: Record<string, boolean>;
+      include?: Record<string, boolean>;
+      skip?: number;
+      take?: number;
+    } = {
       where: query.where,
       orderBy: query.orderBy,
       select: query.select ? this.buildSelectObject(query.select) : undefined,
@@ -175,7 +183,7 @@ export class PrismaService {
     return await this.prisma.$queryRawUnsafe(query.sql, ...(query.params || [])) as T[];
   }
 
-  private async executeWithTransaction(tx: any, query: DatabaseQuery): Promise<any> {
+  private async executeWithTransaction(tx: Prisma.TransactionClient, query: DatabaseQuery): Promise<unknown> {
     const model = tx[query.table];
     
     switch (query.type) {
@@ -218,12 +226,24 @@ export class PrismaService {
     }
   }
 
-  private getModel(tableName: string): any {
-    const model = (this.prisma as any)[tableName];
-    if (!model) {
+  private getModel(tableName: string): {
+    findMany: (options: unknown) => Promise<unknown[]>;
+    create: (options: { data: unknown }) => Promise<unknown>;
+    createMany: (options: { data: unknown[]; skipDuplicates?: boolean }) => Promise<unknown>;
+    update: (options: { where: unknown; data: unknown }) => Promise<unknown>;
+    delete: (options: { where: unknown }) => Promise<unknown>;
+  } {
+    const model = (this.prisma as Record<string, unknown>)[tableName];
+    if (!model || typeof model !== 'object' || model === null) {
       throw new Error(`Model ${tableName} not found in Prisma client`);
     }
-    return model;
+    return model as {
+      findMany: (options: unknown) => Promise<unknown[]>;
+      create: (options: { data: unknown }) => Promise<unknown>;
+      createMany: (options: { data: unknown[]; skipDuplicates?: boolean }) => Promise<unknown>;
+      update: (options: { where: unknown; data: unknown }) => Promise<unknown>;
+      delete: (options: { where: unknown }) => Promise<unknown>;
+    };
   }
 
   private buildSelectObject(select: string[]): Record<string, boolean> {
@@ -242,7 +262,7 @@ export class PrismaService {
     return includeObj;
   }
 
-  private mapIsolationLevel(level?: string): any {
+  private mapIsolationLevel(level?: string): Prisma.TransactionIsolationLevel {
     switch (level) {
       case 'read-uncommitted':
         return 'ReadUncommitted';

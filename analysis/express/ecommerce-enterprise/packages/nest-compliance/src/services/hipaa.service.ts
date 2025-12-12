@@ -211,13 +211,13 @@ export class HIPAAService {
     return true;
   }
 
-  private async encryptHealthData(data: Record<string, any>): Promise<Record<string, any>> {
+  private async encryptHealthData(data: Record<string, unknown>): Promise<Record<string, unknown>> {
     const key = crypto.randomBytes(32);
     // IV not used in createCipher but kept for completeness
     crypto.randomBytes(16);
     const cipher = crypto.createCipher(this.config.encryption.algorithm, key);
     
-    const encrypted: Record<string, any> = {};
+    const encrypted: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
       if (typeof value === 'string') {
         encrypted[key] = cipher.update(value, 'utf8', 'hex') + cipher.final('hex');
@@ -229,9 +229,9 @@ export class HIPAAService {
     return encrypted;
   }
 
-  private minimizeHealthData(data: Record<string, any>): Record<string, any> {
+  private minimizeHealthData(data: Record<string, unknown>): Record<string, unknown> {
     // Remove unnecessary fields and anonymize where possible
-    const minimized: Record<string, any> = {};
+    const minimized: Record<string, unknown> = {};
     
     for (const [key, value] of Object.entries(data)) {
       if (this.isRequiredField(key)) {
@@ -256,7 +256,7 @@ export class HIPAAService {
     return identifiableFields.includes(field);
   }
 
-  private anonymizeValue(value: any): any {
+  private anonymizeValue(value: unknown): unknown {
     if (typeof value === 'string') {
       return value.replace(/[a-zA-Z0-9]/g, '*');
     }
@@ -303,7 +303,7 @@ export class HIPAAService {
     return 'low';
   }
 
-  private generateHash(data: any): string {
+  private generateHash(data: unknown): string {
     return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
   }
 
@@ -362,7 +362,7 @@ export class HIPAAService {
     return recommendations;
   }
 
-  private validateDataMinimization(data: Record<string, any>): boolean {
+  private validateDataMinimization(data: Record<string, unknown>): boolean {
     // Check if data contains only necessary fields
     const allowedFields = ['diagnosis', 'treatment', 'medication', 'allergies', 'vitalSigns'];
     const dataFields = Object.keys(data);

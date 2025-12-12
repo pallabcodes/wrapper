@@ -1,10 +1,21 @@
 import { SetMetadata } from '@nestjs/common';
 
+type MethodDecorator = (
+  target: unknown,
+  propertyKey: string,
+  descriptor: PropertyDescriptor
+) => PropertyDescriptor;
+
+interface CacheService {
+  get: <T>(key: string) => Promise<T | undefined>;
+  set: <T>(key: string, value: T, ttl?: number) => Promise<void>;
+}
+
 export interface CacheDecoratorOptions {
-  key?: string | ((args: any[], target: any, propertyKey: string) => string);
+  key?: string | ((args: unknown[], target: unknown, propertyKey: string) => string);
   ttl?: number;
-  condition?: (args: any[], target: any, propertyKey: string) => boolean;
-  skipIf?: (result: any) => boolean;
+  condition?: (args: unknown[], target: unknown, propertyKey: string) => boolean;
+  skipIf?: (result: unknown) => boolean;
   tags?: string[];
   namespace?: string;
 }
@@ -12,25 +23,27 @@ export interface CacheDecoratorOptions {
 export const CACHE_KEY = 'cache:key';
 export const CACHE_OPTIONS = 'cache:options';
 
-export function Cache(options: CacheDecoratorOptions = {}) {
-  return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+export function Cache(options: CacheDecoratorOptions = {}): MethodDecorator {
+  return (target: unknown, propertyKey: string, descriptor: PropertyDescriptor) => {
     const originalMethod = descriptor.value;
     
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       // Try to get cacheService from the instance
-      const cacheService = (this as any).cacheService;
+      const cacheService = (this as { cacheService?: CacheService }).cacheService;
       if (!cacheService) {
         return originalMethod.apply(this, args);
       }
 
       // Build cache key
+      const targetName =
+        (target as { constructor?: { name?: string } })?.constructor?.name ?? 'anonymous';
       let cacheKey: string;
       if (typeof options.key === 'function') {
         cacheKey = options.key(args, target, propertyKey);
       } else if (options.key) {
         cacheKey = options.key;
       } else {
-        cacheKey = `${target.constructor.name}:${propertyKey}:${JSON.stringify(args)}`;
+        cacheKey = `${targetName}:${propertyKey}:${JSON.stringify(args)}`;
       }
 
       // Add namespace if provided
@@ -63,12 +76,13 @@ export function Cache(options: CacheDecoratorOptions = {}) {
       return result;
     };
 
-    SetMetadata(CACHE_KEY, options.key)(target, propertyKey, descriptor);
-    SetMetadata(CACHE_OPTIONS, options)(target, propertyKey, descriptor);
+    SetMetadata(CACHE_KEY, options.key)(target as object, propertyKey, descriptor);
+    SetMetadata(CACHE_OPTIONS, options)(target as object, propertyKey, descriptor);
+    return descriptor;
   };
 }
 
-export function CacheKey(key: string | ((args: any[], target: any, propertyKey: string) => string)) {
+export function CacheKey(key: string | ((args: unknown[], target: unknown, propertyKey: string) => string)) {
   return SetMetadata(CACHE_KEY, key);
 }
 
@@ -76,7 +90,7 @@ export function CacheTTL(ttl: number) {
   return SetMetadata('cache:ttl', ttl);
 }
 
-export function CacheCondition(condition: (args: any[], target: any, propertyKey: string) => boolean) {
+export function CacheCondition(condition: (args: unknown[], target: unknown, propertyKey: string) => boolean) {
   return SetMetadata('cache:condition', condition);
 }
 

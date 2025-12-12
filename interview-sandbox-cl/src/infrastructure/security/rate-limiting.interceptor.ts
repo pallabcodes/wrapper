@@ -1,12 +1,18 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler, HttpException, HttpStatus } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import type { RateLimitConfig } from './security.config';
 
 @Injectable()
 export class RateLimitingInterceptor implements NestInterceptor {
   private readonly requests = new Map<string, { count: number; resetTime: number }>();
-  private readonly limit = 100; // requests per window
-  private readonly windowMs = 15 * 60 * 1000; // 15 minutes
+  private readonly limit: number;
+  private readonly windowMs: number;
+
+  constructor(config?: RateLimitConfig) {
+    this.windowMs = config?.windowMs ?? 15 * 60 * 1000;
+    this.limit = config?.maxRequests ?? 100;
+  }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();

@@ -24,10 +24,10 @@ import {
 import { TypedJwtAuthGuard } from '@ecommerce-enterprise/nest-enterprise-auth';
 import { RequirePolicy, UseRbacGuard } from '@ecommerce-enterprise/nest-enterprise-rbac';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { EnterprisePaymentService } from '../services/enterprise-payment.service';
-import { FraudDetectionService } from '../services/fraud-detection.service';
-import { PaymentComplianceService } from '../services/payment-compliance.service';
-import { PaymentMonitoringService } from '../services/payment-monitoring.service';
+import { EnterprisePaymentService, PaymentMetrics } from '../services/enterprise-payment.service';
+import { FraudDetectionService, RiskAssessmentResult } from '../services/fraud-detection.service';
+import { PaymentComplianceService, ComplianceAudit, ComplianceStatus } from '../services/payment-compliance.service';
+import { PaymentMonitoringService, MonitoringDashboard } from '../services/payment-monitoring.service';
 import { CreatePaymentDto } from '../dto/create-payment.dto';
 import { UpdatePaymentDto } from '../dto/update-payment.dto';
 import { PaymentResponseDto } from '../dto/payment-response.dto';
@@ -262,7 +262,7 @@ export class EnterprisePaymentController {
     @Param('id') id: string,
     @Body() updatePaymentDto: UpdatePaymentDto,
     @Request() req: AuthedRequest,
-  ): Promise<any> {
+  ): Promise<PaymentResponseDto> {
     this.logger.log(`Updating payment ${id} for user ${req.user?.id}`);
 
     return await this.enterprisePaymentService.updatePayment(
@@ -322,7 +322,7 @@ export class EnterprisePaymentController {
   async assessFraudRisk(
     @Body() requestData: Record<string, unknown>,
     @Request() req: AuthedRequest,
-  ): Promise<any> {
+  ): Promise<RiskAssessmentResult> {
     this.logger.log(`Assessing fraud risk for user ${req.user?.id}`);
 
     // Validate request data
@@ -374,7 +374,7 @@ export class EnterprisePaymentController {
   async performComplianceAudit(
     @Body() requestData: Record<string, unknown>,
     @Request() req: AuthedRequest,
-  ): Promise<any> {
+  ): Promise<ComplianceAudit> {
     this.logger.log(`Performing compliance audit for tenant ${req.user?.tenantId}`);
 
     // Validate request data
@@ -395,7 +395,7 @@ export class EnterprisePaymentController {
   @ApiResponse({ status: 200, description: 'Compliance status retrieved' })
   async getComplianceStatus(
     @Request() req: AuthedRequest,
-  ): Promise<any> {
+  ): Promise<ComplianceStatus> {
     this.logger.log(`Getting compliance status for tenant ${req.user?.tenantId}`);
 
     return await this.paymentComplianceService.getComplianceStatus(req.user?.tenantId);
@@ -411,7 +411,7 @@ export class EnterprisePaymentController {
   async getMonitoringDashboard(
     @Query() _query: Record<string, unknown>,
     @Request() req: AuthedRequest,
-  ): Promise<any> {
+  ): Promise<MonitoringDashboard> {
     this.logger.log(`Getting monitoring dashboard for tenant ${req.user?.tenantId}`);
 
     return await this.paymentMonitoringService.getMonitoringDashboard(req.user?.tenantId);
@@ -426,7 +426,7 @@ export class EnterprisePaymentController {
   async getPaymentMetrics(
     @Query() query: Record<string, unknown>,
     @Request() req: AuthedRequest,
-  ): Promise<any> {
+  ): Promise<PaymentMetrics> {
     this.logger.log(`Getting payment metrics for tenant ${req.user?.tenantId}`);
 
     const q = query as Record<string, unknown>;
@@ -463,7 +463,7 @@ export class EnterprisePaymentController {
   async getAnalyticsSummary(
     @Query() query: Record<string, unknown>,
     @Request() req: AuthedRequest,
-  ): Promise<any> {
+  ): Promise<PaymentMetrics> {
     this.logger.log(`Getting analytics summary for tenant ${req.user?.tenantId}`);
 
     const q = query as Record<string, unknown>;
@@ -500,7 +500,8 @@ export class EnterprisePaymentController {
   @ApiOperation({ summary: 'Refresh access and refresh tokens' })
   @ApiResponse({ status: 200, description: 'Tokens refreshed' })
   async refreshTokens(@Request() req: AuthedRequest, @Res({ passthrough: true }) res: Response): Promise<{ ok: true }> {
-    const sub = (req as any)?.user?.sub || (req as any)?.user?.id;
+    const user = req.user as { sub?: string; id?: string } | undefined;
+    const sub = user?.sub || user?.id;
     const payload = { sub };
     const access = signAccessToken(payload, { secret: process.env.JWT_SECRET || 'dev_secret', expiresIn: '15m' });
     const refresh = signRefreshToken(payload, { secret: process.env.REFRESH_JWT_SECRET || process.env.JWT_SECRET || 'dev_refresh_secret', expiresIn: '7d' });

@@ -59,7 +59,11 @@ export class AnalyticsController {
   @Policies((p) => (p.roles || []).includes('admin'))
   @V2()
   @RateLimitStrict(10, 60000)
-  @Cache({ ttlMs: 5_000, swrMs: 25_000, key: ({ query }) => `events:${JSON.stringify(query || {})}` })
+  @Cache({
+    ttlMs: 5_000,
+    swrMs: 25_000,
+    key: (ctx: { query?: unknown }) => `events:${JSON.stringify(ctx.query ?? {})}`,
+  })
   @Serialize({
     title: 'EventsResponse',
     type: 'object',

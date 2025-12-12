@@ -5,17 +5,26 @@
  * with enterprise features built-in.
  */
 
-import { CryptoAPI, SimpleEncryptionResult, SimpleDecryptionResult } from './crypto-api';
+import { CryptoAPI, CryptoAPIConfig } from './crypto-api';
+import type { SymmetricAlgorithm, AsymmetricAlgorithm } from '../types/crypto.types';
 
 export interface CryptoDecoratorOptions {
-  algorithm?: 'aes-256-gcm' | 'aes-128-gcm' | 'rsa-2048' | 'rsa-4096' | 'ec-p256' | 'ec-p384';
+  algorithm?: SymmetricAlgorithm | AsymmetricAlgorithm | undefined;
   enableAudit?: boolean;
   enablePerformanceMonitoring?: boolean;
-  compliance?: string[];
-  expiresIn?: number; // hours
-  userId?: string;
+  compliance?: string[] | undefined;
+  expiresIn?: number | undefined;
+  userId?: string | undefined;
   keyId?: string;
+  keySize?: number | undefined;
+  validateExpiration?: boolean | undefined;
 }
+
+type MethodDecorator = (
+  target: unknown,
+  propertyKey: string,
+  descriptor: PropertyDescriptor
+) => PropertyDescriptor;
 
 /**
  * 🔐 Encrypt method result automatically
@@ -23,26 +32,30 @@ export interface CryptoDecoratorOptions {
  * @param options - Encryption options
  * @returns Method decorator
  */
-export function EncryptResult(options: CryptoDecoratorOptions = {}) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function EncryptResult(options: CryptoDecoratorOptions = {}): MethodDecorator {
+  return function (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
     const api = new CryptoAPI({
-      algorithm: options.algorithm || 'aes-256-gcm',
-      enableAudit: options.enableAudit !== false,
-      enablePerformanceMonitoring: options.enablePerformanceMonitoring !== false,
+      algorithm: (options.algorithm as CryptoAPIConfig['algorithm']) ?? 'aes-256-gcm',
+      enableAudit: options.enableAudit ?? true,
+      enablePerformanceMonitoring: options.enablePerformanceMonitoring ?? true,
     });
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       const result = await originalMethod.apply(this, args);
-      
-      // Encrypt the result
-      const encrypted = await api.encrypt(result, {
-        algorithm: options.algorithm,
-        expiresIn: options.expiresIn,
-        userId: options.userId,
-        compliance: options.compliance,
-      });
-      
+
+      const encryptOptions: {
+        algorithm?: SymmetricAlgorithm;
+        expiresIn?: number;
+        userId?: string;
+        compliance?: string[];
+      } = {};
+      if (options.algorithm !== undefined) encryptOptions.algorithm = options.algorithm as SymmetricAlgorithm;
+      if (options.expiresIn !== undefined) encryptOptions.expiresIn = options.expiresIn;
+      if (options.userId !== undefined) encryptOptions.userId = options.userId;
+      if (options.compliance !== undefined) encryptOptions.compliance = options.compliance;
+
+      const encrypted = await api.encrypt(result, encryptOptions);
       return encrypted;
     };
 
@@ -56,26 +69,24 @@ export function EncryptResult(options: CryptoDecoratorOptions = {}) {
  * @param options - Decryption options
  * @returns Method decorator
  */
-export function DecryptParam(options: CryptoDecoratorOptions = {}) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function DecryptParam(options: CryptoDecoratorOptions = {}): MethodDecorator {
+  return function (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
     const api = new CryptoAPI({
-      algorithm: options.algorithm || 'aes-256-gcm',
-      enableAudit: options.enableAudit !== false,
-      enablePerformanceMonitoring: options.enablePerformanceMonitoring !== false,
+      algorithm: (options.algorithm as CryptoAPIConfig['algorithm']) ?? 'aes-256-gcm',
+      enableAudit: options.enableAudit ?? true,
+      enablePerformanceMonitoring: options.enablePerformanceMonitoring ?? true,
     });
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       // Decrypt the first parameter if it's an encrypted string
       if (args.length > 0 && typeof args[0] === 'string' && options.keyId) {
         try {
-          const decrypted = await api.decrypt(args[0], options.keyId, {
-            userId: options.userId,
-            validateExpiration: true,
-          });
-          args[0] = decrypted.data;
+          const decrypted = await api.decrypt(args[0], options.keyId);
+          args[0] = decrypted.data as unknown;
         } catch (error) {
-          throw new Error(`Failed to decrypt parameter: ${error.message}`);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          throw new Error(`Failed to decrypt parameter: ${errorMessage}`);
         }
       }
       
@@ -92,28 +103,35 @@ export function DecryptParam(options: CryptoDecoratorOptions = {}) {
  * @param options - Encryption options
  * @returns Method decorator
  */
-export function EncryptParam(options: CryptoDecoratorOptions = {}) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function EncryptParam(options: CryptoDecoratorOptions = {}): MethodDecorator {
+  return function (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
     const api = new CryptoAPI({
-      algorithm: options.algorithm || 'aes-256-gcm',
-      enableAudit: options.enableAudit !== false,
-      enablePerformanceMonitoring: options.enablePerformanceMonitoring !== false,
+      algorithm: (options.algorithm as CryptoAPIConfig['algorithm']) ?? 'aes-256-gcm',
+      enableAudit: options.enableAudit ?? true,
+      enablePerformanceMonitoring: options.enablePerformanceMonitoring ?? true,
     });
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       // Encrypt the first parameter if it's not already encrypted
-      if (args.length > 0 && typeof args[0] === 'object' && !args[0].keyId) {
+      if (args.length > 0 && typeof args[0] === 'object' && args[0] !== null && !('keyId' in args[0])) {
         try {
-          const encrypted = await api.encrypt(args[0], {
-            algorithm: options.algorithm,
-            expiresIn: options.expiresIn,
-            userId: options.userId,
-            compliance: options.compliance,
-          });
-          args[0] = encrypted;
+          const encryptOptions: {
+            algorithm?: SymmetricAlgorithm;
+            expiresIn?: number;
+            userId?: string;
+            compliance?: string[];
+          } = {};
+          if (options.algorithm !== undefined) encryptOptions.algorithm = options.algorithm as SymmetricAlgorithm;
+          if (options.expiresIn !== undefined) encryptOptions.expiresIn = options.expiresIn;
+          if (options.userId !== undefined) encryptOptions.userId = options.userId;
+          if (options.compliance !== undefined) encryptOptions.compliance = options.compliance;
+
+          const encrypted = await api.encrypt(args[0], encryptOptions);
+          args[0] = encrypted as unknown;
         } catch (error) {
-          throw new Error(`Failed to encrypt parameter: ${error.message}`);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          throw new Error(`Failed to encrypt parameter: ${errorMessage}`);
         }
       }
       
@@ -130,21 +148,21 @@ export function EncryptParam(options: CryptoDecoratorOptions = {}) {
  * @param options - Key generation options
  * @returns Method decorator
  */
-export function GenerateKey(options: CryptoDecoratorOptions = {}) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function GenerateKey(options: CryptoDecoratorOptions = {}): MethodDecorator {
+  return function (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
     const api = new CryptoAPI({
-      algorithm: options.algorithm || 'aes-256-gcm',
-      enableAudit: options.enableAudit !== false,
-      enablePerformanceMonitoring: options.enablePerformanceMonitoring !== false,
+      algorithm: (options.algorithm as CryptoAPIConfig['algorithm']) ?? 'aes-256-gcm',
+      enableAudit: options.enableAudit ?? true,
+      enablePerformanceMonitoring: options.enablePerformanceMonitoring ?? true,
     });
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       // Generate key before method execution
       const key = await api.generateKey('secret', {
-        algorithm: options.algorithm,
-        keySize: options.keySize,
-        expiresIn: options.expiresIn,
+        ...(options.algorithm !== undefined ? { algorithm: options.algorithm as SymmetricAlgorithm | AsymmetricAlgorithm } : {}),
+        ...(options.keySize !== undefined ? { keySize: options.keySize } : {}),
+        ...(options.expiresIn !== undefined ? { expiresIn: options.expiresIn } : {}),
       });
       
       // Add key to arguments
@@ -167,13 +185,13 @@ export function MonitorPerformance(options: {
   operation?: string; 
   threshold?: number; 
   enableAudit?: boolean;
-} = {}) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+} = {}): MethodDecorator {
+  return function (_target: unknown, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
     const operation = options.operation || propertyKey;
     const threshold = options.threshold || 100; // ms
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       const startTime = Date.now();
       
       try {
@@ -196,7 +214,8 @@ export function MonitorPerformance(options: {
         const duration = Date.now() - startTime;
         
         // Log error
-        console.error(`❌ ${operation} failed after ${duration}ms: ${error.message}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`❌ ${operation} failed after ${duration}ms: ${errorMessage}`);
         throw error;
       }
     };
@@ -211,20 +230,20 @@ export function MonitorPerformance(options: {
  * @param compliance - Compliance requirements
  * @returns Method decorator
  */
-export function Compliance(compliance: string[]) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function Compliance(compliance: string[]): MethodDecorator {
+  return function (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       // Log compliance requirements
       console.log(`🔒 Compliance requirements: ${compliance.join(', ')}`);
       
       // Add compliance metadata to result
       const result = await originalMethod.apply(this, args);
       
-      if (result && typeof result === 'object') {
-        result.compliance = compliance;
-        result.complianceCheckedAt = new Date().toISOString();
+      if (result && typeof result === 'object' && result !== null) {
+        (result as Record<string, unknown>)['compliance'] = compliance;
+        (result as Record<string, unknown>)['complianceCheckedAt'] = new Date().toISOString();
       }
       
       return result;
@@ -245,26 +264,30 @@ export function SecurityValidation(options: {
   validateOutput?: boolean;
   sanitizeInput?: boolean;
   sanitizeOutput?: boolean;
-} = {}) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+} = {}): MethodDecorator {
+  return function (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       // Validate and sanitize input
       if (options.validateInput || options.sanitizeInput) {
-        args = args.map(arg => {
+        const sanitizedArgs = args.map(arg => {
           if (typeof arg === 'string') {
+            let sanitized = arg;
             // Basic sanitization
             if (options.sanitizeInput) {
-              arg = arg.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+              sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
             }
             // Basic validation
-            if (options.validateInput && arg.length > 10000) {
+            if (options.validateInput && sanitized.length > 10000) {
               throw new Error('Input too large');
             }
+            return sanitized;
           }
           return arg;
         });
+        args.length = 0;
+        args.push(...sanitizedArgs);
       }
       
       const result = await originalMethod.apply(this, args);
@@ -272,14 +295,16 @@ export function SecurityValidation(options: {
       // Validate and sanitize output
       if (options.validateOutput || options.sanitizeOutput) {
         if (typeof result === 'string') {
+          let sanitized = result;
           // Basic sanitization
           if (options.sanitizeOutput) {
-            result.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+            sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
           }
           // Basic validation
-          if (options.validateOutput && result.length > 10000) {
+          if (options.validateOutput && sanitized.length > 10000) {
             throw new Error('Output too large');
           }
+          return sanitized;
         }
       }
       
@@ -296,13 +321,16 @@ export function SecurityValidation(options: {
  * @param decorators - Array of decorators
  * @returns Combined decorator
  */
-export function CombineDecorators(...decorators: any[]) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function CombineDecorators(...decorators: MethodDecorator[]): MethodDecorator {
+  return function (target: unknown, propertyKey: string, descriptor: PropertyDescriptor) {
     let currentDescriptor = descriptor;
     
     // Apply decorators in reverse order
     for (let i = decorators.length - 1; i >= 0; i--) {
       const decorator = decorators[i];
+      if (!decorator) {
+        continue;
+      }
       currentDescriptor = decorator(target, propertyKey, currentDescriptor);
     }
     

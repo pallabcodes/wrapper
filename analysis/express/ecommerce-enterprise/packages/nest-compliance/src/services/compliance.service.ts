@@ -216,7 +216,10 @@ export class ComplianceService {
     return breach;
   }
 
-  async validateCompliance(data: any, context: { type: string; action: string; userId: string }): Promise<boolean> {
+  async validateCompliance(
+    data: PersonalData | Record<string, unknown>,
+    context: { type: string; action: string; userId: string }
+  ): Promise<boolean> {
     this.logger.log(`Validating compliance for ${context.type} data, action: ${context.action}`);
     
     let isValid = true;
@@ -248,11 +251,12 @@ export class ComplianceService {
 
     // HIPAA validation
     if (this.config.hipaa.enabled && this.isHealthData(data)) {
+      const healthData = data as PersonalData;
       const accessValid = await this.hipaaService.validateAccess(
         context.userId,
         context.type,
         context.action,
-        data
+        healthData
       );
       if (!accessValid) {
         this.logger.warn(`HIPAA access validation failed for user: ${context.userId}`);
@@ -263,7 +267,12 @@ export class ComplianceService {
     return isValid;
   }
 
-  async getComplianceStatus(): Promise<any> {
+  async getComplianceStatus(): Promise<{
+    gdpr: { enabled: boolean; status: 'active' | 'inactive' };
+    sox: { enabled: boolean; status: 'active' | 'inactive' };
+    hipaa: { enabled: boolean; status: 'active' | 'inactive' };
+    audit: { enabled: boolean; logLevel: string };
+  }> {
     return {
       gdpr: {
         enabled: this.config.gdpr.enabled,
@@ -302,16 +311,18 @@ export class ComplianceService {
     return types;
   }
 
-  private isPersonalData(data: any): boolean {
+  private isPersonalData(data: { type?: string }): boolean {
     return data.type === 'personal' || data.type === 'sensitive';
   }
 
-  private isFinancialData(data: any): boolean {
-    return data.type === 'financial' || data.purpose?.includes('financial');
+  private isFinancialData(data: { type?: string; purpose?: string | string[] }): boolean {
+    const purpose = Array.isArray(data.purpose) ? data.purpose.join(' ') : data.purpose || '';
+    return data.type === 'financial' || purpose.includes('financial');
   }
 
-  private isHealthData(data: any): boolean {
-    return data.type === 'health' || data.purpose?.includes('health');
+  private isHealthData(data: { type?: string; purpose?: string | string[] }): boolean {
+    const purpose = Array.isArray(data.purpose) ? data.purpose.join(' ') : data.purpose || '';
+    return data.type === 'health' || purpose.includes('health') || purpose.includes('medical');
   }
 
   private calculateOverallComplianceScore(reports: ComplianceReport[]): number {
@@ -351,7 +362,11 @@ export class ComplianceService {
     return true;
   }
 
-  private async logComplianceEvent(event: string, data: any, context: any): Promise<void> {
+  private async logComplianceEvent(
+    event: string,
+    data: unknown,
+    context: Record<string, unknown>
+  ): Promise<void> {
     this.logger.debug(`Compliance event logged: ${event}`, { data, context });
   }
 

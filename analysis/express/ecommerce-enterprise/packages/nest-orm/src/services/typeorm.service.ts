@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseQuery, QueryResult, TransactionOptions } from '../types';
-import { DataSource, Repository, EntityManager } from 'typeorm';
+import { DataSource, Repository, EntityManager, SelectQueryBuilder, UpdateResult, DeleteResult } from 'typeorm';
 // import { MoreThan, LessThan, Like, In, Between } from 'typeorm';
 
 @Injectable()
@@ -52,11 +52,11 @@ export class TypeOrmService {
     return this.isConnectedFlag;
   }
 
-  async execute<T = any>(query: DatabaseQuery<T>): Promise<QueryResult<T>> {
+  async execute<T = unknown>(query: DatabaseQuery<T>): Promise<QueryResult<T>> {
     const startTime = Date.now();
     
     try {
-      let result: any;
+      let result: T[] | T | UpdateResult | DeleteResult;
       
       switch (query.type) {
         case 'select':
@@ -95,7 +95,7 @@ export class TypeOrmService {
     }
   }
 
-  async executeTransaction<T = any>(
+  async executeTransaction<T = unknown>(
     queries: DatabaseQuery[],
     _options?: TransactionOptions
   ): Promise<T> {
@@ -204,7 +204,7 @@ export class TypeOrmService {
     return await this.dataSource.query(query.sql, query.params || []) as T[];
   }
 
-  private async executeWithTransaction(manager: EntityManager, query: DatabaseQuery): Promise<any> {
+  private async executeWithTransaction(manager: EntityManager, query: DatabaseQuery): Promise<unknown> {
     const repository = manager.getRepository(query.table);
     
     switch (query.type) {
@@ -262,13 +262,13 @@ export class TypeOrmService {
     }
   }
 
-  private getRepository(tableName: string): Repository<any> {
+  private getRepository(tableName: string): Repository<Record<string, unknown>> {
     // In a real implementation, you would have entity registry
     // For now, we'll use a simple approach
     return this.dataSource.getRepository(tableName);
   }
 
-  private applyWhereConditions(queryBuilder: any, where: Record<string, any>): void {
+  private applyWhereConditions(queryBuilder: SelectQueryBuilder<Record<string, unknown>>, where: Record<string, unknown>): void {
     Object.entries(where).forEach(([key, _value], index) => {
       const parameterName = `param${index}`;
       
@@ -303,7 +303,7 @@ export class TypeOrmService {
     });
   }
 
-  private buildWhereClause(where: Record<string, any>): string {
+  private buildWhereClause(where: Record<string, unknown>): string {
     const conditions: string[] = [];
     
     Object.entries(where).forEach(([key, _value], index) => {

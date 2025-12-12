@@ -153,7 +153,7 @@ export class ${name}Module {}
 @Controller('${name.toLowerCase()}')
 export class ${name}Controller {
   @Get()
-  findAll(@Query() query: any): string {
+  findAll(@Query() query: Record<string, unknown>): string {
     return 'This action returns all ${name.toLowerCase()}';
   }
 
@@ -163,12 +163,12 @@ export class ${name}Controller {
   }
 
   @Post()
-  create(@Body() create${name}Dto: any): string {
+  create(@Body() create${name}Dto: Record<string, unknown>): string {
     return 'This action adds a new ${name.toLowerCase()}';
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() update${name}Dto: any): string {
+  update(@Param('id') id: string, @Body() update${name}Dto: Record<string, unknown>): string {
     return \`This action updates a #\${id} ${name.toLowerCase()}\`;
   }
 
@@ -193,11 +193,11 @@ export class ${name}Service {
     return \`\${id}\`;
   }
 
-  create(create${name}Dto: any): string {
+  create(create${name}Dto: Record<string, unknown>): string {
     return 'created';
   }
 
-  update(id: string, update${name}Dto: any): string {
+  update(id: string, update${name}Dto: Record<string, unknown>): string {
     return \`updated \${id}\`;
   }
 
@@ -229,7 +229,7 @@ import { tap } from 'rxjs/operators';
 
 @Injectable()
 export class ${name}Interceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     return next.handle().pipe(
       tap(data => {
         // Add your interceptor logic here
@@ -245,7 +245,7 @@ export class ${name}Interceptor implements NestInterceptor {
 
 export const ${name.toUpperCase()}_KEY = '${name.toLowerCase()}';
 
-export const ${name} = (value?: any) => SetMetadata(${name.toUpperCase()}_KEY, value);
+export const ${name} = (value?: unknown) => SetMetadata(${name.toUpperCase()}_KEY, value);
 `;
   }
 
@@ -254,7 +254,7 @@ export const ${name} = (value?: any) => SetMetadata(${name.toUpperCase()}_KEY, v
 
 @Injectable()
 export class ${name}Pipe implements PipeTransform {
-  transform(value: any, metadata: ArgumentMetadata) {
+  transform(value: unknown, metadata: ArgumentMetadata) {
     // Add your pipe logic here
     return value;
   }

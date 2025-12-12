@@ -17,6 +17,8 @@ export interface AuthConfig {
   };
 }
 
+export const AUTH_CONFIG_TOKEN = 'AUTH_CONFIG';
+
 export function createAuthConfig(configService: ConfigService): AuthConfig {
   const jwtSecret = configService.get<string>('JWT_SECRET');
   if (!jwtSecret) {

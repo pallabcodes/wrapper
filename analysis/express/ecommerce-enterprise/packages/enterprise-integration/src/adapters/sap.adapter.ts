@@ -1,10 +1,33 @@
 import { SAPOptions } from '../interfaces/enterprise-options.interface';
 import { Logger } from '@nestjs/common';
 
+interface RFCResult {
+  success: boolean;
+  data?: unknown;
+  customer?: Record<string, unknown>;
+  material?: Record<string, unknown>;
+  order?: Record<string, unknown>;
+}
+
+interface ODataQueryOptions {
+  select?: string[];
+  orderby?: string;
+  top?: number;
+  skip?: number;
+}
+
+interface ODataEntity extends Record<string, unknown> {
+  id?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+type ODataEntityArray = ODataEntity[];
+
 export class SAPAdapter {
   private readonly logger = new Logger(SAPAdapter.name);
-  // private rfcConnection: any;
-  // private odataClient: any;
+  // private rfcConnection: unknown;
+  // private odataClient: unknown;
 
   constructor(private readonly options: SAPOptions) {}
 
@@ -47,7 +70,7 @@ export class SAPAdapter {
     }
   }
 
-  async callRFC(functionName: string, parameters: Record<string, any>): Promise<any> {
+  async callRFC(functionName: string, parameters: Record<string, unknown>): Promise<RFCResult> {
     try {
       // Mock RFC call for demo purposes
       this.logger.log(`RFC call: ${functionName} with parameters:`, parameters);
@@ -69,12 +92,7 @@ export class SAPAdapter {
     }
   }
 
-  async queryOData(entitySet: string, filters?: Record<string, any>, options?: {
-    select?: string[];
-    orderby?: string;
-    top?: number;
-    skip?: number;
-  }): Promise<any[]> {
+  async queryOData(entitySet: string, filters?: Record<string, unknown>, options?: ODataQueryOptions): Promise<ODataEntityArray> {
     try {
       // Mock OData query for demo purposes
       this.logger.log(`OData query: ${entitySet}`, { filters, options });
@@ -96,7 +114,7 @@ export class SAPAdapter {
     }
   }
 
-  async createODataEntity(entitySet: string, data: Record<string, any>): Promise<any> {
+  async createODataEntity(entitySet: string, data: Record<string, unknown>): Promise<ODataEntity> {
     try {
       // Mock OData create for demo purposes
       this.logger.log(`OData create: ${entitySet}`, data);
@@ -114,12 +132,12 @@ export class SAPAdapter {
     }
   }
 
-  async updateODataEntity(entitySet: string, key: string, data: Record<string, any>): Promise<any> {
+  async updateODataEntity(entitySet: string, key: string, data: Record<string, unknown>): Promise<ODataEntity> {
     try {
       // Mock OData update for demo purposes
       this.logger.log(`OData update: ${entitySet} (${key})`, data);
       
-      const result = {
+      const result: ODataEntity = {
         id: key,
         ...data,
         updatedAt: new Date().toISOString(),
@@ -142,7 +160,7 @@ export class SAPAdapter {
     }
   }
 
-  async sendIDoc(messageType: string, data: Record<string, any>): Promise<string> {
+  async sendIDoc(messageType: string, data: Record<string, unknown>): Promise<string> {
     try {
       // Mock IDoc send for demo purposes
       this.logger.log(`IDoc send: ${messageType}`, data);
@@ -155,7 +173,7 @@ export class SAPAdapter {
     }
   }
 
-  async receiveIDoc(idocId: string): Promise<Record<string, any>> {
+  async receiveIDoc(idocId: string): Promise<Record<string, unknown>> {
     try {
       // Mock IDoc receive for demo purposes
       this.logger.log(`IDoc receive: ${idocId}`);
@@ -182,7 +200,7 @@ export class SAPAdapter {
   }
 
   // Mock data generators
-  private mockGetCustomerDetail(parameters: Record<string, any>) {
+  private mockGetCustomerDetail(parameters: Record<string, unknown>): RFCResult {
     return {
       success: true,
       customer: {
@@ -195,7 +213,7 @@ export class SAPAdapter {
     };
   }
 
-  private mockGetMaterialDetail(parameters: Record<string, any>) {
+  private mockGetMaterialDetail(parameters: Record<string, unknown>): RFCResult {
     return {
       success: true,
       material: {
@@ -207,7 +225,7 @@ export class SAPAdapter {
     };
   }
 
-  private mockCreateSalesOrder(parameters: Record<string, any>) {
+  private mockCreateSalesOrder(parameters: Record<string, unknown>): RFCResult {
     return {
       success: true,
       order: {
@@ -219,7 +237,7 @@ export class SAPAdapter {
     };
   }
 
-  private mockGetCustomers(filters?: Record<string, any>, options?: any) {
+  private mockGetCustomers(filters?: Record<string, unknown>, options?: ODataQueryOptions): ODataEntityArray {
     const customers = [
       {
         KUNNR: 'CUST001',
@@ -240,7 +258,7 @@ export class SAPAdapter {
     return this.applyFiltersAndOptions(customers, filters, options);
   }
 
-  private mockGetProducts(filters?: Record<string, any>, options?: any) {
+  private mockGetProducts(filters?: Record<string, unknown>, options?: ODataQueryOptions): ODataEntityArray {
     const products = [
       {
         MATNR: 'MAT001',
@@ -261,7 +279,7 @@ export class SAPAdapter {
     return this.applyFiltersAndOptions(products, filters, options);
   }
 
-  private mockGetOrders(filters?: Record<string, any>, options?: any) {
+  private mockGetOrders(filters?: Record<string, unknown>, options?: ODataQueryOptions): ODataEntityArray {
     const orders = [
       {
         VBELN: 'SO001',
@@ -282,8 +300,8 @@ export class SAPAdapter {
     return this.applyFiltersAndOptions(orders, filters, options);
   }
 
-  private applyFiltersAndOptions(data: any[], filters?: Record<string, any>, options?: any): any[] {
-    let result = [...data];
+  private applyFiltersAndOptions(data: ODataEntityArray, filters?: Record<string, unknown>, options?: ODataQueryOptions): ODataEntityArray {
+    let result: ODataEntityArray = [...data];
 
     // Apply filters
     if (filters) {
@@ -298,8 +316,8 @@ export class SAPAdapter {
     if (options) {
       if (options.select) {
         result = result.map(item => {
-          const selected: any = {};
-          options.select.forEach((field: string) => {
+          const selected: ODataEntity = {};
+          options.select?.forEach((field: string) => {
             if (item[field] !== undefined) {
               selected[field] = item[field];
             }
@@ -310,14 +328,16 @@ export class SAPAdapter {
 
       if (options.orderby) {
         const [field, direction] = options.orderby.split(' ');
-        result.sort((a, b) => {
-          const aVal = a[field];
-          const bVal = b[field];
-          if (direction === 'desc') {
-            return bVal > aVal ? 1 : -1;
-          }
-          return aVal > bVal ? 1 : -1;
-        });
+        if (field) {
+          result.sort((a, b) => {
+            const aVal = a[field];
+            const bVal = b[field];
+            if (direction === 'desc') {
+              return (bVal ?? 0) > (aVal ?? 0) ? 1 : -1;
+            }
+            return (aVal ?? 0) > (bVal ?? 0) ? 1 : -1;
+          });
+        }
       }
 
       if (options.skip) {

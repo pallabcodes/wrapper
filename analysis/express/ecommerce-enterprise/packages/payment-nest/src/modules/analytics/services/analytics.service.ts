@@ -8,11 +8,79 @@ export interface AnalyticsFilters {
   endDate?: string;
 }
 
+interface PaymentStats {
+  totalPayments: number;
+  totalAmount: number;
+  completedPayments: number;
+  failedPayments: number;
+  pendingPayments: number;
+}
+
+interface PaymentStatsResponse extends PaymentStats {
+  successRate: number;
+  averageTransactionValue: number;
+}
+
+interface RevenueData {
+  date: string;
+  revenue: number;
+}
+
+interface MonthlyRevenueData {
+  month: string;
+  revenue: number;
+}
+
+interface TransactionData {
+  date: string;
+  transactions: number;
+}
+
+interface MonthlyTransactionData {
+  month: string;
+  transactions: number;
+}
+
+interface ProviderStat {
+  provider: PaymentProvider;
+  totalPayments: number;
+  totalAmount: number;
+  successRate: number;
+}
+
+interface RevenueAnalytics {
+  totalRevenue: number;
+  period: string;
+  startDate: Date;
+  endDate: Date;
+  dailyRevenue: RevenueData[];
+  monthlyRevenue: MonthlyRevenueData[];
+}
+
+interface TransactionAnalytics {
+  totalTransactions: number;
+  completedTransactions: number;
+  failedTransactions: number;
+  pendingTransactions: number;
+  period: string;
+  startDate: Date;
+  endDate: Date;
+  dailyTransactions: TransactionData[];
+  monthlyTransactions: MonthlyTransactionData[];
+}
+
+interface ProviderAnalytics {
+  providers: ProviderStat[];
+  period: string;
+  startDate: Date;
+  endDate: Date;
+}
+
 @Injectable()
 export class AnalyticsService {
   constructor(private readonly paymentRepository: PaymentRepository) {}
 
-  async getPaymentStats(tenantId: string): Promise<any> {
+  async getPaymentStats(tenantId: string): Promise<PaymentStatsResponse> {
     const stats = await this.paymentRepository.getPaymentStats(tenantId);
     
     return {
@@ -30,7 +98,7 @@ export class AnalyticsService {
     };
   }
 
-  async getRevenueAnalytics(tenantId: string, filters: AnalyticsFilters): Promise<any> {
+  async getRevenueAnalytics(tenantId: string, filters: AnalyticsFilters): Promise<RevenueAnalytics> {
     const { startDate, endDate } = this.parseDateRange(filters);
     
     // This would typically involve more complex queries
@@ -47,7 +115,7 @@ export class AnalyticsService {
     };
   }
 
-  async getTransactionAnalytics(tenantId: string, filters: AnalyticsFilters): Promise<any> {
+  async getTransactionAnalytics(tenantId: string, filters: AnalyticsFilters): Promise<TransactionAnalytics> {
     const { startDate, endDate } = this.parseDateRange(filters);
     
     const stats = await this.paymentRepository.getPaymentStats(tenantId);
@@ -65,7 +133,7 @@ export class AnalyticsService {
     };
   }
 
-  async getProviderAnalytics(tenantId: string, filters: AnalyticsFilters): Promise<any> {
+  async getProviderAnalytics(tenantId: string, filters: AnalyticsFilters): Promise<ProviderAnalytics> {
     const { startDate, endDate } = this.parseDateRange(filters);
     
     // This would typically involve more complex queries
@@ -110,7 +178,7 @@ export class AnalyticsService {
     return { startDate, endDate };
   }
 
-  private async getDailyRevenue(_tenantId: string, _startDate: Date, _endDate: Date): Promise<any[]> {
+  private async getDailyRevenue(_tenantId: string, _startDate: Date, _endDate: Date): Promise<RevenueData[]> {
     // This would typically involve a complex SQL query
     // For now, we'll return mock data
     return [
@@ -120,7 +188,7 @@ export class AnalyticsService {
     ];
   }
 
-  private async getMonthlyRevenue(_tenantId: string, _startDate: Date, _endDate: Date): Promise<any[]> {
+  private async getMonthlyRevenue(_tenantId: string, _startDate: Date, _endDate: Date): Promise<MonthlyRevenueData[]> {
     // This would typically involve a complex SQL query
     // For now, we'll return mock data
     return [
@@ -130,7 +198,7 @@ export class AnalyticsService {
     ];
   }
 
-  private async getDailyTransactions(_tenantId: string, _startDate: Date, _endDate: Date): Promise<any[]> {
+  private async getDailyTransactions(_tenantId: string, _startDate: Date, _endDate: Date): Promise<TransactionData[]> {
     // This would typically involve a complex SQL query
     // For now, we'll return mock data
     return [
@@ -140,7 +208,7 @@ export class AnalyticsService {
     ];
   }
 
-  private async getMonthlyTransactions(tenantId: string, startDate: Date, endDate: Date): Promise<any[]> {
+  private async getMonthlyTransactions(tenantId: string, startDate: Date, endDate: Date): Promise<MonthlyTransactionData[]> {
     // This would typically involve a complex SQL query
     // For now, we'll return mock data
     return [
@@ -150,7 +218,7 @@ export class AnalyticsService {
     ];
   }
 
-  private async getProviderStats(tenantId: string, startDate: Date, endDate: Date): Promise<any[]> {
+  private async getProviderStats(tenantId: string, startDate: Date, endDate: Date): Promise<ProviderStat[]> {
     // This would typically involve a complex SQL query
     // For now, we'll return mock data
     return [

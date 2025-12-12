@@ -6,7 +6,11 @@ import {
   RegionHealth,
   DataSyncStatus,
   DataConflict,
-  RegionEvent
+  RegionEvent,
+  DataReplication,
+  ReplicationConfig,
+  LoadBalancerConfig,
+  GlobalLoadBalancer
 } from '../interfaces/multi-region.interface';
 import { RegionManagerService } from './region-manager.service';
 import { DataReplicationService } from './data-replication.service';
@@ -84,7 +88,7 @@ export class MultiRegionService {
     dataType: string,
     dataId: string,
     operation: 'create' | 'update' | 'delete',
-    data: any,
+    data: unknown,
     sourceRegion?: string
   ): Promise<string> {
     return this.dataReplication.replicateData(dataType, dataId, operation, data, sourceRegion);
@@ -102,20 +106,34 @@ export class MultiRegionService {
     conflictId: string,
     strategy: string,
     resolvedBy: string,
-    finalData: any
+    finalData: unknown
   ): Promise<boolean> {
     return this.dataReplication.resolveConflict(conflictId, strategy, resolvedBy, finalData);
   }
 
-  async getReplicationQueue(): Promise<any[]> {
+  async getReplicationQueue(): Promise<DataReplication[]> {
     return this.dataReplication.getReplicationQueue();
   }
 
-  async getReplicationStats(): Promise<any> {
+  async getReplicationStats(): Promise<{
+    total: number;
+    pending: number;
+    processing: number;
+    completed: number;
+    failed: number;
+    successRate: number;
+  }> {
     return this.dataReplication.getReplicationStats();
   }
 
-  async getLoadBalancerStats(): Promise<any> {
+  async getLoadBalancerStats(): Promise<{
+    totalRequests: number;
+    regionStats: Array<{
+      regionId: string;
+      requestCount: number;
+      percentage: number;
+    }>;
+  }> {
     return this.loadBalancer.getRequestStats();
   }
 
@@ -139,19 +157,19 @@ export class MultiRegionService {
     await this.dataReplication.resumeReplication();
   }
 
-  async getReplicationConfig(): Promise<any> {
+  async getReplicationConfig(): Promise<ReplicationConfig> {
     return this.dataReplication.getReplicationConfig();
   }
 
-  async updateReplicationConfig(config: any): Promise<void> {
+  async updateReplicationConfig(config: Partial<ReplicationConfig>): Promise<void> {
     this.dataReplication.updateReplicationConfig(config);
   }
 
-  async getLoadBalancerConfig(): Promise<any> {
+  async getLoadBalancerConfig(): Promise<LoadBalancerConfig> {
     return this.loadBalancer.getLoadBalancerConfig();
   }
 
-  async updateLoadBalancerConfig(config: any): Promise<void> {
+  async updateLoadBalancerConfig(config: Partial<LoadBalancerConfig>): Promise<void> {
     this.loadBalancer.updateLoadBalancerConfig(config);
   }
 
@@ -175,7 +193,7 @@ export class MultiRegionService {
     return this.loadBalancer.removeRoutingRule(ruleId);
   }
 
-  async getGlobalLoadBalancer(): Promise<any> {
+  async getGlobalLoadBalancer(): Promise<GlobalLoadBalancer> {
     return this.loadBalancer.getGlobalLoadBalancer();
   }
 
@@ -207,7 +225,7 @@ export class MultiRegionService {
     dataType: string,
     dataId: string,
     regions: string[],
-    versions: { region: string; data: any; timestamp: Date }[]
+    versions: { region: string; data: unknown; timestamp: Date }[]
   ): Promise<DataConflict | null> {
     return this.dataReplication.detectConflict(dataType, dataId, regions, versions);
   }

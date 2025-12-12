@@ -5,6 +5,7 @@ import { Password } from '../value-objects/password.vo';
 import { UserId } from '../value-objects/user-id.vo';
 import { UserRegisteredEvent, UserEmailVerifiedEvent } from '../events/user-events';
 import type { UserRepositoryPort } from '../ports/output/user.repository.port';
+import type { AuthConfig } from '../../infrastructure/config/auth.config';
 
 /**
  * Domain Service for User-related business logic
@@ -22,7 +23,7 @@ export class UserDomainService {
   async registerUser(
     email: Email,
     name: string,
-    password: Password,
+    password: string,
     role: string = 'USER'
   ): Promise<User> {
     // Business rule: Check if email is available
@@ -41,8 +42,7 @@ export class UserDomainService {
       throw new Error('Password does not meet security requirements');
     }
 
-    // Create user and add domain event
-    const user = User.create(email, name, password, role as any);
+    const user = await User.create(email, name, password, this.getAuthConfig(), role as any);
 
     // Add domain event for side effects (email sending, etc.)
     user.addDomainEvent(new UserRegisteredEvent(
@@ -127,12 +127,34 @@ export class UserDomainService {
   /**
    * Business rule: Check password requirements
    */
-  private meetsPasswordRequirements(password: Password): boolean {
+  private meetsPasswordRequirements(password: string): boolean {
     // Domain-specific password rules
-    const passwordValue = password.toString();
+    const passwordValue = password;
     return passwordValue.length >= 8 &&
            /[A-Z]/.test(passwordValue) &&
            /[a-z]/.test(passwordValue) &&
            /\d/.test(passwordValue);
+  }
+
+  /**
+   * In a real app, inject config; here provide defaults to keep domain pure.
+   */
+  private getAuthConfig(): AuthConfig {
+    return {
+      JWT: {
+        SECRET: 'unused',
+        ACCESS_TOKEN_EXPIRATION: '15m',
+        REFRESH_TOKEN_EXPIRATION: '7d',
+      },
+      BCRYPT: {
+        SALT_ROUNDS: 10,
+      },
+      PASSWORD: {
+        MIN_LENGTH: 8,
+        REQUIRE_UPPERCASE: true,
+        REQUIRE_LOWERCASE: true,
+        REQUIRE_NUMBER: true,
+      },
+    };
   }
 }

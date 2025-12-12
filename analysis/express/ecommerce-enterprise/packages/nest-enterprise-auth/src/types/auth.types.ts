@@ -26,9 +26,9 @@ export interface AuthContext<TUser extends AuthUserBase = AuthUserBase> {
 
 declare global {
   namespace Express {
-    // Augment Express Request for better DX in controllers/guards
+    interface User extends AuthUserBase {}
     interface Request {
-      user?: AuthUserBase;
+      user?: User;
       authContext?: AuthContext;
     }
   }

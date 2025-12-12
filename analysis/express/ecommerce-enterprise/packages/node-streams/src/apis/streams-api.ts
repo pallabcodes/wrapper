@@ -17,6 +17,7 @@ import {
   StreamSplitterConfig,
   StreamMergerConfig,
 } from '../types/streams.types';
+import type { Readable, Writable } from 'stream';
 
 export interface StreamsConfig {
   algorithm?: 'aes-256-gcm' | 'aes-128-gcm' | 'gzip' | 'brotli' | 'lz4' | 'zstd';
@@ -169,6 +170,17 @@ export class StreamsAPI {
     } catch (error) {
       throw new Error(`Failed to create readable stream: ${error.message}`);
     }
+  }
+
+  /**
+   * Pipe with backpressure and optional retries.
+   */
+  async pipeWithBackpressure(
+    readable: Readable,
+    writable: Writable,
+    options: { streamId?: string; maxRetries?: number; retryDelayMs?: number } = {}
+  ): Promise<void> {
+    return this.streamsService.pipeWithBackpressure(readable, writable, options);
   }
 
   /**

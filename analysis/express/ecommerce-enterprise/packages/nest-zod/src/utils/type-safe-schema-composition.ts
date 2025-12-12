@@ -62,7 +62,7 @@ export class TypeSafeSchemaComposer<T extends z.ZodSchema = z.ZodSchema> {
         }
       }
       return acc;
-    }, {} as Record<string, z.ZodSchema>);
+    }, {} as z.ZodRawShape);
 
     const newSchema = z.object(pickedShape) as z.ZodObject<Pick<z.infer<T>, K>>;
     return new TypeSafeSchemaComposer(newSchema, this.options);
@@ -89,7 +89,7 @@ export class TypeSafeSchemaComposer<T extends z.ZodSchema = z.ZodSchema> {
         }
       }
       return acc;
-    }, {} as Record<string, z.ZodSchema>);
+    }, {} as z.ZodRawShape);
 
     const newSchema = z.object(omittedShape) as z.ZodObject<Omit<z.infer<T>, K>>;
     return new TypeSafeSchemaComposer(newSchema, this.options);
@@ -98,12 +98,12 @@ export class TypeSafeSchemaComposer<T extends z.ZodSchema = z.ZodSchema> {
   /**
    * Type-safe schema partial
    */
-  partial(): TypeSafeSchemaComposer<z.ZodObject<any>> {
+  partial(): TypeSafeSchemaComposer<z.ZodObject<z.ZodRawShape>> {
     if (!isZodObjectSchema(this.schema)) {
       throw new Error('Partial operation requires an object schema');
     }
 
-    const newSchema = this.schema.partial() as z.ZodObject<any>;
+    const newSchema = this.schema.partial() as z.ZodObject<z.ZodRawShape>;
     return new TypeSafeSchemaComposer(newSchema, this.options);
   }
 
@@ -326,10 +326,11 @@ export function typeSafeOmit<T extends z.ZodObject<Record<string, z.ZodSchema>>,
 /**
  * Type-safe schema partial utility
  */
-export function typeSafePartial<T extends z.ZodObject<Record<string, z.ZodSchema>>>(
+export function typeSafePartial<T extends z.ZodObject<z.ZodRawShape>>(
   schema: T
-): z.ZodObject<any> {
-  return createTypeSafeComposer(schema).partial().build();
+): ReturnType<T['partial']> {
+  // Use the native partial typing from the input schema to avoid widening to optional undefined
+  return schema.partial() as ReturnType<T['partial']>;
 }
 
 /**
@@ -337,7 +338,7 @@ export function typeSafePartial<T extends z.ZodObject<Record<string, z.ZodSchema
  */
 export function typeSafeRequired<T extends z.ZodObject<Record<string, z.ZodSchema>>>(
   schema: T
-): z.ZodObject<any> {
+): z.ZodObject<Record<string, z.ZodSchema>> {
   return createTypeSafeComposer(schema).required().build();
 }
 
@@ -389,9 +390,12 @@ export function typeSafeUnion<T extends z.ZodSchema[]>(
 /**
  * Type-safe schema discriminated union
  */
-export function typeSafeDiscriminatedUnion<T extends string, U extends z.ZodDiscriminatedUnionOption<T>[]>(
+export function typeSafeDiscriminatedUnion<
+  T extends string,
+  U extends [z.ZodDiscriminatedUnionOption<T>, z.ZodDiscriminatedUnionOption<T>, ...z.ZodDiscriminatedUnionOption<T>[]]
+>(
   discriminator: T,
   options: U
 ): z.ZodDiscriminatedUnion<T, U> {
-  return z.discriminatedUnion(discriminator, options as any);
+  return z.discriminatedUnion(discriminator, options);
 }

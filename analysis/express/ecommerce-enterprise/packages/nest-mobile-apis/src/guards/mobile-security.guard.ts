@@ -7,9 +7,36 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import type { Request } from 'express';
 import { MobileSecurityService } from '../services/mobile-security.service';
 import { MobileSecurityOptions, MOBILE_SECURITY_METADATA } from '../decorators/mobile-api.decorator';
 import { MobileDeviceInfo } from '../interfaces/mobile-api.interface';
+
+interface MobileSecurityRequest extends Request {
+  deviceInfo?: MobileDeviceInfo;
+  user?: {
+    id?: string;
+    [key: string]: unknown;
+  };
+  securityContext?: {
+    userId: string | null;
+    deviceId?: string;
+    platform?: string;
+    authenticated: boolean;
+    biometricAuthenticated: boolean;
+    location: { latitude: number; longitude: number; accuracy?: number } | null;
+  };
+  headers: {
+    authorization?: string;
+    'x-auth-token'?: string;
+    'x-user-id'?: string;
+    'x-biometric-token'?: string;
+    'x-latitude'?: string;
+    'x-longitude'?: string;
+    'x-location-accuracy'?: string;
+    [key: string]: string | string[] | undefined;
+  };
+}
 
 @Injectable()
 export class MobileSecurityGuard implements CanActivate {
@@ -21,7 +48,7 @@ export class MobileSecurityGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<MobileSecurityRequest>();
     // const handler = context.getHandler();
     
     const options: MobileSecurityOptions = this.reflector.getAllAndOverride<MobileSecurityOptions>(
@@ -127,24 +154,30 @@ export class MobileSecurityGuard implements CanActivate {
     }
   }
 
-  private extractToken(request: any): string | null {
+  private extractToken(request: MobileSecurityRequest): string | null {
     const authHeader = request.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
       return authHeader.substring(7);
     }
     
-    return request.headers['x-auth-token'] || null;
+    const token = request.headers['x-auth-token'];
+    return typeof token === 'string' ? token : null;
   }
 
-  private extractUserId(request: any): string | null {
-    return request.headers['x-user-id'] || request.user?.id || null;
+  private extractUserId(request: MobileSecurityRequest): string | null {
+    const userId = request.headers['x-user-id'];
+    if (userId && typeof userId === 'string') {
+      return userId;
+    }
+    return request.user?.id || null;
   }
 
-  private extractBiometricToken(request: any): string | null {
-    return request.headers['x-biometric-token'] || null;
+  private extractBiometricToken(request: MobileSecurityRequest): string | null {
+    const token = request.headers['x-biometric-token'];
+    return typeof token === 'string' ? token : null;
   }
 
-  private extractLocation(request: any): { latitude: number; longitude: number; accuracy?: number } | null {
+  private extractLocation(request: MobileSecurityRequest): { latitude: number; longitude: number; accuracy?: number } | null {
     const lat = request.headers['x-latitude'];
     const lng = request.headers['x-longitude'];
     const accuracy = request.headers['x-location-accuracy'];

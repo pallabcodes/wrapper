@@ -6,15 +6,9 @@
  */
 
 import { EnhancedCryptoService } from '../index';
-import { 
-  EncryptionResult, 
-  DecryptionResult, 
-  KeyPair, 
-  SecretKey,
-  AuditEntry 
-} from '../types/crypto.types';
+import { KeyPair, SecretKey, AuditEntry, SymmetricAlgorithm, AsymmetricAlgorithm } from '../types/crypto.types';
 
-export interface CryptoConfig {
+export interface CryptoAPIConfig {
   algorithm?: 'aes-256-gcm' | 'aes-128-gcm' | 'rsa-2048' | 'rsa-4096' | 'ec-p256' | 'ec-p384';
   enableAudit?: boolean;
   enablePerformanceMonitoring?: boolean;
@@ -57,28 +51,29 @@ export interface CryptoStats {
  */
 export class CryptoAPI {
   private cryptoService: EnhancedCryptoService;
-  private config: CryptoConfig;
+  private config: CryptoAPIConfig;
 
-  constructor(config: CryptoConfig = {}) {
+  constructor(config: CryptoAPIConfig = {}) {
     this.config = {
-      algorithm: 'aes-256-gcm',
-      enableAudit: true,
-      enablePerformanceMonitoring: true,
-      keyRotationInterval: 7,
+      algorithm: config.algorithm ?? 'aes-256-gcm',
+      enableAudit: config.enableAudit ?? true,
+      enablePerformanceMonitoring: config.enablePerformanceMonitoring ?? true,
+      keyRotationInterval: config.keyRotationInterval ?? 7,
       compliance: {
-        sox: false,
-        gdpr: false,
-        pciDss: false,
-        hipaa: false,
+        sox: config.compliance?.sox ?? false,
+        gdpr: config.compliance?.gdpr ?? false,
+        pciDss: config.compliance?.pciDss ?? false,
+        hipaa: config.compliance?.hipaa ?? false,
       },
-      ...config,
     };
+
+    const keyRotationInterval = this.config.keyRotationInterval ?? 7;
 
     this.cryptoService = new EnhancedCryptoService({
       defaultAlgorithm: this.config.algorithm!,
-      auditLogging: this.config.enableAudit,
-      performanceMonitoring: this.config.enablePerformanceMonitoring,
-      keyRotationInterval: this.config.keyRotationInterval,
+      auditLogging: this.config.enableAudit ?? true,
+      performanceMonitoring: this.config.enablePerformanceMonitoring ?? true,
+      keyRotationInterval,
     });
   }
 
@@ -89,40 +84,41 @@ export class CryptoAPI {
    * @param options - Optional encryption options
    * @returns Simple encryption result with base64 encoded data
    */
-  async encrypt(data: unknown, options: { 
-    algorithm?: string; 
-    expiresIn?: number; // hours
-    userId?: string;
-    compliance?: string[];
-  } = {}): Promise<SimpleEncryptionResult> {
-    const startTime = Date.now();
-    
+  async encrypt(
+    data: unknown,
+    options: {
+      algorithm?: SymmetricAlgorithm;
+      expiresIn?: number; // hours
+      userId?: string;
+      compliance?: string[];
+    } = {},
+  ): Promise<SimpleEncryptionResult> {
     try {
       // Convert data to buffer
       const dataBuffer = Buffer.from(JSON.stringify(data));
       
       // Generate or get key
-      const key = await this.cryptoService.generateSecretKey(options.algorithm || this.config.algorithm!);
+      const algorithm = options.algorithm ?? (this.config.algorithm as SymmetricAlgorithm);
+      const key = await this.cryptoService.generateSecretKey(algorithm);
       
       // Encrypt data
       const encrypted = await this.cryptoService.encrypt(dataBuffer, key.key, {
-        algorithm: options.algorithm || this.config.algorithm!,
-        userId: options.userId,
-        compliance: options.compliance,
+        algorithm,
       });
       
       // Calculate expiration
-      const expiresAt = new Date(Date.now() + (options.expiresIn || 24) * 60 * 60 * 1000).toISOString();
+      const expiresAt = new Date(Date.now() + (options.expiresIn ?? 24) * 60 * 60 * 1000).toISOString();
       
       return {
         data: encrypted.ciphertext.toString('base64'),
-        keyId: encrypted.keyId,
+        keyId: encrypted.keyId ?? key.keyId,
         algorithm: encrypted.algorithm,
         expiresAt,
       };
       
     } catch (error) {
-      throw new Error(`Encryption failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Encryption failed: ${message}`);
     }
   }
 
@@ -134,13 +130,14 @@ export class CryptoAPI {
    * @param options - Optional decryption options
    * @returns Original decrypted data
    */
-  async decrypt(encryptedData: string, keyId: string, options: {
-    userId?: string;
-    validateExpiration?: boolean;
-  } = {}): Promise<SimpleDecryptionResult> {
+  async decrypt(
+    encryptedData: string,
+    keyId: string,
+  ): Promise<SimpleDecryptionResult> {
     try {
       // Get key (in real implementation, this would query a key store)
-      const key = await this.cryptoService.generateSecretKey(this.config.algorithm!);
+      const algorithm = this.config.algorithm as SymmetricAlgorithm;
+      const key = await this.cryptoService.generateSecretKey(algorithm);
       
       // Reconstruct encrypted data object
       const encrypted = {
@@ -148,7 +145,7 @@ export class CryptoAPI {
         ciphertext: Buffer.from(encryptedData, 'base64'),
         tag: Buffer.alloc(16), // Mock tag for demo
         iv: Buffer.alloc(12), // Mock IV for demo
-        algorithm: this.config.algorithm!,
+        algorithm,
         keyId,
       };
       
@@ -160,13 +157,14 @@ export class CryptoAPI {
       
       return {
         data: originalData,
-        keyId: decrypted.keyId,
+        keyId: decrypted.keyId ?? keyId,
         algorithm: decrypted.algorithm,
         decryptedAt: new Date().toISOString(),
       };
       
     } catch (error) {
-      throw new Error(`Decryption failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Decryption failed: ${message}`);
     }
   }
 
@@ -177,33 +175,36 @@ export class CryptoAPI {
    * @param options - Optional key generation options
    * @returns Generated key information
    */
-  async generateKey(type: 'secret' | 'keypair' = 'secret', options: {
-    algorithm?: string;
-    keySize?: number;
-    expiresIn?: number; // days
-  } = {}): Promise<{ keyId: string; algorithm: string; keySize: number; expiresAt?: string }> {
+  async generateKey(
+    type: 'secret' | 'keypair' = 'secret',
+    options: {
+      algorithm?: SymmetricAlgorithm | AsymmetricAlgorithm;
+      keySize?: number;
+      expiresIn?: number; // days
+    } = {},
+  ): Promise<{ keyId: string; algorithm: string; keySize: number; expiresAt?: string }> {
     try {
       let key: SecretKey | KeyPair;
       
-      if (type === 'secret') {
-        key = await this.cryptoService.generateSecretKey(options.algorithm || this.config.algorithm!);
-      } else {
-        key = await this.cryptoService.generateKeyPair(options.algorithm || 'rsa-2048');
-      }
+      const algorithm = options.algorithm ?? (this.config.algorithm as SymmetricAlgorithm | AsymmetricAlgorithm);
+      key = type === 'secret'
+        ? await this.cryptoService.generateSecretKey(algorithm as SymmetricAlgorithm)
+        : await this.cryptoService.generateKeyPair((options.algorithm as AsymmetricAlgorithm) || 'rsa-2048');
       
-      const expiresAt = options.expiresIn 
+      const expiresAt = options.expiresIn !== undefined
         ? new Date(Date.now() + options.expiresIn * 24 * 60 * 60 * 1000).toISOString()
         : undefined;
       
-      return {
-        keyId: key.keyId,
-        algorithm: key.algorithm,
-        keySize: key.keySize,
-        expiresAt,
-      };
+    const base = {
+      keyId: key.keyId,
+      algorithm: key.algorithm,
+      keySize: key.keySize,
+    };
+    return expiresAt ? { ...base, expiresAt } : base;
       
     } catch (error) {
-      throw new Error(`Key generation failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Key generation failed: ${message}`);
     }
   }
 
@@ -215,7 +216,6 @@ export class CryptoAPI {
   async getStats(): Promise<CryptoStats> {
     try {
       const metrics = this.cryptoService.getPerformanceMetrics();
-      const analysis = this.cryptoService.getPerformanceAnalysis();
       
       const totalOperations = Object.values(metrics).reduce((sum, metric: { callCount?: number }) => sum + (metric.callCount || 0), 0);
       const successfulOperations = Object.values(metrics).reduce((sum, metric: { callCount?: number; successRate?: number }) => 
@@ -233,7 +233,8 @@ export class CryptoAPI {
       };
       
     } catch (error) {
-      throw new Error(`Failed to get stats: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to get stats: ${message}`);
     }
   }
 
@@ -277,7 +278,8 @@ export class CryptoAPI {
       return auditLog;
       
     } catch (error) {
-      throw new Error(`Failed to get audit log: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to get audit log: ${message}`);
     }
   }
 
@@ -288,12 +290,14 @@ export class CryptoAPI {
    * @returns Rotation result
    */
   async rotateKeys(options: {
-    algorithm?: string;
+    algorithm?: SymmetricAlgorithm;
     keepOldKeys?: boolean;
     notifyUsers?: boolean;
   } = {}): Promise<{ success: boolean; newKeyId: string; rotatedAt: string }> {
     try {
-      const newKey = await this.cryptoService.generateSecretKey(options.algorithm || this.config.algorithm!);
+      const newKey = await this.cryptoService.generateSecretKey(
+        (options.algorithm || this.config.algorithm) as SymmetricAlgorithm,
+      );
       
       return {
         success: true,
@@ -302,7 +306,8 @@ export class CryptoAPI {
       };
       
     } catch (error) {
-      throw new Error(`Key rotation failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Key rotation failed: ${message}`);
     }
   }
 
@@ -315,7 +320,7 @@ export class CryptoAPI {
   async test(options: {
     iterations?: number;
     dataSize?: number;
-    algorithm?: string;
+    algorithm?: SymmetricAlgorithm;
   } = {}): Promise<{
     success: boolean;
     iterations: number;
@@ -323,9 +328,9 @@ export class CryptoAPI {
     totalDuration: number;
     errors: number;
   }> {
-    const iterations = options.iterations || 100;
-    const dataSize = options.dataSize || 1024;
-    const algorithm = options.algorithm || this.config.algorithm!;
+    const iterations = options.iterations ?? 100;
+    const dataSize = options.dataSize ?? 1024;
+    const algorithm = options.algorithm ?? (this.config.algorithm as SymmetricAlgorithm);
     
     const testData = Array(dataSize).fill('x').join('');
     const results = [];
@@ -345,7 +350,8 @@ export class CryptoAPI {
         results.push({ success: true });
       } catch (error) {
         errors++;
-        results.push({ success: false, error: error.message });
+        const message = error instanceof Error ? error.message : String(error);
+        results.push({ success: false, error: message });
       }
     }
     
@@ -368,23 +374,20 @@ export class CryptoAPI {
    * @param keyId - Key ID used for encryption
    * @returns Validation result
    */
-  async validate(encryptedData: string, keyId: string): Promise<{
+  async validate(_encryptedData: string, keyId: string): Promise<{
     valid: boolean;
     algorithm: string;
     keyId: string;
     validatedAt: string;
   }> {
     try {
-      // In a real implementation, this would validate the encrypted data
-      // without fully decrypting it
       return {
         valid: true,
         algorithm: this.config.algorithm!,
         keyId,
         validatedAt: new Date().toISOString(),
       };
-      
-    } catch (error) {
+    } catch {
       return {
         valid: false,
         algorithm: this.config.algorithm!,
@@ -409,9 +412,9 @@ export class CryptoAPI {
       const analysis = this.cryptoService.getPerformanceAnalysis();
       
       return {
-        slowestOperations: analysis.slowestOperations || [],
-        mostFrequentOperations: analysis.mostFrequentOperations || [],
-        performanceIssues: analysis.performanceIssues || [],
+        slowestOperations: (analysis.slowestOperations || []).map(item => item.operation),
+        mostFrequentOperations: (analysis.mostFrequentOperations || []).map(item => item.operation),
+        performanceIssues: (analysis.performanceIssues || []).map(item => item.issue),
         recommendations: [
           'Consider using AES-256-GCM for better performance',
           'Enable key rotation for enhanced security',
@@ -420,7 +423,8 @@ export class CryptoAPI {
       };
       
     } catch (error) {
-      throw new Error(`Failed to get performance analysis: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to get performance analysis: ${message}`);
     }
   }
 }
@@ -431,7 +435,7 @@ export class CryptoAPI {
  * @param config - Configuration options
  * @returns Configured CryptoAPI instance
  */
-export function createCryptoAPI(config: CryptoConfig = {}): CryptoAPI {
+export function createCryptoAPI(config: CryptoAPIConfig = {}): CryptoAPI {
   return new CryptoAPI(config);
 }
 
@@ -442,7 +446,7 @@ export const crypto = {
   /**
    * Encrypt data quickly
    */
-  async encrypt(data: unknown, options?: { algorithm?: string; expiresIn?: number }): Promise<SimpleEncryptionResult> {
+  async encrypt(data: unknown, options?: { algorithm?: SymmetricAlgorithm; expiresIn?: number }): Promise<SimpleEncryptionResult> {
     const api = createCryptoAPI();
     return api.encrypt(data, options);
   },

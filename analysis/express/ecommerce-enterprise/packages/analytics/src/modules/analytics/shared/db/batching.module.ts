@@ -42,13 +42,13 @@ class SimpleDataLoader<K, V> {
         else item.resolve(val as V);
       });
     } catch (err) {
-      batch.forEach((q) => q.reject(err));
+      batch.forEach((q) => q.reject(err as Error));
     }
   }
 }
 
 export class BatchingService {
-  private loaders = new Map<string, SimpleDataLoader<unknown, unknown>>();
+  private loaders = new Map<string, SimpleDataLoader<any, any>>();
 
   getOrCreateLoader<K, V>(name: string, batchFn: BatchFn<K, V>): SimpleDataLoader<K, V> {
     if (!this.loaders.has(name)) {

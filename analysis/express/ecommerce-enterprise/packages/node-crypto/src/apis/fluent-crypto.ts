@@ -5,15 +5,18 @@
  * with enterprise features built-in.
  */
 
-import { CryptoAPI, SimpleEncryptionResult, SimpleDecryptionResult, CryptoStats } from './crypto-api';
+import { CryptoAPI, SimpleEncryptionResult, SimpleDecryptionResult, CryptoStats, CryptoAPIConfig } from './crypto-api';
+import type { SymmetricAlgorithm, AsymmetricAlgorithm } from '../types/crypto.types';
 
 export interface FluentCryptoConfig {
-  algorithm?: 'aes-256-gcm' | 'aes-128-gcm' | 'rsa-2048' | 'rsa-4096' | 'ec-p256' | 'ec-p384';
+  algorithm?: SymmetricAlgorithm | AsymmetricAlgorithm | undefined;
   enableAudit?: boolean;
   enablePerformanceMonitoring?: boolean;
-  compliance?: string[];
-  userId?: string;
-  expiresIn?: number; // hours
+  compliance?: string[] | undefined;
+  userId?: string | undefined;
+  expiresIn?: number | undefined; // hours
+  validateExpiration?: boolean | undefined;
+  keySize?: number | undefined;
 }
 
 /**
@@ -31,14 +34,18 @@ export class FluentCrypto {
       enableAudit: true,
       enablePerformanceMonitoring: true,
       compliance: [],
+      validateExpiration: false,
       ...config,
     };
 
+    type AlgorithmOption = NonNullable<CryptoAPIConfig['algorithm']>;
+    const algorithm: AlgorithmOption = (this.config.algorithm ?? 'aes-256-gcm') as AlgorithmOption;
+
     this.api = new CryptoAPI({
-      algorithm: this.config.algorithm,
+      algorithm,
       enableAudit: this.config.enableAudit,
       enablePerformanceMonitoring: this.config.enablePerformanceMonitoring,
-    });
+    } as CryptoAPIConfig);
   }
 
   /**
@@ -127,12 +134,18 @@ export class FluentEncryption {
    * Execute encryption
    */
   async execute(): Promise<SimpleEncryptionResult> {
-    return this.api.encrypt(this.data, {
-      algorithm: this.config.algorithm,
-      expiresIn: this.config.expiresIn,
-      userId: this.config.userId,
-      compliance: this.config.compliance,
-    });
+    const encryptOptions: {
+      algorithm?: SymmetricAlgorithm;
+      expiresIn?: number;
+      userId?: string;
+      compliance?: string[];
+    } = {};
+    if (this.config.algorithm !== undefined) encryptOptions.algorithm = this.config.algorithm as SymmetricAlgorithm;
+    if (this.config.expiresIn !== undefined) encryptOptions.expiresIn = this.config.expiresIn;
+    if (this.config.userId !== undefined) encryptOptions.userId = this.config.userId;
+    if (this.config.compliance !== undefined) encryptOptions.compliance = this.config.compliance;
+
+    return this.api.encrypt(this.data, encryptOptions);
   }
 }
 
@@ -172,10 +185,7 @@ export class FluentDecryption {
    * Execute decryption
    */
   async execute(): Promise<SimpleDecryptionResult> {
-    return this.api.decrypt(this.encryptedData, this.keyId, {
-      userId: this.config.userId,
-      validateExpiration: this.config.validateExpiration,
-    });
+    return this.api.decrypt(this.encryptedData, this.keyId);
   }
 }
 
@@ -221,11 +231,16 @@ export class FluentKeyGeneration {
    * Execute key generation
    */
   async execute(): Promise<{ keyId: string; algorithm: string; keySize: number; expiresAt?: string }> {
-    return this.api.generateKey(this.type, {
-      algorithm: this.config.algorithm,
-      keySize: this.config.keySize,
-      expiresIn: this.config.expiresIn,
-    });
+    const generateOptions: {
+      algorithm?: SymmetricAlgorithm | AsymmetricAlgorithm;
+      keySize?: number;
+      expiresIn?: number;
+    } = {};
+    if (this.config.algorithm !== undefined) generateOptions.algorithm = this.config.algorithm;
+    if (this.config.keySize !== undefined) generateOptions.keySize = this.config.keySize;
+    if (this.config.expiresIn !== undefined) generateOptions.expiresIn = this.config.expiresIn;
+
+    return this.api.generateKey(this.type, generateOptions);
   }
 }
 

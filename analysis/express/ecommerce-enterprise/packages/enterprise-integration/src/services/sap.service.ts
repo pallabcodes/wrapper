@@ -5,6 +5,20 @@ import { SAPAdapter } from '../adapters/sap.adapter';
 import { CacheService } from './cache.service';
 import { RetryService } from './retry.service';
 
+interface RFCResult {
+  success: boolean;
+  data?: unknown;
+  customer?: Record<string, unknown>;
+  material?: Record<string, unknown>;
+  order?: Record<string, unknown>;
+}
+
+interface ODataEntity extends Record<string, unknown> {
+  id?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 @Injectable()
 export class SAPService {
   private readonly logger = new Logger(SAPService.name);
@@ -42,13 +56,13 @@ export class SAPService {
     return true;
   }
 
-  async callRFC(functionName: string, parameters: Record<string, any>): Promise<any> {
+  async callRFC(functionName: string, parameters: Record<string, unknown>): Promise<RFCResult> {
     if (!this.isConnected) {
       throw new Error('SAP service is not connected');
     }
 
     const cacheKey = `sap_rfc_${functionName}_${JSON.stringify(parameters)}`;
-    const cached = await this.cacheService.get(cacheKey);
+    const cached = await this.cacheService.get<RFCResult>(cacheKey);
     if (cached) {
       return cached;
     }
@@ -67,18 +81,22 @@ export class SAPService {
     }
   }
 
-  async queryOData(entitySet: string, filters?: Record<string, any>, options?: {
+  async queryOData(
+    entitySet: string,
+    filters?: Record<string, unknown>,
+    options?: {
     select?: string[];
     orderby?: string;
     top?: number;
     skip?: number;
-  }): Promise<any[]> {
+  }
+  ): Promise<ODataEntity[]> {
     if (!this.isConnected) {
       throw new Error('SAP service is not connected');
     }
 
     const cacheKey = `sap_odata_${entitySet}_${JSON.stringify({ filters, options })}`;
-    const cached = await this.cacheService.get(cacheKey);
+    const cached = await this.cacheService.get<ODataEntity[]>(cacheKey);
     if (cached) {
       return cached;
     }
@@ -90,14 +108,14 @@ export class SAPService {
       );
 
       await this.cacheService.set(cacheKey, result, 600); // 10 minutes cache
-      return result;
+      return result as ODataEntity[];
     } catch (error) {
       this.logger.error(`SAP OData query failed: ${entitySet}`, (error as Error).stack);
       throw error;
     }
   }
 
-  async createODataEntity(entitySet: string, data: Record<string, any>): Promise<any> {
+  async createODataEntity(entitySet: string, data: Record<string, unknown>): Promise<ODataEntity> {
     if (!this.isConnected) {
       throw new Error('SAP service is not connected');
     }
@@ -117,7 +135,7 @@ export class SAPService {
     }
   }
 
-  async updateODataEntity(entitySet: string, key: string, data: Record<string, any>): Promise<any> {
+  async updateODataEntity(entitySet: string, key: string, data: Record<string, unknown>): Promise<ODataEntity> {
     if (!this.isConnected) {
       throw new Error('SAP service is not connected');
     }
@@ -156,7 +174,7 @@ export class SAPService {
     }
   }
 
-  async sendIDoc(messageType: string, data: Record<string, any>): Promise<string> {
+  async sendIDoc(messageType: string, data: Record<string, unknown>): Promise<string> {
     if (!this.isConnected) {
       throw new Error('SAP service is not connected');
     }
@@ -175,7 +193,7 @@ export class SAPService {
     }
   }
 
-  async receiveIDoc(idocId: string): Promise<Record<string, any>> {
+  async receiveIDoc(idocId: string): Promise<Record<string, unknown>> {
     if (!this.isConnected) {
       throw new Error('SAP service is not connected');
     }

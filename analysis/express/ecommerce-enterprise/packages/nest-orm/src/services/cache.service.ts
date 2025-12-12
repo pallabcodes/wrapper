@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import Redis from 'ioredis';
+import Redis, { RedisOptions } from 'ioredis';
 
 @Injectable()
 export class CacheService {
@@ -13,19 +13,21 @@ export class CacheService {
 
   async connect(): Promise<void> {
     try {
-      this.redis = new Redis({
+      const redisOptions: RedisOptions = {
         host: process.env['REDIS_HOST'] || 'localhost',
         port: parseInt(process.env['REDIS_PORT'] || '6379'),
         enableReadyCheck: false,
         maxRetriesPerRequest: 3,
-      } as any);
+      };
+      
+      this.redis = new Redis(redisOptions);
 
-      (this.redis as any).on('connect', () => {
+      this.redis.on('connect', () => {
         this.isConnectedFlag = true;
         this.logger.log('Redis connected successfully');
       });
 
-      (this.redis as any).on('error', (error: any) => {
+      this.redis.on('error', (error: Error) => {
         this.logger.error('Redis connection error', error);
         this.isConnectedFlag = false;
       });
@@ -120,7 +122,7 @@ export class CacheService {
 
   async flush(): Promise<void> {
     try {
-      await (this.redis as any).flushdb();
+      await this.redis.flushdb();
     } catch (error) {
       this.logger.error('Failed to flush cache', error);
       throw error;
@@ -148,7 +150,7 @@ export class CacheService {
 
   async mset<T>(keyValuePairs: Record<string, T>, ttl?: number): Promise<void> {
     try {
-      const pipeline = (this.redis as any).pipeline();
+      const pipeline = this.redis.pipeline();
       
       Object.entries(keyValuePairs).forEach(([key, value]) => {
         const serialized = JSON.stringify(value);
@@ -168,17 +170,17 @@ export class CacheService {
 
   async getStats(): Promise<{
     connected: boolean;
-    memory: any;
+    memory: Record<string, string>;
     keys: number;
     hitRate: number;
   }> {
     try {
-      const info = await (this.redis as any).info('memory');
-      const keys = await (this.redis as any).dbsize();
+      const info = await this.redis.info('memory');
+      const keys = await this.redis.dbsize();
       
       // Parse memory info
-      const memoryInfo: any = {};
-      info.split('\r\n').forEach((line: any) => {
+      const memoryInfo: Record<string, string> = {};
+      info.split('\r\n').forEach((line: string) => {
         if (line.includes(':')) {
           const [key, value] = line.split(':');
           memoryInfo[key] = value;

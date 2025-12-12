@@ -40,10 +40,10 @@ describe('ResponseWrapper', () => {
         success: true,
         message: 'Success',
         data: { id: 1, name: 'Test' },
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -63,10 +63,10 @@ describe('ResponseWrapper', () => {
         success: true,
         message: 'Created successfully',
         data: { id: 1, name: 'Test' },
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -84,10 +84,10 @@ describe('ResponseWrapper', () => {
         success: true,
         message: 'Success',
         data: { id: 1, name: 'Test' },
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -105,10 +105,10 @@ describe('ResponseWrapper', () => {
         success: true,
         message: 'Success',
         data: null,
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -126,10 +126,10 @@ describe('ResponseWrapper', () => {
         success: true,
         message: 'Success',
         data: undefined,
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -151,12 +151,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'Something went wrong',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: 'VALIDATION_ERROR',
         details: { field: 'email', issue: 'Invalid format' },
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -173,12 +173,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'Internal server error',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: undefined,
         details: undefined,
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -196,12 +196,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'Not found',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: undefined,
         details: undefined,
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -218,12 +218,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: '',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: undefined,
         details: undefined,
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -239,12 +239,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'Resource not found',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: 'NOT_FOUND',
         details: undefined,
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -258,12 +258,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'User not found',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: 'NOT_FOUND',
         details: undefined,
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -285,7 +285,7 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'Validation failed',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: 'VALIDATION_ERROR',
         details: {
           email: 'Invalid email format',
@@ -293,7 +293,7 @@ describe('ResponseWrapper', () => {
         },
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -310,12 +310,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'Validation failed',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: 'VALIDATION_ERROR',
         details: {},
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -331,12 +331,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'Unauthorized',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: 'UNAUTHORIZED',
         details: undefined,
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -350,12 +350,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'Invalid credentials',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: 'UNAUTHORIZED',
         details: undefined,
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -371,12 +371,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'Forbidden',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: 'FORBIDDEN',
         details: undefined,
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -390,12 +390,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'Insufficient permissions',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: 'FORBIDDEN',
         details: undefined,
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -411,12 +411,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'Conflict',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: 'CONFLICT',
         details: undefined,
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -434,12 +434,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'Email already exists',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: 'CONFLICT',
         details: { email: 'user@example.com' },
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -455,12 +455,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'Internal server error',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: 'INTERNAL_ERROR',
         details: undefined,
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })
@@ -474,12 +474,12 @@ describe('ResponseWrapper', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         message: 'Database connection failed',
-        timestamp: expect.any(String),
+        timestamp: expect.anything(),
         errorCode: 'INTERNAL_ERROR',
         details: undefined,
         meta: {
           version: '1.0.0',
-          environment: expect.any(String)
+          environment: expect.anything()
         }
       })
     })

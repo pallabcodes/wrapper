@@ -5,7 +5,7 @@
  * Kept under 200 lines for maintainability.
  */
 
-const { z } = require('zod')
+import { z } from 'zod'
 
 // ============================================================================
 // BASE SCHEMAS AND TYPES
@@ -16,14 +16,24 @@ export const baseResponseSchema = z.object({
   message: z.string(),
   timestamp: z.string(),
   requestId: z.string().optional(),
-  data: z.any().optional(),
+  data: z.unknown().optional(),
   meta: z.object({
     version: z.string(),
     environment: z.string()
   }).optional()
 })
 
-export type BaseResponse = any
+export interface BaseResponse {
+  success: boolean;
+  message: string;
+  timestamp: string;
+  requestId?: string;
+  data?: unknown;
+  meta?: {
+    version: string;
+    environment: string;
+  };
+}
 
 export type ResponseMeta = {
   version?: string
@@ -34,7 +44,7 @@ export type ResponseMeta = {
     total: number
     totalPages: number
   }
-  filters?: Record<string, any>
+  filters?: Record<string, unknown>
   sorting?: {
     field: string
     direction: 'asc' | 'desc'
@@ -49,7 +59,7 @@ export type ResponseMeta = {
 // CORE RESPONSE BUILDER
 // ============================================================================
 
-export const createResponse = <T = any>(
+export const createResponse = <T = unknown>(
   success: boolean,
   message: string,
   data?: T,
@@ -59,7 +69,7 @@ export const createResponse = <T = any>(
   success,
   message,
   timestamp: new Date().toISOString(),
-  requestId,
+  requestId: requestId ?? '',
   ...(data !== undefined && { data }),
   meta: {
     version: process.env['npm_package_version'] || '1.0.0',
@@ -72,21 +82,21 @@ export const createResponse = <T = any>(
 // SUCCESS RESPONSES
 // ============================================================================
 
-export const successResponse = <T = any>(
+export const successResponse = <T = unknown>(
   data: T,
   message = 'Operation completed successfully',
   meta?: ResponseMeta,
   requestId?: string
 ) => createResponse(true, message, data, meta, requestId)
 
-export const createdResponse = <T = any>(
+export const createdResponse = <T = unknown>(
   data: T,
   message = 'Resource created successfully',
   meta?: ResponseMeta,
   requestId?: string
 ) => createResponse(true, message, data, meta, requestId)
 
-export const updatedResponse = <T = any>(
+export const updatedResponse = <T = unknown>(
   data: T,
   message = 'Resource updated successfully',
   meta?: ResponseMeta,
@@ -135,7 +145,7 @@ export const forbiddenResponse = (
 // ADVANCED RESPONSES
 // ============================================================================
 
-export const paginatedResponse = <T = any>(
+export const paginatedResponse = <T = unknown>(
   data: T[],
   pagination: ResponseMeta['pagination'],
   message = 'Data retrieved successfully',
@@ -149,17 +159,17 @@ export const paginatedResponse = <T = any>(
 import { Response } from 'express'
 
 export const responseWrapper = {
-  success: <T = any>(res: Response, data: T, message?: string, status = 200) => {
+  success: <T = unknown>(res: Response, data: T, message?: string, status = 200) => {
     const response = successResponse(data, message)
     return res.status(status).json(response)
   },
 
-  created: <T = any>(res: Response, data: T, message?: string) => {
+  created: <T = unknown>(res: Response, data: T, message?: string) => {
     const response = createdResponse(data, message)
     return res.status(201).json(response)
   },
 
-  updated: <T = any>(res: Response, data: T, message?: string) => {
+  updated: <T = unknown>(res: Response, data: T, message?: string) => {
     const response = updatedResponse(data, message)
     return res.status(200).json(response)
   },

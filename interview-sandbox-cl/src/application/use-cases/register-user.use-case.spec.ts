@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RegisterUserUseCase } from './register-user.use-case';
 import { USER_REPOSITORY_PORT } from '@domain/ports/output/user.repository.port';
 import { UserAlreadyExistsException } from '@domain/exceptions/user-already-exists.exception';
+import { AUTH_CONFIG_TOKEN } from '@infrastructure/config/auth.config';
 
 // Mock repository
 const mockUserRepository = {
@@ -19,6 +20,19 @@ describe('RegisterUserUseCase', () => {
         {
           provide: USER_REPOSITORY_PORT,
           useValue: mockUserRepository,
+        },
+        {
+          provide: AUTH_CONFIG_TOKEN,
+          useValue: {
+            JWT: { SECRET: 'unused', ACCESS_TOKEN_EXPIRATION: '15m', REFRESH_TOKEN_EXPIRATION: '7d' },
+            BCRYPT: { SALT_ROUNDS: 4 },
+            PASSWORD: {
+              MIN_LENGTH: 8,
+              REQUIRE_UPPERCASE: true,
+              REQUIRE_LOWERCASE: true,
+              REQUIRE_NUMBER: true,
+            },
+          },
         },
       ],
     }).compile();

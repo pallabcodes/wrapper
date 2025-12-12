@@ -3,20 +3,27 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    // Change id column from INTEGER AUTO_INCREMENT to UUID
+    const table = await queryInterface.describeTable('users');
+    const idCol = table?.id;
+
+    if (idCol && idCol.type?.includes('UUID')) {
+      // Already migrated; skip id change
+    } else {
     await queryInterface.changeColumn('users', 'id', {
       type: Sequelize.UUID,
       defaultValue: Sequelize.UUIDV4,
       allowNull: false,
       primaryKey: true,
     });
+    }
 
-    // Add isActive column
+    if (!table?.isActive) {
     await queryInterface.addColumn('users', 'isActive', {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
       allowNull: false,
     });
+    }
   },
 
   async down (queryInterface, Sequelize) {

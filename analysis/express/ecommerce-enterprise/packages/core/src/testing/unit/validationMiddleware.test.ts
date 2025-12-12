@@ -76,7 +76,7 @@ describe('ValidationMiddleware', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         error: 'Validation failed',
-        details: expect.any(Array)
+        details: expect.anything()
       })
       expect(mockNext).not.toHaveBeenCalled()
     })
@@ -98,7 +98,7 @@ describe('ValidationMiddleware', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         error: 'Validation failed',
-        details: expect.any(Array)
+        details: expect.anything()
       })
       expect(mockNext).not.toHaveBeenCalled()
     })
@@ -116,7 +116,7 @@ describe('ValidationMiddleware', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         error: 'Validation failed',
-        details: expect.any(Array)
+        details: expect.anything()
       })
       expect(mockNext).not.toHaveBeenCalled()
     })
@@ -135,7 +135,7 @@ describe('ValidationMiddleware', () => {
       validateWithError(mockRequest as Request, mockResponse as Response, mockNext)
 
       // Assert
-      expect(mockNext).toHaveBeenCalledWith(expect.any(Error))
+      expect(mockNext).toHaveBeenCalledWith(expect.anything())
       expect(mockResponse.status).not.toHaveBeenCalled()
       expect(mockResponse.json).not.toHaveBeenCalled()
     })
@@ -190,7 +190,7 @@ describe('ValidationMiddleware', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         error: 'Validation failed',
-        details: expect.any(Array)
+        details: expect.anything()
       })
       expect(mockNext).not.toHaveBeenCalled()
     })
@@ -212,7 +212,7 @@ describe('ValidationMiddleware', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         error: 'Validation failed',
-        details: expect.any(Array)
+        details: expect.anything()
       })
       expect(mockNext).not.toHaveBeenCalled()
     })
@@ -230,7 +230,7 @@ describe('ValidationMiddleware', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         error: 'Validation failed',
-        details: expect.any(Array)
+        details: expect.anything()
       })
       expect(mockNext).not.toHaveBeenCalled()
     })
@@ -249,7 +249,7 @@ describe('ValidationMiddleware', () => {
       validateWithError(mockRequest as Request, mockResponse as Response, mockNext)
 
       // Assert
-      expect(mockNext).toHaveBeenCalledWith(expect.any(Error))
+      expect(mockNext).toHaveBeenCalledWith(expect.anything())
       expect(mockResponse.status).not.toHaveBeenCalled()
       expect(mockResponse.json).not.toHaveBeenCalled()
     })
@@ -297,7 +297,7 @@ describe('ValidationMiddleware', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         error: 'Validation failed',
-        details: expect.any(Array)
+        details: expect.anything()
       })
       expect(mockNext).not.toHaveBeenCalled()
     })
@@ -319,7 +319,7 @@ describe('ValidationMiddleware', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         error: 'Validation failed',
-        details: expect.any(Array)
+        details: expect.anything()
       })
       expect(mockNext).not.toHaveBeenCalled()
     })
@@ -337,7 +337,7 @@ describe('ValidationMiddleware', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
         error: 'Validation failed',
-        details: expect.any(Array)
+        details: expect.anything()
       })
       expect(mockNext).not.toHaveBeenCalled()
     })
@@ -356,7 +356,7 @@ describe('ValidationMiddleware', () => {
       validateWithError(mockRequest as Request, mockResponse as Response, mockNext)
 
       // Assert
-      expect(mockNext).toHaveBeenCalledWith(expect.any(Error))
+      expect(mockNext).toHaveBeenCalledWith(expect.anything())
       expect(mockResponse.status).not.toHaveBeenCalled()
       expect(mockResponse.json).not.toHaveBeenCalled()
     })

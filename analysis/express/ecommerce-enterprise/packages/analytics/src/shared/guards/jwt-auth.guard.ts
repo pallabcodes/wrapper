@@ -14,8 +14,10 @@ interface RequestWithUser extends Request {
   user?: {
     sub: string;
     email: string;
+    id: string;
     roles?: string[];
     permissions?: string[];
+    [key: string]: unknown;
   };
 }
 

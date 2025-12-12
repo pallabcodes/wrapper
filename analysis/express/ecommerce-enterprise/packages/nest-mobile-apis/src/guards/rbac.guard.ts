@@ -1,8 +1,29 @@
 import { CanActivate, ExecutionContext, Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import type { Request } from 'express';
 import { RBAC_METADATA_KEY } from '../decorators/mobile-api.decorator';
 import { RbacRequirement, RbacContext } from '../interfaces/mobile-api.interface';
 // import { RbacService } from '../services/rbac.service';
+
+interface RbacRequest extends Request {
+  user?: {
+    id?: string;
+    tenantId?: string;
+    roles?: string[];
+    permissions?: string[];
+    [key: string]: unknown;
+  };
+  params?: Record<string, string>;
+  query?: Record<string, string | string[] | undefined>;
+  body?: Record<string, unknown>;
+  headers: {
+    'x-roles'?: string | string[];
+    'x-permissions'?: string | string[];
+    'x-user-id'?: string;
+    'x-tenant-id'?: string;
+    [key: string]: string | string[] | undefined;
+  };
+}
 
 function getTracer() {
   try {
@@ -33,7 +54,7 @@ export class RbacGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<any>();
+    const request = context.switchToHttp().getRequest<RbacRequest>();
     const rbac: RbacContext = this.extractRbacContext(request);
 
     const isOwnerOk = this.checkOwner(requirement, request, rbac);
@@ -69,13 +90,19 @@ export class RbacGuard implements CanActivate {
     return true;
   }
 
-  private extractRbacContext(request: any): RbacContext {
+  private extractRbacContext(request: RbacRequest): RbacContext {
     // Try common locations in real apps: request.user from auth guard, custom headers for demo
     const user = request.user || {};
-    const roles: string[] = user.roles || this.headerList(request.headers['x-roles']);
-    const permissions: string[] = user.permissions || this.headerList(request.headers['x-permissions']);
-    const userId: string | undefined = user.id || request.headers['x-user-id'];
-    const tenantId: string | undefined = user.tenantId || request.headers['x-tenant-id'];
+    const rolesHeader = request.headers['x-roles'];
+    const permissionsHeader = request.headers['x-permissions'];
+    const userIdHeader = request.headers['x-user-id'];
+    const tenantIdHeader = request.headers['x-tenant-id'];
+    
+    const roles: string[] = Array.isArray(user.roles) ? user.roles : this.headerList(rolesHeader);
+    const permissions: string[] = Array.isArray(user.permissions) ? user.permissions : this.headerList(permissionsHeader);
+    const userId: string | undefined = user.id || (typeof userIdHeader === 'string' ? userIdHeader : undefined);
+    const tenantId: string | undefined = user.tenantId || (typeof tenantIdHeader === 'string' ? tenantIdHeader : undefined);
+    
     return { 
       ...(userId && { userId }), 
       ...(tenantId && { tenantId }), 
@@ -89,7 +116,7 @@ export class RbacGuard implements CanActivate {
     return value.split(',').map(s => s.trim()).filter(Boolean);
   }
 
-  private checkOwner(req: RbacRequirement, request: any, ctx: RbacContext): boolean {
+  private checkOwner(req: RbacRequirement, request: RbacRequest, ctx: RbacContext): boolean {
     if (!req.allowIfOwner) return true;
     const param = req.resourceParam || 'userId';
     const resourceId = request.params?.[param] || request.query?.[param] || request.body?.[param];

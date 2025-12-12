@@ -17,7 +17,7 @@ describe('Email Value Object', () => {
     });
 
     it('should throw error for emails with invalid characters', () => {
-      expect(() => Email.create('test<script>@example.com')).toThrow('Invalid characters in email');
+      expect(() => Email.create('test<script>@example.com')).toThrow('Invalid email format');
     });
 
     it('should throw error for too long emails', () => {

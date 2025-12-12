@@ -23,27 +23,28 @@ const sampleUser = {
   isActive: true
 };
 
-console.log('Schema _def:', (UserSchema as any)._def);
-console.log('Schema _def.shape:', (UserSchema as any)._def.shape);
-console.log('Schema keys:', Object.keys((UserSchema as any)._def.shape));
+if (UserSchema instanceof z.ZodObject) {
+  console.log('Schema shape keys:', Object.keys(UserSchema.shape));
+}
 
 // Test whitelisting logic
 function extractSchemaProperties(schema: z.ZodSchema): string[] {
-  if (schema._def && (schema._def as any).shape) {
-    return Object.keys((schema._def as any).shape);
+  if (schema instanceof z.ZodObject) {
+    return Object.keys(schema.shape);
   }
   return [];
 }
 
-function filterProperties(data: any, allowedProperties: string[]): any {
+function filterProperties(data: unknown, allowedProperties: string[]): Record<string, unknown> {
   if (typeof data !== 'object' || data === null) {
-    return data;
+    return {};
   }
   
-  const result: any = {};
+  const result: Record<string, unknown> = {};
   for (const prop of allowedProperties) {
     if (prop in data) {
-      result[prop] = data[prop];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      result[prop] = (data as Record<string, unknown>)[prop];
     }
   }
   return result;

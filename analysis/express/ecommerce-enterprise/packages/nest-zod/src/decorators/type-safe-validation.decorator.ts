@@ -90,7 +90,7 @@ export function TypeSafeValidation(options: TypeSafeValidationOptions) {
  * class UserController { ... }
  */
 export function TypeSafeSchema(options: TypeSafeSchemaOptions = {}) {
-  return function (target: any) {
+  return function (target: Record<string, unknown>) {
     // Store schema options in class metadata
     Reflect.defineMetadata(TYPE_SAFE_VALIDATION_OPTIONS, options, target);
     return target;
@@ -109,7 +109,7 @@ export function TypeSafeSchema(options: TypeSafeSchemaOptions = {}) {
  * async validateEmail(@Body() data: Record<string, unknown>) { ... }
  */
 export function TypeSafeField(fieldName: string, schema: z.ZodSchema) {
-  return function (target: any, propertyKey: string, _descriptor: PropertyDescriptor) {
+  return function (target: Record<string, unknown>, propertyKey: string, _descriptor: PropertyDescriptor) {
     const existingSchemas = Reflect.getMetadata(TYPE_SAFE_VALIDATION_SCHEMA, target) || {};
     existingSchemas[propertyKey] = existingSchemas[propertyKey] || {};
     existingSchemas[propertyKey][fieldName] = schema;
@@ -129,7 +129,7 @@ export function TypeSafeField(fieldName: string, schema: z.ZodSchema) {
  * async createUser(@Body() data: Record<string, unknown>) { ... }
  */
 export function TypeSafeMethod(schema: z.ZodSchema, options: Partial<TypeSafeValidationOptions> = {}) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (target: Record<string, unknown>, propertyKey: string, descriptor: PropertyDescriptor) {
     const validationOptions: TypeSafeValidationOptions = {
       schema,
       errorFormat: 'user',
@@ -261,7 +261,7 @@ export function TypeSafeErrorHandling(options: {
   includeSuggestions?: boolean;
   customHandler?: (error: z.ZodError) => unknown;
 }) {
-  return function (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (_target: Record<string, unknown>, _propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: unknown[]) {
@@ -324,7 +324,7 @@ export function TypeSafeRecovery(options: {
   fallbackData?: Record<string, unknown>;
   onRecovery?: (recoveredData: Record<string, unknown>) => void;
 }) {
-  return function (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (_target: Record<string, unknown>, _propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: unknown[]) {
@@ -368,7 +368,7 @@ export function TypeSafeRecovery(options: {
  * async getSchemaInfo(@Body() data: Record<string, unknown>) { ... }
  */
 export function TypeSafeIntrospect() {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (target: Record<string, unknown>, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: unknown[]) {

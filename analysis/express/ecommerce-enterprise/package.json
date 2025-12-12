@@ -22,6 +22,8 @@
     "test:load": "jest --testPathPattern=load",
     "test:security": "jest --testPathPattern=security",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "audit:types": "node scripts/audit-any-types.js",
+    "audit:types:check": "node scripts/check-type-safety.js",
     "db:migrate": "turbo run db:migrate",
     "db:seed": "turbo run db:seed",
     "docker:prod": "./docker-start.sh prod",

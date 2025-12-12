@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -14,10 +14,11 @@ import { UserModel } from './infrastructure/persistence/models/user.model';
 import { DomainExceptionFilter } from './common/filters/domain-exception.filter';
 import { JwtStrategy } from './infrastructure/auth/jwt.strategy';
 import { JwtService } from './infrastructure/auth/jwt.service';
-import { AUTH_CONFIG } from './infrastructure/config/auth.config';
+import { AUTH_CONFIG_TOKEN, createAuthConfig } from './infrastructure/config/auth.config';
 import { HealthService } from './infrastructure/monitoring/health.service';
 import { CacheService } from './infrastructure/cache/cache.service';
 import { CustomLoggerService } from './infrastructure/logging/logger.service';
+import { MetricsService } from './infrastructure/monitoring/metrics.service';
 
 @Module({
   imports: [
@@ -67,9 +68,16 @@ import { CustomLoggerService } from './infrastructure/logging/logger.service';
     }),
     SequelizeModule.forFeature([UserModel]),
     PassportModule,
-    JwtModule.register({
-      secret: AUTH_CONFIG.JWT.SECRET,
-      signOptions: { expiresIn: AUTH_CONFIG.JWT.ACCESS_TOKEN_EXPIRATION },
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const auth = createAuthConfig(configService);
+        return {
+          secret: auth.JWT.SECRET,
+          signOptions: { expiresIn: auth.JWT.ACCESS_TOKEN_EXPIRATION as any },
+        };
+      },
     }),
   ],
   controllers: [AuthController, HealthController],
@@ -83,8 +91,16 @@ import { CustomLoggerService } from './infrastructure/logging/logger.service';
     JwtStrategy,
     JwtService,
     HealthService,
+    MetricsService,
     CacheService,
     CustomLoggerService,
+
+    // Auth config
+    {
+      provide: AUTH_CONFIG_TOKEN,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => createAuthConfig(configService),
+    },
 
     // Dependency Inversion: Wire Ports to Adapters
     {

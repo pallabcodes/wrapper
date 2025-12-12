@@ -1,6 +1,8 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Redis: any = require('ioredis');
+type RedisClient = any;
 // import { v4 as uuidv4 } from 'uuid';
 import {
   EventStreamingConfig,
@@ -15,8 +17,8 @@ import {
 @Injectable()
 export class RedisService implements EventPublisher, EventSubscriber, OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
-  private publisher!: Redis;
-  private subscriber!: Redis;
+  private publisher!: RedisClient;
+  private subscriber!: RedisClient;
   private config: EventStreamingConfig;
   private handlers: Map<string, EventHandler[]> = new Map();
   private metrics!: EventStreamingMetrics;
@@ -50,7 +52,9 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
         throw new Error('Redis configuration is required');
       }
 
-      this.publisher = new Redis({
+      const RedisConstructor: any = (Redis as any).default ?? Redis;
+
+      this.publisher = new RedisConstructor({
         host: this.config.redis.host,
         port: this.config.redis.port,
         password: this.config.redis.password,
@@ -59,7 +63,7 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
         maxRetriesPerRequest: 3,
       });
 
-      this.subscriber = new Redis({
+      this.subscriber = new RedisConstructor({
         host: this.config.redis.host,
         port: this.config.redis.port,
         password: this.config.redis.password,
@@ -69,30 +73,31 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
       });
 
       // Test connection
-      await (this.publisher as any).ping();
-      await (this.subscriber as any).ping();
+      await this.publisher.ping();
+      await this.subscriber.ping();
 
       this.isConnected = true;
       this.logger.log('Redis connected successfully');
     } catch (error) {
-      this.logger.error('Failed to connect to Redis:', error);
+      const err = error as Error;
+      this.logger.error('Failed to connect to Redis:', err);
       this.isConnected = false;
-      throw error;
+      throw err;
     }
   }
 
   private async disconnect() {
     try {
       if (this.publisher) {
-        await (this.publisher as any).quit();
+        await this.publisher.quit();
       }
       if (this.subscriber) {
-        await (this.subscriber as any).quit();
+        await this.subscriber.quit();
       }
       this.isConnected = false;
       this.logger.log('Redis disconnected');
     } catch (error) {
-      this.logger.error('Error disconnecting from Redis:', error);
+      this.logger.error('Error disconnecting from Redis:', error as Error);
     }
   }
 
@@ -101,20 +106,20 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
       const channel = `${topic}:${message.type}`;
       const messageData = JSON.stringify(message);
 
-      await (this.publisher as any).publish(channel, messageData);
+      await this.publisher.publish(channel, messageData);
 
       this.updateMetrics('published');
       this.logger.debug(`Event published to channel ${channel}:`, message.id);
     } catch (error) {
       this.updateMetrics('failed');
-      this.logger.error(`Failed to publish event to topic ${topic}:`, error);
-      throw error;
+      this.logger.error(`Failed to publish event to topic ${topic}:`, error as Error);
+      throw error as Error;
     }
   }
 
   async publishBatch(topic: string, messages: EventMessage[]): Promise<void> {
     try {
-      const pipeline = (this.publisher as any).pipeline();
+      const pipeline = this.publisher.pipeline();
 
       for (const message of messages) {
         const channel = `${topic}:${message.type}`;
@@ -128,8 +133,8 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
       this.logger.debug(`Batch of ${messages.length} events published to topic ${topic}`);
     } catch (error) {
       this.updateMetrics('failed', messages.length);
-      this.logger.error(`Failed to publish batch to topic ${topic}:`, error);
-      throw error;
+      this.logger.error(`Failed to publish batch to topic ${topic}:`, error as Error);
+      throw error as Error;
     }
   }
 
@@ -143,9 +148,9 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
 
       const channel = `${topic}:${handler.eventType}`;
 
-      await (this.subscriber as any).subscribe(channel);
+      await this.subscriber.subscribe(channel);
 
-      (this.subscriber as any).on('message', async (receivedChannel: any, message: any) => {
+      this.subscriber.on('message', async (receivedChannel: string, message: string) => {
         if (receivedChannel === channel) {
           await this.handleMessage(message, topic, handler);
         }
@@ -167,7 +172,7 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
 
         if (filteredHandlers.length === 0) {
           const channel = `${topic}:${eventType}`;
-          await (this.subscriber as any).unsubscribe(channel);
+          await this.subscriber.unsubscribe(channel);
           this.handlers.delete(topic);
         }
       }
@@ -204,14 +209,14 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
       this.updateLatency(duration);
     } catch (error) {
       if (handler.options?.retry) {
-        await this.retryHandler(handler, message, error);
+        await this.retryHandler(handler, message, error as Error);
       } else {
         throw error;
       }
     }
   }
 
-  private async retryHandler(handler: EventHandler, message: EventMessage, _error: any): Promise<void> {
+  private async retryHandler(handler: EventHandler, message: EventMessage, _error: Error): Promise<void> {
     const maxRetries = handler.options?.maxRetries || 3;
     const retryDelay = handler.options?.retryDelay || 1000;
 
@@ -223,9 +228,9 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
         return;
       } catch (retryError) {
         if (attempt === maxRetries) {
-          this.logger.error(`Handler failed after ${maxRetries} retries:`, retryError);
+          this.logger.error(`Handler failed after ${maxRetries} retries:`, retryError as Error);
           if (handler.options?.deadLetterQueue) {
-            await this.sendToDeadLetterQueue(handler.options.deadLetterQueue, message, retryError);
+            await this.sendToDeadLetterQueue(handler.options.deadLetterQueue, message, retryError as Error);
           }
           throw retryError;
         }
@@ -233,7 +238,7 @@ export class RedisService implements EventPublisher, EventSubscriber, OnModuleIn
     }
   }
 
-  private async sendToDeadLetterQueue(queue: string, message: EventMessage, error: any): Promise<void> {
+  private async sendToDeadLetterQueue(queue: string, message: EventMessage, error: Error): Promise<void> {
     try {
       const deadLetterMessage: EventMessage = {
         ...message,

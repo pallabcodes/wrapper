@@ -4,7 +4,8 @@ import {
   EnterpriseIntegrationOptions, 
   EnterpriseData, 
   SyncResult, 
-  ConflictResolution 
+  ConflictResolution,
+  ConflictRule,
 } from '../interfaces/enterprise-options.interface';
 import { SAPService } from './sap.service';
 import { SalesforceService } from './salesforce.service';
@@ -27,16 +28,19 @@ export class EnterpriseIntegrationService {
   }
 
   private initializeIntegration() {
-    this.options = this.configService.get<EnterpriseIntegrationOptions>('ENTERPRISE_INTEGRATION_CONFIG', {
-      sap: { enabled: false, connection: {} as any },
-      salesforce: { enabled: false, connection: {} as any },
+    const defaultOptions: EnterpriseIntegrationOptions = {
+      sap: { enabled: false, connection: { host: '', port: 0, client: '', user: '', password: '' } },
+      salesforce: { enabled: false, connection: { loginUrl: '', username: '', password: '', securityToken: '' } },
       cache: { enabled: false, ttl: 300, maxSize: 1000, provider: 'memory' },
       retry: { enabled: true, maxAttempts: 3, delay: 1000, backoffMultiplier: 2, maxDelay: 30000 },
       monitoring: { enabled: true, metrics: true, logging: true, tracing: false },
-    });
+    };
+    this.options =
+      this.configService.get<EnterpriseIntegrationOptions>('ENTERPRISE_INTEGRATION_CONFIG') ??
+      defaultOptions;
   }
 
-  async isHealthy(): Promise<{ healthy: boolean; services: any }> {
+  async isHealthy(): Promise<{ healthy: boolean; services: Record<string, boolean> }> {
     const services = {
       sap: await this.sapService.isHealthy(),
       salesforce: await this.salesforceService.isHealthy(),
@@ -143,7 +147,10 @@ export class EnterpriseIntegrationService {
             this.getEntitySetForType(record.type),
             { id: record.id }
           );
-          return sapResults.length > 0 ? this.mapSAPToEnterpriseData(sapResults[0], record.type) : null;
+          if (sapResults.length > 0 && sapResults[0]) {
+            return this.mapSAPToEnterpriseData(sapResults[0], record.type);
+          }
+          return null;
         
         case 'salesforce':
           // Query Salesforce for existing record
@@ -151,7 +158,10 @@ export class EnterpriseIntegrationService {
             this.getObjectTypeForType(record.type),
             `SELECT Id FROM ${this.getObjectTypeForType(record.type)} WHERE External_Id__c = '${record.id}'`
           );
-          return sfResults.length > 0 ? this.mapSalesforceToEnterpriseData(sfResults[0], record.type) : null;
+          if (sfResults.length > 0 && sfResults[0]) {
+            return this.mapSalesforceToEnterpriseData(sfResults[0], record.type);
+          }
+          return null;
         
         default:
           return null;
@@ -232,12 +242,12 @@ export class EnterpriseIntegrationService {
     };
   }
 
-  private evaluateRule(_rule: any, _sourceRecord: EnterpriseData, _targetRecord: EnterpriseData): boolean {
+  private evaluateRule(_rule: ConflictRule, _sourceRecord: EnterpriseData, _targetRecord: EnterpriseData): boolean {
     // Simple rule evaluation - in a real implementation, this would be more sophisticated
     return true;
   }
 
-  private mergeFieldValues(sourceValue: any, targetValue: any, _field: string): any {
+  private mergeFieldValues(sourceValue: unknown, targetValue: unknown, _field: string): unknown {
     // Custom merge logic based on field type
     if (typeof sourceValue === 'string' && typeof targetValue === 'string') {
       return sourceValue.length > targetValue.length ? sourceValue : targetValue;
@@ -273,14 +283,24 @@ export class EnterpriseIntegrationService {
     return objectTypes[type] || 'Generic__c';
   }
 
-  private mapSAPToEnterpriseData(sapData: any, type: string): EnterpriseData {
+  private mapSAPToEnterpriseData(sapData: Record<string, unknown>, type: string): EnterpriseData {
+    const id =
+      (sapData as Record<string, unknown>)['id'] ??
+      (sapData as Record<string, unknown>)['KUNNR'] ??
+      (sapData as Record<string, unknown>)['MATNR'] ??
+      (sapData as Record<string, unknown>)['VBELN'];
+    const created =
+      (sapData as Record<string, unknown>)['CreatedDate'] ??
+      (sapData as Record<string, unknown>)['ERDAT'] ??
+      Date.now();
+
     return {
-      id: sapData.id || sapData.KUNNR || sapData.MATNR || sapData.VBELN,
+      id: id as string,
       source: 'sap',
       type,
       data: sapData,
       metadata: {
-        timestamp: new Date(sapData.CreatedDate || sapData.ERDAT || Date.now()),
+        timestamp: new Date(created as string | number | Date),
         version: '1.0',
         checksum: this.calculateChecksum(sapData),
         syncStatus: 'synced',
@@ -288,14 +308,17 @@ export class EnterpriseIntegrationService {
     };
   }
 
-  private mapSalesforceToEnterpriseData(sfData: any, type: string): EnterpriseData {
+  private mapSalesforceToEnterpriseData(sfData: Record<string, unknown>, type: string): EnterpriseData {
+    const id = (sfData as Record<string, unknown>)['Id'] as string;
+    const created = (sfData as Record<string, unknown>)['CreatedDate'] ?? Date.now();
+
     return {
-      id: sfData.Id,
+      id,
       source: 'salesforce',
       type,
       data: sfData,
       metadata: {
-        timestamp: new Date(sfData.CreatedDate || Date.now()),
+        timestamp: new Date(created as string | number | Date),
         version: '1.0',
         checksum: this.calculateChecksum(sfData),
         syncStatus: 'synced',
@@ -303,12 +326,18 @@ export class EnterpriseIntegrationService {
     };
   }
 
-  private calculateChecksum(data: any): string {
+  private calculateChecksum(data: unknown): string {
     // Simple checksum calculation
     return Buffer.from(JSON.stringify(data)).toString('base64').slice(0, 16);
   }
 
-  async getIntegrationStats(): Promise<any> {
+  async getIntegrationStats(): Promise<{
+    health: { healthy: boolean; services: Record<string, boolean> };
+    cache: unknown;
+    retry: unknown;
+    options: EnterpriseIntegrationOptions;
+    timestamp: string;
+  }> {
     const health = await this.isHealthy();
     const cacheStats = await this.cacheService.getStats();
     const retryStats = this.retryService.getRetryStats();
@@ -329,7 +358,7 @@ export class EnterpriseIntegrationService {
 
   async resetCircuitBreakers(): Promise<void> {
     // Reset all circuit breakers
-    (global as any).circuitBreakerStates = {};
+    (globalThis as { circuitBreakerStates?: Record<string, unknown> }).circuitBreakerStates = {};
     this.logger.log('Circuit breakers reset');
   }
 }

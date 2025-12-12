@@ -1,5 +1,5 @@
 import { CacheStore, CacheEntry } from '../interfaces/cache-store.interface';
-import { LRUCache } from 'lru-cache';
+import LRUCache from 'lru-cache';
 
 export class MemoryLRUStore implements CacheStore {
   private cache: LRUCache<string, CacheEntry>;
@@ -7,8 +7,9 @@ export class MemoryLRUStore implements CacheStore {
   constructor(options: { max: number; ttl?: number } = { max: 1000 }) {
     this.cache = new LRUCache({
       max: options.max,
+      // ttl typing in lru-cache may differ; cast for compatibility
       ttl: options.ttl || 1000 * 60 * 60, // 1 hour default
-    });
+    } as any);
   }
 
   async get<T>(key: string): Promise<CacheEntry<T> | undefined> {
@@ -27,7 +28,7 @@ export class MemoryLRUStore implements CacheStore {
   }
 
   async del(key: string): Promise<void> {
-    this.cache.delete(key);
+    (this.cache as any).delete?.(key);
   }
 
   async exists(key: string): Promise<boolean> {
@@ -89,7 +90,7 @@ export class MemoryLRUStore implements CacheStore {
 
   async mdel(keys: string[]): Promise<void> {
     for (const key of keys) {
-      this.cache.delete(key);
+      (this.cache as any).delete?.(key);
     }
   }
 
@@ -97,7 +98,7 @@ export class MemoryLRUStore implements CacheStore {
     const existing = this.cache.get(key);
     const current = existing ? (existing.value as number) || 0 : 0;
     const newValue = current + value;
-    await this.set(key, newValue as any);
+    await this.set(key, newValue);
     return newValue;
   }
 
@@ -116,15 +117,15 @@ export class MemoryLRUStore implements CacheStore {
     const entry = this.cache.get(key);
     const hash = entry ? (entry.value as Record<string, T>) || {} : {};
     hash[field] = value;
-    await this.set(key, hash as any);
+    await this.set<Record<string, T>>(key, hash);
   }
 
   async hdel(key: string, field: string): Promise<void> {
     const entry = this.cache.get(key);
     if (entry) {
-      const hash = entry.value as Record<string, any>;
+      const hash = entry.value as Record<string, unknown>;
       delete hash[field];
-      await this.set(key, hash as any);
+      await this.set(key, hash);
     }
   }
 
@@ -143,7 +144,7 @@ export class MemoryLRUStore implements CacheStore {
         added++;
       }
     }
-    await this.set(key, set as any);
+    await this.set(key, set);
     return added;
   }
 
@@ -158,7 +159,7 @@ export class MemoryLRUStore implements CacheStore {
         removed++;
       }
     }
-    await this.set(key, set as any);
+    await this.set(key, set);
     return removed;
   }
 
@@ -181,7 +182,7 @@ export class MemoryLRUStore implements CacheStore {
     const zset = entry ? (entry.value as Map<string, number>) || new Map() : new Map();
     const isNew = !zset.has(member);
     zset.set(member, score);
-    await this.set(key, zset as any);
+    await this.set(key, zset);
     return isNew ? 1 : 0;
   }
 
@@ -191,7 +192,7 @@ export class MemoryLRUStore implements CacheStore {
     const zset = entry.value as Map<string, number>;
     const existed = zset.has(member);
     zset.delete(member);
-    await this.set(key, zset as any);
+    await this.set(key, zset);
     return existed ? 1 : 0;
   }
 

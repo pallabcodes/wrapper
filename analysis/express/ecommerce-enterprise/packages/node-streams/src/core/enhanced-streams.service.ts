@@ -22,6 +22,8 @@ import {
   StreamMergerConfig,
   StreamConfiguration,
 } from '../types/streams.types';
+import { once } from 'events';
+import { Readable, Writable } from 'stream';
 import type {
   BaseStream,
   ReadableStream,
@@ -573,5 +575,43 @@ export class EnhancedStreamsService {
         'Implement backpressure control for high-throughput scenarios',
       ],
     };
+  }
+
+  // Backpressure-aware piping with optional retries
+  async pipeWithBackpressure(
+    readable: Readable,
+    writable: Writable,
+    options: { streamId?: string; maxRetries?: number; retryDelayMs?: number } = {}
+  ): Promise<void> {
+    const maxRetries = options.maxRetries ?? this.config.global.retryAttempts ?? 0;
+    const retryDelayMs = options.retryDelayMs ?? this.config.global.retryDelay ?? 1000;
+    let attempt = 0;
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      try {
+        for await (const chunk of readable) {
+          const ok = writable.write(chunk);
+          if (!ok) {
+            await once(writable, 'drain');
+          }
+          if (options.streamId) {
+            this.updateStreamMetrics(options.streamId, 'data', chunk as Buffer);
+          }
+        }
+        writable.end();
+        return;
+      } catch (error) {
+        attempt += 1;
+        if (options.streamId) {
+          this.updateStreamMetrics(options.streamId, 'error', error as Error);
+        }
+        if (attempt > maxRetries) {
+          writable.destroy(error as Error);
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+      }
+    }
   }
 }

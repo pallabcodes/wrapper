@@ -1,13 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseQuery, QueryResult, TransactionOptions } from '../types';
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { PgTable } from 'drizzle-orm/pg-core';
 import postgres from 'postgres';
 import { eq, and, sql } from 'drizzle-orm';
+
+type DrizzleTransaction = Parameters<Parameters<PostgresJsDatabase<Record<string, never>>['transaction']>[0]>[0];
 
 @Injectable()
 export class DrizzleService {
   private readonly logger = new Logger(DrizzleService.name);
-  private db!: PostgresJsDatabase<any>;
+  private db!: PostgresJsDatabase<Record<string, never>>;
   private isConnectedFlag = false;
 
   constructor() {
@@ -43,11 +46,11 @@ export class DrizzleService {
     return this.isConnectedFlag;
   }
 
-  async execute<T = any>(query: DatabaseQuery<T>): Promise<QueryResult<T>> {
+  async execute<T = unknown>(query: DatabaseQuery<T>): Promise<QueryResult<T>> {
     const startTime = Date.now();
     
     try {
-      let result: any;
+      let result: unknown;
       
       switch (query.type) {
         case 'select':
@@ -86,7 +89,7 @@ export class DrizzleService {
     }
   }
 
-  async executeTransaction<T = any>(
+  async executeTransaction<T = unknown>(
     queries: DatabaseQuery[],
     _options?: TransactionOptions
   ): Promise<T> {
@@ -115,13 +118,13 @@ export class DrizzleService {
   private async executeSelect<T>(query: DatabaseQuery<T>): Promise<T[]> {
     const table = this.getTable(query.table);
     
-    let selectQuery: any = this.db.select().from(table);
+    let selectQuery = this.db.select().from(table);
     
     // Apply where conditions
     if (query.where) {
       const whereConditions = this.buildWhereConditions(query.where);
       if (whereConditions.length > 0) {
-        selectQuery = selectQuery.where(and(...whereConditions));
+        selectQuery = selectQuery.where(and(...whereConditions)) as typeof selectQuery;
       }
     }
     
@@ -130,23 +133,23 @@ export class DrizzleService {
       const orderByColumns = Object.entries(query.orderBy).map(([column, direction]) => 
         direction === 'desc' ? sql`${sql.identifier(column)} DESC` : sql`${sql.identifier(column)} ASC`
       );
-      selectQuery = selectQuery.orderBy(...orderByColumns);
+      selectQuery = selectQuery.orderBy(...orderByColumns) as typeof selectQuery;
     }
     
     // Apply pagination
     if (query.pagination) {
       const { page, limit } = query.pagination;
       const offset = (page - 1) * limit;
-      selectQuery = selectQuery.limit(limit).offset(offset);
+      selectQuery = selectQuery.limit(limit).offset(offset) as typeof selectQuery;
     }
     
     // Apply field selection
     if (query.select) {
       const selectFields = query.select.map(field => sql.identifier(field));
-      selectQuery = (this.db as any).select(...selectFields).from(table);
+      selectQuery = this.db.select(...selectFields).from(table) as typeof selectQuery;
     }
     
-    return await selectQuery;
+    return await selectQuery as T[];
   }
 
   private async executeInsert<T>(query: DatabaseQuery<T>): Promise<T> {
@@ -193,15 +196,15 @@ export class DrizzleService {
     
     const params = query.params || [];
     if (params.length === 0) {
-      return await (this.db as any).execute(sql.raw(query.sql)) as T[];
+      return await this.db.execute(sql.raw(query.sql)) as T[];
     } else {
-      // Use Function.prototype.apply to avoid spread operator issues
-      const rawQuery = sql.raw as any;
-      return await (this.db as any).execute(rawQuery.apply(sql, [query.sql, ...params])) as T[];
+      // Use sql template for parameterized queries
+      const rawSql = sql.raw(query.sql, params);
+      return await this.db.execute(rawSql) as T[];
     }
   }
 
-  private async executeWithTransaction(tx: any, query: DatabaseQuery): Promise<any> {
+  private async executeWithTransaction(tx: DrizzleTransaction, query: DatabaseQuery): Promise<unknown> {
     const table = this.getTable(query.table);
     
     switch (query.type) {
@@ -254,9 +257,9 @@ export class DrizzleService {
         if (params.length === 0) {
           return await tx.execute(sql.raw(query.sql!));
         } else {
-          // Use Function.prototype.apply to avoid spread operator issues
-          const rawQuery = sql.raw as any;
-          return await tx.execute(rawQuery.apply(sql, [query.sql!, ...params]));
+          // Use sql template for parameterized queries
+          const rawSql = sql.raw(query.sql!, params);
+          return await tx.execute(rawSql);
         }
       
       default:
@@ -264,14 +267,14 @@ export class DrizzleService {
     }
   }
 
-  private getTable(tableName: string): any {
+  private getTable(tableName: string): PgTable {
     // In a real implementation, you would have a table registry
     // For now, we'll use a simple approach
-    return sql.identifier(tableName);
+    return sql.identifier(tableName) as unknown as PgTable;
   }
 
-  private buildWhereConditions(where: Record<string, any>): any[] {
-    const conditions: any[] = [];
+  private buildWhereConditions(where: Record<string, unknown>): ReturnType<typeof eq>[] {
+    const conditions: ReturnType<typeof eq>[] = [];
     
     Object.entries(where).forEach(([key, value]) => {
       if (typeof value === 'object' && value !== null) {

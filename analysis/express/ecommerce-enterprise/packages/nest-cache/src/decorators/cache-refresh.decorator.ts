@@ -1,9 +1,20 @@
 import { SetMetadata } from '@nestjs/common';
 
+type MethodDecorator = (
+  target: unknown,
+  propertyKey: string,
+  descriptor: PropertyDescriptor
+) => PropertyDescriptor;
+
+interface CacheService {
+  get: <T>(key: string) => Promise<T | undefined>;
+  set: <T>(key: string, value: T, ttl?: number) => Promise<void>;
+}
+
 export interface CacheRefreshOptions {
-  key?: string | ((args: any[], target: any, propertyKey: string) => string);
+  key?: string | ((args: unknown[], target: unknown, propertyKey: string) => string);
   ttl?: number;
-  condition?: (args: any[], target: any, propertyKey: string) => boolean;
+  condition?: (args: unknown[], target: unknown, propertyKey: string) => boolean;
   namespace?: string;
   background?: boolean; // Refresh in background without waiting
 }
@@ -11,13 +22,13 @@ export interface CacheRefreshOptions {
 export const CACHE_REFRESH_KEY = 'cache:refresh:key';
 export const CACHE_REFRESH_OPTIONS = 'cache:refresh:options';
 
-export function CacheRefresh(options: CacheRefreshOptions = {}) {
-  return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+export function CacheRefresh(options: CacheRefreshOptions = {}): MethodDecorator {
+  return (target: unknown, propertyKey: string, descriptor: PropertyDescriptor) => {
     const originalMethod = descriptor.value;
     
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       // Try to get cacheService from the instance
-      const cacheService = (this as any).cacheService;
+      const cacheService = (this as { cacheService?: CacheService }).cacheService;
       
       // Execute original method first
       const result = await originalMethod.apply(this, args);
@@ -32,13 +43,15 @@ export function CacheRefresh(options: CacheRefreshOptions = {}) {
       }
 
       // Build cache key
+      const targetName =
+        (target as { constructor?: { name?: string } })?.constructor?.name ?? 'anonymous';
       let cacheKey: string;
       if (typeof options.key === 'function') {
         cacheKey = options.key(args, target, propertyKey);
       } else if (options.key) {
         cacheKey = options.key;
       } else {
-        cacheKey = `${target.constructor.name}:${propertyKey}:${JSON.stringify(args)}`;
+        cacheKey = `${targetName}:${propertyKey}:${JSON.stringify(args)}`;
       }
 
       if (options.namespace) {
@@ -62,12 +75,13 @@ export function CacheRefresh(options: CacheRefreshOptions = {}) {
       return result;
     };
 
-    SetMetadata(CACHE_REFRESH_KEY, options.key)(target, propertyKey, descriptor);
-    SetMetadata(CACHE_REFRESH_OPTIONS, options)(target, propertyKey, descriptor);
+    SetMetadata(CACHE_REFRESH_KEY, options.key)(target as object, propertyKey, descriptor);
+    SetMetadata(CACHE_REFRESH_OPTIONS, options)(target as object, propertyKey, descriptor);
+    return descriptor;
   };
 }
 
-export function CacheRefreshKey(key: string | ((args: any[], target: any, propertyKey: string) => string)) {
+export function CacheRefreshKey(key: string | ((args: unknown[], target: unknown, propertyKey: string) => string)) {
   return SetMetadata(CACHE_REFRESH_KEY, key);
 }
 
@@ -75,7 +89,7 @@ export function CacheRefreshTTL(ttl: number) {
   return SetMetadata('cache:refresh:ttl', ttl);
 }
 
-export function CacheRefreshCondition(condition: (args: any[], target: any, propertyKey: string) => boolean) {
+export function CacheRefreshCondition(condition: (args: unknown[], target: unknown, propertyKey: string) => boolean) {
   return SetMetadata('cache:refresh:condition', condition);
 }
 

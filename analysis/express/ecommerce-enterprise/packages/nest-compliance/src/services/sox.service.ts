@@ -76,7 +76,7 @@ export class SOXService {
     return auditLog;
   }
 
-  async logDataAccess(userId: string, resource: string, resourceId: string, action: string, details: Record<string, any>): Promise<AuditLog> {
+  async logDataAccess(userId: string, resource: string, resourceId: string, action: string, details: Record<string, unknown>): Promise<AuditLog> {
     this.logger.log(`Logging data access: ${action} on ${resource}/${resourceId} by ${userId}`);
     
     const auditLog: AuditLog = {
@@ -106,8 +106,8 @@ export class SOXService {
     type: 'configuration' | 'code' | 'data' | 'access';
     description: string;
     userId: string;
-    previousValue?: any;
-    newValue?: any;
+    previousValue?: unknown;
+    newValue?: unknown;
     reason: string;
     approvalRequired: boolean;
     approvedBy?: string;
@@ -206,7 +206,7 @@ export class SOXService {
     return logs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }
 
-  async validateDataIntegrity(data: any, checksum: string): Promise<boolean> {
+  async validateDataIntegrity(data: unknown, checksum: string): Promise<boolean> {
     this.logger.log(`Validating data integrity for checksum: ${checksum}`);
     
     if (!this.config.dataIntegrity) {
@@ -240,7 +240,7 @@ export class SOXService {
     return 'low';
   }
 
-  private generateHash(data: any): string {
+  private generateHash(data: unknown): string {
     return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
   }
 
@@ -304,11 +304,11 @@ export class SOXService {
     return recommendations;
   }
 
-  private calculateChecksum(data: any): string {
+  private calculateChecksum(data: unknown): string {
     return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
   }
 
-  private async logDataIntegrityViolation(_data: any, expectedChecksum: string, actualChecksum: string): Promise<void> {
+  private async logDataIntegrityViolation(_data: unknown, expectedChecksum: string, actualChecksum: string): Promise<void> {
     this.logger.error(`Data integrity violation logged: expected ${expectedChecksum}, got ${actualChecksum}`);
   }
 

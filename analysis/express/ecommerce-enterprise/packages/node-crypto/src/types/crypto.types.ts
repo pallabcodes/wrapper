@@ -43,12 +43,14 @@ export interface EncryptionResult extends CryptoOperationResult {
   ciphertext: Buffer;
   tag: Buffer;
   iv: Buffer;
-  algorithm: 'aes-256-gcm';
+  algorithm: string;
+  keyId?: string;
 }
 
 export interface DecryptionResult extends CryptoOperationResult {
   plaintext: Buffer;
-  algorithm: 'aes-256-gcm';
+  algorithm: string;
+  keyId?: string;
 }
 
 // Key Management Types
@@ -213,7 +215,7 @@ export interface PerformanceReport {
 
 // Configuration Types
 export interface CryptoConfig {
-  defaultAlgorithm: string;
+  defaultAlgorithm: SymmetricAlgorithm | AsymmetricAlgorithm;
   keyRotationInterval: number; // days
   auditRetentionDays: number;
   performanceMonitoring: boolean;
@@ -222,6 +224,8 @@ export interface CryptoConfig {
   auditFilePath: string;
   maxMemoryEntries: number;
 }
+
+export type EnhancedCryptoServiceConfig = CryptoConfig;
 
 export interface PerformanceThresholds {
   [operation: string]: {
@@ -236,16 +240,16 @@ export interface CryptoError extends Error {
   code: string;
   operation: string;
   keyId?: string;
-  details?: any;
+  details?: unknown;
 }
 
 export class EncryptionError extends Error implements CryptoError {
   code = 'ENCRYPTION_ERROR';
   operation: string;
   keyId?: string;
-  details?: any;
+  details?: unknown;
 
-  constructor(message: string, operation: string, keyId?: string, details?: any) {
+  constructor(message: string, operation: string, keyId?: string, details?: unknown) {
     super(message);
     this.name = 'EncryptionError';
     this.operation = operation;
@@ -262,9 +266,9 @@ export class DecryptionError extends Error implements CryptoError {
   code = 'DECRYPTION_ERROR';
   operation: string;
   keyId?: string;
-  details?: any;
+  details?: unknown;
 
-  constructor(message: string, operation: string, keyId?: string, details?: any) {
+  constructor(message: string, operation: string, keyId?: string, details?: unknown) {
     super(message);
     this.name = 'DecryptionError';
     this.operation = operation;
@@ -281,9 +285,9 @@ export class KeyError extends Error implements CryptoError {
   code = 'KEY_ERROR';
   operation: string;
   keyId?: string;
-  details?: any;
+  details?: unknown;
 
-  constructor(message: string, operation: string, keyId?: string, details?: any) {
+  constructor(message: string, operation: string, keyId?: string, details?: unknown) {
     super(message);
     this.name = 'KeyError';
     this.operation = operation;
@@ -300,9 +304,9 @@ export class AuditError extends Error implements CryptoError {
   code = 'AUDIT_ERROR';
   operation: string;
   keyId?: string;
-  details?: any;
+  details?: unknown;
 
-  constructor(message: string, operation: string, keyId?: string, details?: any) {
+  constructor(message: string, operation: string, keyId?: string, details?: unknown) {
     super(message);
     this.name = 'AuditError';
     this.operation = operation;

@@ -17,7 +17,6 @@ export class DatabaseMetrics {
       name: 'database_queries_total',
       help: 'Total number of database queries',
       labelNames: ['operation', 'table'],
-      registers: [promClient.register],
     });
 
     this.queryDuration = new promClient.Histogram({
@@ -25,34 +24,29 @@ export class DatabaseMetrics {
       help: 'Duration of database queries in seconds',
       labelNames: ['operation', 'table'],
       buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5],
-      registers: [promClient.register],
     });
 
     this.errorCounter = new promClient.Counter({
       name: 'database_errors_total',
       help: 'Total number of database errors',
       labelNames: ['operation', 'error_type'],
-      registers: [promClient.register],
     });
 
     this.cacheHitCounter = new promClient.Counter({
       name: 'database_cache_hits_total',
       help: 'Total number of database cache hits',
-      registers: [promClient.register],
     });
 
     this.transactionCounter = new promClient.Counter({
       name: 'database_transactions_total',
       help: 'Total number of database transactions',
       labelNames: ['status'],
-      registers: [promClient.register],
     });
 
     this.transactionDuration = new promClient.Histogram({
       name: 'database_transaction_duration_seconds',
       help: 'Duration of database transactions in seconds',
       buckets: [0.01, 0.1, 0.5, 1, 5, 10, 30],
-      registers: [promClient.register],
     });
   }
 
@@ -79,6 +73,14 @@ export class DatabaseMetrics {
   }
 
   async resetMetrics(): Promise<void> {
-    promClient.register.clear();
+    const registry = promClient.register as unknown as {
+      resetMetrics?: () => void;
+      clear?: () => void;
+    };
+    if (registry.resetMetrics) {
+      registry.resetMetrics();
+    } else if (registry.clear) {
+      registry.clear();
+    }
   }
 }

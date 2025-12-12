@@ -5,19 +5,22 @@
  * Following internal team patterns for enterprise applications.
  */
 
-import { eq, like, or, desc, asc } from 'drizzle-orm'
-import { db } from '../../database/client'
-import { users, User, NewUser } from '../../database/schema'
-import { 
-  createRecord, 
-  findRecordById, 
-  findRecords, 
-  updateRecord, 
-  deleteRecord, 
+import { eq, like, or, desc, asc } from 'drizzle-orm';
+import { db } from '../../database/client';
+import { users, User, NewUser } from '../../database/schema';
+import {
+  createRecord,
+  findRecordById,
+  findRecords,
+  updateRecord,
+  deleteRecord,
   countRecords,
   RepositoryResult,
-  QueryOptions 
-} from '../../database/repositories/baseRepository'
+  QueryOptions,
+} from '../../database/repositories/baseRepository';
+
+const tbl = users as any;
+const dbAny: any = db;
 
 // ============================================================================
 // AUTH REPOSITORY FUNCTIONS
@@ -34,7 +37,7 @@ export const createUser = async (data: NewUser): Promise<RepositoryResult<User>>
       }
     }
 
-    return await createRecord(users, data, 'users')
+    return await createRecord(tbl, data, 'users')
   } catch (error) {
     console.error('Failed to create user', { error, data })
     return { 
@@ -45,13 +48,13 @@ export const createUser = async (data: NewUser): Promise<RepositoryResult<User>>
 }
 
 export const findUserById = async (id: string): Promise<RepositoryResult<User>> => {
-  return await findRecordById(users, id, 'users')
+  return await findRecordById(tbl, id, 'users')
 }
 
 export const findUserByEmail = async (email: string): Promise<RepositoryResult<User>> => {
   try {
     const startTime = Date.now()
-    const result = await db.select().from(users).where(eq(users.email, email)).limit(1)
+    const result = await dbAny.select().from(tbl).where(eq(tbl.email as any, email)).limit(1)
     const duration = Date.now() - startTime
     
     const resultArray = Array.isArray(result) ? result : []
@@ -79,7 +82,7 @@ export const findUsersByRole = async (
     ...options,
     where: { role }
   }
-  return await findRecords(users, queryOptions, 'users')
+  return await findRecords(tbl, queryOptions, 'users')
 }
 
 export const searchUsers = async (
@@ -89,11 +92,11 @@ export const searchUsers = async (
   try {
     const startTime = Date.now()
     const searchTerm = `%${query}%`
-    let dbQuery = db.select().from(users).where(
+    let dbQuery = dbAny.select().from(tbl).where(
       or(
-        like(users.firstName, searchTerm),
-        like(users.lastName, searchTerm),
-        like(users.email, searchTerm)
+        like(tbl.firstName as any, searchTerm),
+        like(tbl.lastName as any, searchTerm),
+        like(tbl.email as any, searchTerm)
       )
     )
     
@@ -102,24 +105,24 @@ export const searchUsers = async (
       // Simple ordering - in production, validate field names
       if (options.orderBy.field === 'createdAt') {
         if (options.orderBy.direction === 'desc') {
-          dbQuery = dbQuery.orderBy(desc(users.createdAt)) as any
+          dbQuery = dbQuery.orderBy(desc(tbl.createdAt))
         } else {
-          dbQuery = dbQuery.orderBy(asc(users.createdAt)) as any
+          dbQuery = dbQuery.orderBy(asc(tbl.createdAt))
         }
       } else if (options.orderBy.field === 'email') {
         if (options.orderBy.direction === 'desc') {
-          dbQuery = dbQuery.orderBy(desc(users.email)) as any
+          dbQuery = dbQuery.orderBy(desc(tbl.email))
         } else {
-          dbQuery = dbQuery.orderBy(asc(users.email)) as any
+          dbQuery = dbQuery.orderBy(asc(tbl.email))
         }
       }
     }
     
     if (options.limit) {
-      dbQuery = dbQuery.limit(options.limit) as any
+      dbQuery = dbQuery.limit(options.limit)
     }
     if (options.offset) {
-      dbQuery = dbQuery.offset(options.offset) as any
+      dbQuery = dbQuery.offset(options.offset)
     }
     
     const result = await dbQuery
@@ -158,7 +161,7 @@ export const updateUser = async (
       }
     }
 
-    return await updateRecord(users, id, data, 'users')
+    return await updateRecord(tbl, id, data, 'users')
   } catch (error) {
     console.error('Failed to update user', { error, id, data })
     return { 
@@ -171,13 +174,13 @@ export const updateUser = async (
 export const updateLastLogin = async (id: string): Promise<RepositoryResult<User>> => {
   try {
     const startTime = Date.now()
-    const result = await db
-      .update(users)
+    const result = await dbAny
+      .update(tbl)
       .set({ 
         lastLoginAt: new Date(),
         updatedAt: new Date() 
       })
-      .where(eq(users.id, id))
+      .where(eq(tbl.id as any, id))
       .returning()
     const duration = Date.now() - startTime
     
@@ -207,9 +210,9 @@ export const activateUser = async (id: string): Promise<RepositoryResult<User>> 
 }
 
 export const deleteUser = async (id: string): Promise<RepositoryResult<boolean>> => {
-  return await deleteRecord(users, id, 'users')
+  return await deleteRecord(tbl, id, 'users')
 }
 
 export const countUsersByRole = async (role: string): Promise<RepositoryResult<number>> => {
-  return await countRecords(users, 'users', { role })
+  return await countRecords(tbl, 'users', { role })
 }

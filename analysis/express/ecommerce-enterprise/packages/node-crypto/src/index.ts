@@ -28,11 +28,11 @@ import {
   RandomResult,
   PerformanceMetric,
   AuditEntry,
-  CryptoConfig,
   BufferLike,
   EncryptionError,
   PerformanceAnalysis,
   AuditFilter,
+  EnhancedCryptoServiceConfig,
 } from './types/crypto.types';
 
 // Re-export all types
@@ -110,9 +110,9 @@ try {
 
 // Enhanced Crypto Service
 export class EnhancedCryptoService {
-  private config: CryptoConfig;
+  private config: EnhancedCryptoServiceConfig;
 
-  constructor(config: Partial<CryptoConfig> = {}) {
+  constructor(config: Partial<EnhancedCryptoServiceConfig> = {}) {
     this.config = {
       defaultAlgorithm: 'aes-256-gcm',
       keyRotationInterval: 90,
@@ -323,11 +323,11 @@ export class EnhancedCryptoService {
   }
 
   // Configuration
-  updateConfig(newConfig: Partial<CryptoConfig>): void {
+  updateConfig(newConfig: Partial<EnhancedCryptoServiceConfig>): void {
     this.config = { ...this.config, ...newConfig };
   }
 
-  getConfig(): CryptoConfig {
+  getConfig(): EnhancedCryptoServiceConfig {
     return { ...this.config };
   }
 

@@ -48,7 +48,8 @@ export class UserApplicationService {
 
       // 2. Create domain objects
       const email = Email.create(dto.email);
-      const password = Password.create(dto.password);
+      // Password requires auth config; application layer should not build it directly.
+      // Leave password creation to the domain service/command handler.
 
       // 3. Check if user exists (read model)
       const existingUserQuery = new GetUserByEmailQuery(email);
@@ -59,7 +60,7 @@ export class UserApplicationService {
       }
 
       // 4. Execute registration command (write model)
-      const registerCommand = new RegisterUserCommand(email, dto.name, password, dto.role);
+      const registerCommand = new RegisterUserCommand(email, dto.name, dto.password, dto.role);
       const registeredUser = await this.registerUserCommandHandler.execute(registerCommand);
 
       // 5. Publish domain events (async side effects)
@@ -112,7 +113,7 @@ export class UserApplicationService {
    */
   private async publishDomainEvents(aggregate: User): Promise<void> {
     if (aggregate.hasUncommittedEvents()) {
-      const events = aggregate.domainEvents;
+      const events = aggregate.domainEventsQueue;
       console.log(`📢 Publishing ${events.length} domain events`);
 
       await this.eventDispatcher.publishAll(events);

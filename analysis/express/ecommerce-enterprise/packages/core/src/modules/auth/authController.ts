@@ -76,7 +76,7 @@ export const changePassword = async (req: Request, res: Response) => {
 
 export const refreshToken = async (req: Request, res: Response) => {
   try {
-    const validatedData = validateSchema(refreshTokenSchema, req.body)
+    const validatedData = validateSchema(refreshTokenSchema, req.body) as { refreshToken: string }
     const result = await authService.refreshToken(validatedData.refreshToken)
     return createSuccessResponse(res, result, 'Token refreshed successfully')
   } catch (error) {

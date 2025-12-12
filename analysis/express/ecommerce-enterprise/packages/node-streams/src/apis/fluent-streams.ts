@@ -7,6 +7,16 @@
 
 import { StreamsAPI, SimpleStreamResult, StreamStats } from './streams-api';
 
+type StreamAlgorithm = NonNullable<FluentStreamsConfig['algorithm']>;
+type StreamTestResult = {
+  success: boolean;
+  iterations: number;
+  averageDuration: number;
+  totalDuration: number;
+  errors: number;
+  throughput: number;
+};
+
 export interface FluentStreamsConfig {
   algorithm?: 'aes-256-gcm' | 'aes-128-gcm' | 'gzip' | 'brotli' | 'lz4' | 'zstd';
   enableEncryption?: boolean;
@@ -124,7 +134,7 @@ export class FluentStreams {
   /**
    * 🧪 Run performance test
    */
-  async test(options: { iterations?: number; dataSize?: number } = {}): Promise<any> {
+  async test(options: { iterations?: number; dataSize?: number } = {}): Promise<StreamTestResult> {
     return this.api.test(options);
   }
 }
@@ -144,8 +154,8 @@ export class FluentReadableStream {
   /**
    * Set algorithm
    */
-  withAlgorithm(algorithm: string): FluentReadableStream {
-    this.config.algorithm = algorithm as any;
+  withAlgorithm(algorithm: StreamAlgorithm): FluentReadableStream {
+    this.config.algorithm = algorithm;
     return this;
   }
 
@@ -236,8 +246,8 @@ export class FluentWritableStream {
   /**
    * Set algorithm
    */
-  withAlgorithm(algorithm: string): FluentWritableStream {
-    this.config.algorithm = algorithm as any;
+  withAlgorithm(algorithm: StreamAlgorithm): FluentWritableStream {
+    this.config.algorithm = algorithm;
     return this;
   }
 
@@ -328,8 +338,8 @@ export class FluentTransformStream {
   /**
    * Set algorithm
    */
-  withAlgorithm(algorithm: string): FluentTransformStream {
-    this.config.algorithm = algorithm as any;
+  withAlgorithm(algorithm: StreamAlgorithm): FluentTransformStream {
+    this.config.algorithm = algorithm;
     return this;
   }
 
@@ -420,8 +430,8 @@ export class FluentDuplexStream {
   /**
    * Set algorithm
    */
-  withAlgorithm(algorithm: string): FluentDuplexStream {
-    this.config.algorithm = algorithm as any;
+  withAlgorithm(algorithm: StreamAlgorithm): FluentDuplexStream {
+    this.config.algorithm = algorithm;
     return this;
   }
 
@@ -514,8 +524,8 @@ export class FluentEncryptedStream {
   /**
    * Set algorithm
    */
-  withAlgorithm(algorithm: string): FluentEncryptedStream {
-    this.config.algorithm = algorithm as any;
+  withAlgorithm(algorithm: StreamAlgorithm): FluentEncryptedStream {
+    this.config.algorithm = algorithm;
     return this;
   }
 
@@ -589,8 +599,8 @@ export class FluentCompressedStream {
   /**
    * Set algorithm
    */
-  withAlgorithm(algorithm: string): FluentCompressedStream {
-    this.config.algorithm = algorithm as any;
+  withAlgorithm(algorithm: StreamAlgorithm): FluentCompressedStream {
+    this.config.algorithm = algorithm;
     return this;
   }
 

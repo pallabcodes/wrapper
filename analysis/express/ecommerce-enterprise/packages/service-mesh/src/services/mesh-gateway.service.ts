@@ -35,7 +35,7 @@ export class MeshGatewayService {
     private readonly metrics: MeshMetrics,
   ) {}
 
-  async callService<T = any>(options: ServiceCallOptions, data?: any): Promise<T> {
+  async callService<T = unknown>(options: ServiceCallOptions, data?: unknown): Promise<T> {
     const startTime = Date.now();
     
     try {
@@ -83,7 +83,7 @@ export class MeshGatewayService {
   private async makeHttpCall<T>(
     instance: ServiceInstance,
     options: ServiceCallOptions,
-    data?: any,
+    data?: unknown,
   ): Promise<T> {
     const url = `${instance.protocol}://${instance.host}:${instance.port}${options.endpoint}`;
     
@@ -92,6 +92,8 @@ export class MeshGatewayService {
       url: string;
       timeout: number;
       headers: Record<string, string>;
+      data?: unknown;
+      params?: unknown;
     } = {
       method: options.method || 'GET',
       url,
@@ -109,9 +111,9 @@ export class MeshGatewayService {
 
     // Add data for non-GET requests
     if (data && options.method !== 'GET') {
-      (requestConfig as any).data = data;
+      requestConfig.data = data;
     } else if (data && options.method === 'GET') {
-      (requestConfig as any).params = data;
+      requestConfig.params = data;
     }
 
     const response: AxiosResponse<T> = await axios(requestConfig);
@@ -141,7 +143,11 @@ export class MeshGatewayService {
     };
   }
 
-  async getMetrics(): Promise<any> {
+  async getMetrics(): Promise<{
+    serviceCalls: Record<string, { success: number; error: number; total: number }>;
+    loadBalancerRequests: Record<string, number>;
+    circuitBreakerStates: Record<string, string>;
+  }> {
     return this.metrics.getMetrics();
   }
 

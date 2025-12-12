@@ -1,13 +1,27 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CacheOptions } from '../interfaces/enterprise-options.interface';
-import Redis from 'ioredis';
+import IORedis from 'ioredis';
+
+interface CacheEntry {
+  value: unknown;
+  expires: number;
+}
+
+interface CacheStats {
+  provider: 'redis' | 'memory';
+  enabled: boolean;
+  size?: number;
+  maxSize?: number;
+  info?: Record<string, string>;
+  error?: string;
+}
 
 @Injectable()
 export class CacheService {
   private readonly logger = new Logger(CacheService.name);
-  private redis: Redis | null = null;
-  private memoryCache = new Map<string, { value: any; expires: number }>();
+  private redis: any | null = null;
+  private memoryCache = new Map<string, CacheEntry>();
   private options!: CacheOptions;
 
   constructor(private readonly configService: ConfigService) {
@@ -29,7 +43,8 @@ export class CacheService {
       }
 
       if (this.options.provider === 'redis' && this.options.redis) {
-        this.redis = new Redis({
+        const RedisCtor: any = (IORedis as any).default ?? IORedis;
+        this.redis = new RedisCtor({
           host: this.options.redis.host,
           port: this.options.redis.port,
           password: this.options.redis.password,
@@ -38,11 +53,11 @@ export class CacheService {
           maxRetriesPerRequest: 3,
         });
 
-        (this.redis as any).on('error', (error: Error) => {
+        this.redis.on('error', (error: Error) => {
           this.logger.error(`Redis error: ${error.message}`);
         });
 
-        (this.redis as any).on('connect', () => {
+        this.redis.on('connect', () => {
           this.logger.log('Redis connected successfully');
         });
       }
@@ -53,7 +68,7 @@ export class CacheService {
     }
   }
 
-  async get(key: string): Promise<any> {
+  async get<T = unknown>(key: string): Promise<T | null> {
     if (!this.options.enabled) {
       return null;
     }
@@ -61,11 +76,11 @@ export class CacheService {
     try {
       if (this.redis) {
         const value = await this.redis.get(key);
-        return value ? JSON.parse(value) : null;
+        return value ? (JSON.parse(value) as T) : null;
       } else {
         const cached = this.memoryCache.get(key);
         if (cached && cached.expires > Date.now()) {
-          return cached.value;
+          return cached.value as T;
         } else if (cached) {
           this.memoryCache.delete(key);
         }
@@ -77,7 +92,7 @@ export class CacheService {
     }
   }
 
-  async set(key: string, value: any, ttl?: number): Promise<void> {
+  async set(key: string, value: unknown, ttl?: number): Promise<void> {
     if (!this.options.enabled) {
       return;
     }
@@ -131,7 +146,7 @@ export class CacheService {
       if (this.redis) {
         const keys = await this.redis.keys(pattern);
         if (keys.length > 0) {
-          await (this.redis as any).del(...keys);
+          await this.redis.del(...keys);
         }
       } else {
         // Memory cache pattern matching
@@ -154,7 +169,7 @@ export class CacheService {
 
     try {
       if (this.redis) {
-        await (this.redis as any).flushAll();
+        await this.redis.flushall();
       } else {
         this.memoryCache.clear();
       }
@@ -163,16 +178,16 @@ export class CacheService {
     }
   }
 
-  async getStats(): Promise<any> {
+  async getStats(): Promise<CacheStats> {
     if (!this.options.enabled) {
-      return { enabled: false };
+      return { enabled: false, provider: 'memory' };
     }
 
     try {
       if (this.redis) {
         try {
-          const info = await (this.redis as any).info('memory');
-          const dbsize = await (this.redis as any).dbSize();
+          const info = await this.redis.info('memory');
+          const dbsize = await this.redis.dbsize();
           
           return {
             provider: 'redis',
@@ -199,19 +214,19 @@ export class CacheService {
       }
     } catch (error) {
       this.logger.error('Cache stats failed', (error as Error).stack);
-      return { enabled: false, error: (error as Error).message };
+      return { enabled: false, provider: 'memory', error: (error as Error).message };
     }
   }
 
-  private parseRedisInfo(info: string): any {
+  private parseRedisInfo(info: string): Record<string, string> {
     const lines = info.split('\r\n');
-    const result: any = {};
+    const result: Record<string, string> = {};
 
     for (const line of lines) {
       if (line.includes(':')) {
         const [key, value] = line.split(':');
         if (key) {
-          result[key] = value;
+          result[key] = value ?? '';
         }
       }
     }
@@ -226,7 +241,7 @@ export class CacheService {
 
     try {
       if (this.redis) {
-        await (this.redis as any).ping();
+        await this.redis.ping();
         return true;
       } else {
         return true; // Memory cache is always healthy

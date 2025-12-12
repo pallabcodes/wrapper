@@ -98,7 +98,7 @@ export interface QueryOptimizationOptions {
   timeout?: number;
 }
 
-export interface DatabaseQuery<_T = any> {
+export interface DatabaseQuery<_T = unknown> {
   /** Query type */
   type: 'select' | 'insert' | 'update' | 'delete' | 'raw';
   
@@ -106,10 +106,10 @@ export interface DatabaseQuery<_T = any> {
   table: string;
   
   /** Query conditions */
-  where?: Record<string, any>;
+  where?: Record<string, unknown>;
   
   /** Query data for insert/update */
-  data?: Record<string, any> | Record<string, any>[];
+  data?: Record<string, unknown> | Record<string, unknown>[];
   
   /** Query options */
   options?: QueryOptimizationOptions;
@@ -118,7 +118,7 @@ export interface DatabaseQuery<_T = any> {
   sql?: string;
   
   /** Query parameters (for raw queries) */
-  params?: any[];
+  params?: unknown[];
   
   /** Pagination */
   pagination?: {
@@ -142,10 +142,10 @@ export interface DatabaseQuery<_T = any> {
   groupBy?: string[];
   
   /** Having conditions */
-  having?: Record<string, any>;
+  having?: Record<string, unknown>;
 }
 
-export interface QueryResult<T = any> {
+export interface QueryResult<T = unknown> {
   /** Query results */
   data: T[];
   
@@ -188,7 +188,7 @@ export interface TransactionOptions {
   maxRetries?: number;
 }
 
-export interface TransactionResult<T = any> {
+export interface TransactionResult<T = unknown> {
   /** Transaction results */
   data: T;
   

@@ -13,6 +13,7 @@ import { BraintreeService } from './braintree.service';
 import { PayPalService } from './paypal.service';
 import { CreatePaymentDto } from '../dto/create-payment.dto';
 import { PaymentResponseDto } from '../dto/payment-response.dto';
+import { PaymentListResponseDto } from '../dto/payment-list-response.dto';
 import { Payment, PaymentStatus, PaymentProvider } from '../entities/payment.entity';
 import { EnterpriseZodValidationService } from '@ecommerce-enterprise/nest-zod';
 import { z } from 'zod';
@@ -54,6 +55,8 @@ export const EnterprisePaymentSchema = z.object({
     exponentialBackoff: z.boolean().default(true),
   }).optional(),
 });
+
+export type EnterprisePaymentData = z.infer<typeof EnterprisePaymentSchema>;
 
 export const FraudDetectionSchema = z.object({
   paymentId: z.string().uuid('Invalid payment ID'),
@@ -102,7 +105,7 @@ export interface ComplianceAudit {
   ipAddress: string;
   userAgent?: string;
   timestamp: Date;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   complianceFlags?: string[];
 }
 
@@ -177,10 +180,10 @@ export class EnterprisePaymentService {
         throw new BadRequestException(`Validation failed: ${validationResult.errors?.message}`);
       }
 
-      const validatedData = validationResult.data;
+      const validatedData = validationResult.data as EnterprisePaymentData;
 
       // Fraud detection
-      const fraudResult = await this.performFraudDetection(validatedData as Record<string, unknown>, context);
+      const fraudResult = await this.performFraudDetection(validatedData, context);
       
       if (fraudResult.recommendation === 'DECLINE') {
         await this.logComplianceAudit({
@@ -205,17 +208,17 @@ export class EnterprisePaymentService {
 
       // Create payment record with fraud detection data
       const payment = await this.paymentRepository.create({
-        amount: (validatedData as any).amount,
-        currency: (validatedData as any).currency,
-        provider: (validatedData as any).provider,
-        method: (validatedData as any).method,
-        description: (validatedData as any).description,
-        customerEmail: (validatedData as any).customerEmail,
+        amount: validatedData.amount,
+        currency: validatedData.currency,
+        provider: validatedData.provider,
+        method: validatedData.method,
+        description: validatedData.description,
+        customerEmail: validatedData.customerEmail,
         userId,
         tenantId,
         status: PaymentStatus.PENDING,
         metadata: {
-          ...(validatedData as any).metadata,
+          ...validatedData.metadata,
           fraudDetection: fraudResult,
           requestId: context.requestId,
         },
@@ -224,7 +227,7 @@ export class EnterprisePaymentService {
       // Process payment with retry logic
       const processingResult = await this.processPaymentWithRetry(
         payment,
-        (validatedData as any).retryPolicy || { maxRetries: 3, retryDelay: 5000, exponentialBackoff: true }
+        validatedData.retryPolicy || { maxRetries: 3, retryDelay: 5000, exponentialBackoff: true }
       );
 
       // Update payment with processing result
@@ -316,7 +319,7 @@ export class EnterprisePaymentService {
     }
 
     // Geographic risk assessment
-    const geoRisk = await this.assessGeographicRisk(context.ipAddress, (paymentData.billingAddress as any)?.country);
+    const geoRisk = await this.assessGeographicRisk(context.ipAddress, paymentData.billingAddress?.country);
     if (geoRisk > 0.5) {
       riskFactors.push({
         factor: 'GEOGRAPHIC_RISK',
@@ -583,7 +586,7 @@ export class EnterprisePaymentService {
       status?: string;
       provider?: string;
     },
-  ): Promise<any> {
+  ): Promise<PaymentListResponseDto> {
     return await this.paymentService.getPayments(userId, tenantId, filters);
   }
 
@@ -591,7 +594,7 @@ export class EnterprisePaymentService {
     id: string,
     userId: string,
     tenantId: string,
-  ): Promise<any> {
+  ): Promise<PaymentResponseDto> {
     return await this.paymentService.getPayment(id, userId, tenantId);
   }
 
@@ -600,7 +603,7 @@ export class EnterprisePaymentService {
     updatePaymentDto: Record<string, unknown>,
     userId: string,
     tenantId: string,
-  ): Promise<any> {
+  ): Promise<PaymentResponseDto> {
     return await this.paymentService.updatePayment(id, updatePaymentDto, userId, tenantId);
   }
 
@@ -617,7 +620,7 @@ export class EnterprisePaymentService {
     refundData: { amount?: number; reason?: string },
     userId: string,
     tenantId: string,
-  ): Promise<any> {
+  ): Promise<PaymentResponseDto> {
     return await this.paymentService.refundPayment(id, refundData, userId, tenantId);
   }
 }

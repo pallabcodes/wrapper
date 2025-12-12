@@ -1,12 +1,16 @@
 import { ClientProxy, ClientProxyFactory, Transport } from '@nestjs/microservices';
 
 export function createRedisClient(url = 'redis://localhost:6379'): ClientProxy {
-  return ClientProxyFactory.create({ 
-    transport: Transport.REDIS, 
-    options: { 
-      host: 'localhost',
-      port: 6379
-    } 
+  const parsed = new URL(url);
+  const port = parsed.port ? Number(parsed.port) : 6379;
+  const host = parsed.hostname || 'localhost';
+
+  return ClientProxyFactory.create({
+    transport: Transport.REDIS,
+    options: {
+      host,
+      port,
+    },
   });
 }
 

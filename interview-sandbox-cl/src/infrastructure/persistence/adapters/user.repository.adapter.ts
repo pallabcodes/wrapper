@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { UserRepositoryPort, USER_REPOSITORY_PORT } from '@domain/ports/output/user.repository.port';
+import { UserRepositoryPort } from '@domain/ports/output/user.repository.port';
 import { User, UserProps } from '@domain/entities/user.entity';
 import { Email } from '@domain/value-objects/email.vo';
 import { UserNotFoundException } from '@domain/exceptions/user-not-found.exception';
 import { UserModel } from '../models/user.model';
+import type { Specification } from '@domain/specifications/specification';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class SequelizeUserRepositoryAdapter implements UserRepositoryPort {
@@ -34,7 +36,9 @@ export class SequelizeUserRepositoryAdapter implements UserRepositoryPort {
       role: user.role,
       isEmailVerified: user.isEmailVerified,
       isActive: user.isActive,
-    });
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    } as any);
 
     return this.toDomain(model);
   }
@@ -93,6 +97,49 @@ export class SequelizeUserRepositoryAdapter implements UserRepositoryPort {
     };
 
     return User.reconstitute(props);
+  }
+
+  async findOne(spec: Specification<User>): Promise<User | null> {
+    throw new Error('findOne by specification not implemented');
+  }
+
+  async findMany(spec: Specification<User>): Promise<User[]> {
+    throw new Error('findMany by specification not implemented');
+  }
+
+  async count(spec: Specification<User>): Promise<number> {
+    throw new Error('count by specification not implemented');
+  }
+
+  async exists(spec: Specification<User>): Promise<boolean> {
+    throw new Error('exists by specification not implemented');
+  }
+
+  async findActiveUsers(): Promise<User[]> {
+    const results = await this.userModel.findAll({ where: { isActive: true } });
+    return results.map((m) => this.toDomain(m));
+  }
+
+  async findUsersByRole(role: string): Promise<User[]> {
+    const results = await this.userModel.findAll({ where: { role } });
+    return results.map((m) => this.toDomain(m));
+  }
+
+  async findRecentlyCreated(days: number): Promise<User[]> {
+    const threshold = new Date(Date.now() - days * 86400000);
+    const results = await this.userModel.findAll({
+      where: {
+        createdAt: {
+          [Op.gte]: threshold,
+        },
+      },
+    });
+    return results.map((m) => this.toDomain(m));
+  }
+
+  async findUnverifiedUsers(): Promise<User[]> {
+    const results = await this.userModel.findAll({ where: { isEmailVerified: false } });
+    return results.map((m) => this.toDomain(m));
   }
 }
 

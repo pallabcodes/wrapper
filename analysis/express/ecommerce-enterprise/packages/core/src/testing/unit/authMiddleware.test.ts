@@ -10,6 +10,8 @@ import jwt from 'jsonwebtoken'
 import { authenticateToken, requireRole } from '../../middleware/auth'
 import { env } from '../../config/env'
 
+type MockUser = { userId: string; email?: string; role?: string }
+
 // Mock dependencies
 jest.mock('jsonwebtoken')
 jest.mock('../../config/env', () => ({
@@ -21,7 +23,7 @@ jest.mock('../../config/env', () => ({
 const mockJwt = jwt as jest.Mocked<typeof jwt>
 
 describe('AuthMiddleware', () => {
-  let mockRequest: Partial<Request> & { user?: any }
+  let mockRequest: Partial<Request> & { user?: MockUser }
   let mockResponse: Partial<Response>
   let mockNext: NextFunction
 
@@ -49,14 +51,14 @@ describe('AuthMiddleware', () => {
       mockRequest.headers = {
         authorization: `Bearer ${token}`
       }
-      mockJwt.verify.mockReturnValue(mockUser as any)
+      mockJwt.verify.mockReturnValue(mockUser)
 
       // Act
       authenticateToken(mockRequest as Request, mockResponse as Response, mockNext)
 
       // Assert
       expect(mockJwt.verify).toHaveBeenCalledWith(token, env.JWT_SECRET)
-      expect((mockRequest as any).user).toEqual(mockUser)
+      expect(mockRequest.user).toEqual(mockUser)
       expect(mockNext).toHaveBeenCalled()
       expect(mockResponse.status).not.toHaveBeenCalled()
       expect(mockResponse.json).not.toHaveBeenCalled()
@@ -126,7 +128,7 @@ describe('AuthMiddleware', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(403)
       expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Invalid token' })
       expect(mockNext).not.toHaveBeenCalled()
-      expect((mockRequest as any).user).toBeUndefined()
+      expect(mockRequest.user).toBeUndefined()
     })
 
     it('should handle expired token', () => {
@@ -147,7 +149,7 @@ describe('AuthMiddleware', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(403)
       expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Invalid token' })
       expect(mockNext).not.toHaveBeenCalled()
-      expect((mockRequest as any).user).toBeUndefined()
+      expect(mockRequest.user).toBeUndefined()
     })
 
     it('should handle malformed token', () => {
@@ -198,7 +200,7 @@ describe('AuthMiddleware', () => {
     it('should allow access for user with required role', () => {
       // Arrange
       const mockUser = { userId: 'user-id', role: 'admin' }
-      ;(mockRequest as any).user = mockUser
+      mockRequest.user = mockUser
       const requireAdmin = requireRole('admin')
 
       // Act
@@ -213,7 +215,7 @@ describe('AuthMiddleware', () => {
     it('should deny access for user without required role', () => {
       // Arrange
       const mockUser = { userId: 'user-id', role: 'user' }
-      ;(mockRequest as any).user = mockUser
+      mockRequest.user = mockUser
       const requireAdmin = requireRole('admin')
 
       // Act
@@ -228,7 +230,7 @@ describe('AuthMiddleware', () => {
     it('should deny access for user with no role', () => {
       // Arrange
       const mockUser = { userId: 'user-id' }
-      ;(mockRequest as any).user = mockUser
+      mockRequest.user = mockUser
       const requireAdmin = requireRole('admin')
 
       // Act
@@ -242,7 +244,7 @@ describe('AuthMiddleware', () => {
 
     it('should deny access when no user is present', () => {
       // Arrange
-      ;(mockRequest as any).user = undefined
+      mockRequest.user = undefined
       const requireAdmin = requireRole('admin')
 
       // Act
@@ -257,7 +259,7 @@ describe('AuthMiddleware', () => {
     it('should allow access for different roles', () => {
       // Arrange
       const mockUser = { userId: 'user-id', role: 'moderator' }
-      ;(mockRequest as any).user = mockUser
+      mockRequest.user = mockUser
       const requireModerator = requireRole('moderator')
 
       // Act
@@ -272,7 +274,7 @@ describe('AuthMiddleware', () => {
     it('should handle case-sensitive role matching', () => {
       // Arrange
       const mockUser = { userId: 'user-id', role: 'Admin' }
-      ;(mockRequest as any).user = mockUser
+      mockRequest.user = mockUser
       const requireAdmin = requireRole('admin')
 
       // Act

@@ -34,6 +34,10 @@ export class Password {
     throw new Error('Cannot compare plain password with plain password');
   }
 
+  toString(): string {
+    return this.value;
+  }
+
   private validate(): void {
     const config = this.config.PASSWORD;
 
@@ -54,4 +58,3 @@ export class Password {
     }
   }
 }
-

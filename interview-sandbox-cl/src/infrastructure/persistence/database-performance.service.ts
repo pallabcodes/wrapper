@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/sequelize';
-import { Sequelize } from 'sequelize';
+import { Sequelize, QueryTypes } from 'sequelize';
 import { CustomLoggerService } from '../logging/logger.service';
 
 @Injectable()
@@ -13,10 +13,10 @@ export class DatabasePerformanceService {
 
   async logSlowQueries(): Promise<void> {
     // Enable query logging for performance monitoring
-    this.sequelize.options.logging = (sql: string, timing?: number) => {
-      if (timing && timing > 100) { // Log queries taking more than 100ms
+    (this.sequelize as any).options.logging = (sql: string, timing?: number) => {
+      if (timing && timing > 100) {
         this.logger.performance('Slow Query Detected', timing, {
-          sql: sql.substring(0, 500), // Truncate long queries
+          sql: sql.substring(0, 500),
           timing,
         });
       }
@@ -45,19 +45,25 @@ export class DatabasePerformanceService {
   async optimizeConnectionPool(): Promise<void> {
     const poolStats = await this.getConnectionPoolStats();
 
-    // Log pool statistics
-    this.logger.debug('Database Connection Pool Stats', 'DatabasePerformance', {
+    this.logger.debug(
+      `Database Connection Pool Stats ${JSON.stringify({
       ...poolStats,
       timestamp: new Date().toISOString(),
-    });
+      })}`,
+      'DatabasePerformance',
+    );
 
-    // Warn if pool is heavily utilized
+    if (poolStats.size && poolStats.using !== undefined) {
     const utilizationRate = poolStats.using / poolStats.size;
     if (utilizationRate > 0.8) {
-      this.logger.warn('High database connection pool utilization detected', 'DatabasePerformance', {
+        this.logger.warn(
+          `High database connection pool utilization detected ${JSON.stringify({
         utilizationRate: `${(utilizationRate * 100).toFixed(1)}%`,
         ...poolStats,
-      });
+          })}`,
+          'DatabasePerformance',
+        );
+      }
     }
   }
 
@@ -80,7 +86,7 @@ export class DatabasePerformanceService {
       results.connectionTime = Date.now() - startTime;
 
       // Test SELECT query
-      await this.sequelize.query('SELECT 1 as test', { type: 'SELECT' });
+      await this.sequelize.query('SELECT 1 as test');
       results.select = true;
 
       // Test INSERT, UPDATE, DELETE would require actual table operations
@@ -88,19 +94,20 @@ export class DatabasePerformanceService {
 
       results.totalTime = Date.now() - startTime;
 
-      this.logger.performance('Database Health Check', results.totalTime, {
-        ...results,
-        status: 'success',
-      });
+      this.logger.performance(
+        'Database Health Check',
+        results.totalTime,
+        { status: 'success' },
+      );
 
       return results;
     } catch (error) {
       results.totalTime = Date.now() - startTime;
 
-      this.logger.error('Database Health Check Failed', error.stack, 'DatabasePerformance', {
-        ...results,
-        error: error.message,
-      });
+      this.logger.error(
+        `Database Health Check Failed: ${error.message}`,
+        error.stack,
+      );
 
       return { ...results, error: error.message };
     }

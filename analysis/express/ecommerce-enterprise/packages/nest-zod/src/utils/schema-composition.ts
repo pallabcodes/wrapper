@@ -152,12 +152,12 @@ export class SchemaCompositionHelper {
   static pick<T extends z.ZodObject<z.ZodRawShape>, K extends keyof T['shape']>(
     schema: T,
     keys: K[]
-  ): z.ZodObject<any> {
-    const shape: Record<string, true> = {};
+  ): z.ZodObject<Pick<T['shape'], K>> {
+    const shape: Record<string, true | undefined> = {};
     for (const key of keys) {
       shape[String(key)] = true;
     }
-    return schema.pick(shape as any);
+    return schema.pick(shape as any) as z.ZodObject<Pick<T['shape'], K>>;
   }
 
   /**
@@ -166,32 +166,32 @@ export class SchemaCompositionHelper {
   static omit<T extends z.ZodObject<z.ZodRawShape>, K extends keyof T['shape']>(
     schema: T,
     keys: K[]
-  ): z.ZodObject<any> {
-    const shape: Record<string, true> = {};
+  ): z.ZodObject<Omit<T['shape'], K>> {
+    const shape: Record<string, true | undefined> = {};
     for (const key of keys) {
       shape[String(key)] = true;
     }
-    return schema.omit(shape as any);
+    return schema.omit(shape as any) as z.ZodObject<Omit<T['shape'], K>>;
   }
 
   /**
    * Create a partial schema
    */
-  static partial<T extends z.ZodObject<z.ZodRawShape>>(schema: T): z.ZodObject<any> {
-    return schema.partial();
+  static partial<T extends z.ZodObject<z.ZodRawShape>>(schema: T): z.ZodObject<{ [K in keyof T['shape']]: z.ZodOptional<T['shape'][K]> }> {
+    return schema.partial() as z.ZodObject<{ [K in keyof T['shape']]: z.ZodOptional<T['shape'][K]> }>;
   }
 
   /**
    * Create a required schema
    */
-  static required<T extends z.ZodObject<z.ZodRawShape>>(schema: T): z.ZodObject<any> {
-    return schema.required();
+  static required<T extends z.ZodObject<z.ZodRawShape>>(schema: T): z.ZodObject<T['shape']> {
+    return schema.required() as z.ZodObject<T['shape']>;
   }
 
   /**
    * Create a schema with conditional fields
    */
-  static conditional<T extends z.ZodObject<any>>(
+  static conditional<T extends z.ZodObject<z.ZodRawShape>>(
     schema: T,
     condition: (data: z.infer<T>) => boolean,
     trueSchema: Partial<z.infer<T>>,
@@ -208,7 +208,7 @@ export class SchemaCompositionHelper {
   /**
    * Create a schema with dependent fields
    */
-  static dependent<T extends z.ZodObject<any>>(
+  static dependent<T extends z.ZodObject<z.ZodRawShape>>(
     schema: T,
     dependencies: Record<string, (data: z.infer<T>) => z.ZodSchema>
   ): z.ZodSchema {
@@ -230,7 +230,7 @@ export class SchemaCompositionHelper {
   /**
    * Create a schema with cross-field validation
    */
-  static crossField<T extends z.ZodObject<any>>(
+  static crossField<T extends z.ZodObject<z.ZodRawShape>>(
     schema: T,
     validators: Array<{
       fields: (keyof z.infer<T>)[];
@@ -272,7 +272,7 @@ export class SchemaCompositionHelper {
   /**
    * Create a schema with object validation
    */
-  static objectValidation<T extends z.ZodObject<any>>(
+  static objectValidation<T extends z.ZodObject<z.ZodRawShape>>(
     schema: T,
     validators: Array<{
       name: string;
@@ -326,7 +326,7 @@ export class SchemaCompositionHelper {
             const key = `${issue.code}_${issue.path.map(p => String(p)).join('.')}`;
             const message = messages[key] || messages[issue.code] || issue.message;
             ctx.addIssue({
-              code: issue.code as any,
+              code: 'custom',
               message,
               path: issue.path,
             });
@@ -469,14 +469,15 @@ export const CommonPatterns = {
   /**
    * Object with required fields based on condition
    */
-  conditionalRequired: <T extends z.ZodObject<any>>(
+  conditionalRequired: <T extends z.ZodObject<z.ZodRawShape>>(
     schema: T,
     condition: (data: z.infer<T>) => boolean,
     requiredFields: (keyof z.infer<T>)[]
   ) =>
     schema.refine((data) => {
       if (condition(data)) {
-        return requiredFields.every(field => data[field] !== undefined);
+        const record = data as Record<string, unknown>;
+        return requiredFields.every(field => record[String(field)] !== undefined);
       }
       return true;
     }),

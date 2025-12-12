@@ -19,7 +19,7 @@ export const SalesforceConnectionSchema = z.object({
   accessToken: z.string().optional(),
   refreshToken: z.string().optional(),
   expiresAt: z.string().datetime().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.unknown()).optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -47,7 +47,7 @@ export const SAPConnectionSchema = z.object({
   sso2_ticketx: z.string().optional(),
   x509cert: z.string().optional(),
   sapsso2: z.string().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.unknown()).optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -72,7 +72,7 @@ export const IntegrationJobSchema = z.object({
       type: z.enum(['oauth2', 'basic', 'api_key', 'certificate'], {
         errorMap: () => ({ message: 'Invalid credential type' })
       }),
-      config: z.record(z.any()),
+      config: z.record(z.unknown()),
     }),
     filters: z.object({
       dateRange: z.object({
@@ -83,7 +83,7 @@ export const IntegrationJobSchema = z.object({
       conditions: z.array(z.object({
         field: z.string(),
         operator: z.enum(['eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'in', 'nin', 'contains', 'startsWith', 'endsWith']),
-        value: z.any(),
+        value: z.unknown(),
       })).optional(),
     }).optional(),
   }),
@@ -94,7 +94,7 @@ export const IntegrationJobSchema = z.object({
       type: z.enum(['oauth2', 'basic', 'api_key', 'certificate'], {
         errorMap: () => ({ message: 'Invalid credential type' })
       }),
-      config: z.record(z.any()),
+      config: z.record(z.unknown()),
     }),
     mapping: z.object({
       fieldMappings: z.array(z.object({
@@ -108,7 +108,7 @@ export const IntegrationJobSchema = z.object({
         type: z.enum(['format', 'calculate', 'lookup', 'validate'], {
           errorMap: () => ({ message: 'Invalid transformation type' })
         }),
-        config: z.record(z.any()),
+        config: z.record(z.unknown()),
       })).optional(),
     }),
   }),
@@ -131,7 +131,7 @@ export const IntegrationJobSchema = z.object({
       type: z.enum(['email', 'sms', 'webhook', 'slack'], {
         errorMap: () => ({ message: 'Invalid alert type' })
       }),
-      config: z.record(z.any()),
+      config: z.record(z.unknown()),
       conditions: z.array(z.object({
         metric: z.string(),
         operator: z.enum(['gt', 'gte', 'lt', 'lte', 'eq', 'ne']),
@@ -140,7 +140,7 @@ export const IntegrationJobSchema = z.object({
     })).optional(),
     metrics: z.array(z.enum(['duration', 'records_processed', 'error_rate', 'throughput'])).optional(),
   }).optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.unknown()).optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   createdBy: z.string().uuid('Invalid creator ID format'),
@@ -162,7 +162,7 @@ export const DataMappingSchema = z.object({
       required: z.boolean().default(false),
       nullable: z.boolean().default(true),
       description: z.string().optional(),
-      constraints: z.record(z.any()).optional(),
+      constraints: z.record(z.unknown()).optional(),
     })),
   }),
   targetSchema: z.object({
@@ -176,7 +176,7 @@ export const DataMappingSchema = z.object({
       required: z.boolean().default(false),
       nullable: z.boolean().default(true),
       description: z.string().optional(),
-      constraints: z.record(z.any()).optional(),
+      constraints: z.record(z.unknown()).optional(),
     })),
   }),
   mappings: z.array(z.object({
@@ -186,7 +186,7 @@ export const DataMappingSchema = z.object({
       type: z.enum(['direct', 'format', 'calculate', 'lookup', 'conditional', 'custom'], {
         errorMap: () => ({ message: 'Invalid transformation type' })
       }),
-      config: z.record(z.any()).optional(),
+      config: z.record(z.unknown()).optional(),
       script: z.string().optional(),
     }).optional(),
     validation: z.object({
@@ -195,7 +195,7 @@ export const DataMappingSchema = z.object({
         type: z.enum(['min', 'max', 'pattern', 'custom'], {
           errorMap: () => ({ message: 'Invalid validation rule type' })
         }),
-        value: z.any(),
+        value: z.unknown(),
         message: z.string().optional(),
       })).optional(),
     }).optional(),
@@ -204,7 +204,7 @@ export const DataMappingSchema = z.object({
   status: z.enum(['draft', 'active', 'deprecated', 'archived'], {
     errorMap: () => ({ message: 'Invalid mapping status' })
   }),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.unknown()).optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   createdBy: z.string().uuid('Invalid creator ID format'),
@@ -231,16 +231,16 @@ export const IntegrationAuditSchema = z.object({
       code: z.string(),
       message: z.string(),
       field: z.string().optional(),
-      value: z.any().optional(),
+      value: z.unknown().optional(),
     })).optional(),
     warnings: z.array(z.object({
       code: z.string(),
       message: z.string(),
       field: z.string().optional(),
-      value: z.any().optional(),
+      value: z.unknown().optional(),
     })).optional(),
   }),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.unknown()).optional(),
   timestamp: z.string().datetime(),
   userId: z.string().uuid('Invalid user ID format'),
   ipAddress: z.string().ip('Invalid IP address format'),

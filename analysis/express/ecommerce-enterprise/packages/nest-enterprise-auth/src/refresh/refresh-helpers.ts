@@ -1,6 +1,6 @@
 import { ExtractJwt, StrategyOptions, Strategy as JwtStrategy } from 'passport-jwt';
 import type { Request, Response } from 'express';
-import { sign, verify, JwtPayload as RawJwtPayload } from 'jsonwebtoken';
+import { sign, verify, JwtPayload as RawJwtPayload, SignOptions as JwtSignOptions } from 'jsonwebtoken';
 
 export type SignOptions = {
   secret: string;
@@ -11,21 +11,21 @@ export type SignOptions = {
 };
 
 export function signAccessToken<TPayload extends object>(payload: TPayload, opts: SignOptions): string {
-  return sign(payload, opts.secret, {
-    expiresIn: opts.expiresIn ?? '15m',
-    issuer: opts.issuer,
-    audience: opts.audience,
-    subject: opts.subject,
-  });
+  const options: JwtSignOptions = {};
+  options.expiresIn = (opts.expiresIn ?? '15m') as NonNullable<JwtSignOptions['expiresIn']>;
+  if (opts.issuer !== undefined) options.issuer = opts.issuer;
+  if (opts.audience !== undefined) options.audience = opts.audience;
+  if (opts.subject !== undefined) options.subject = opts.subject;
+  return sign(payload, opts.secret, options);
 }
 
 export function signRefreshToken<TPayload extends object>(payload: TPayload, opts: SignOptions): string {
-  return sign(payload, opts.secret, {
-    expiresIn: opts.expiresIn ?? '7d',
-    issuer: opts.issuer,
-    audience: opts.audience,
-    subject: opts.subject,
-  });
+  const options: JwtSignOptions = {};
+  options.expiresIn = (opts.expiresIn ?? '7d') as NonNullable<JwtSignOptions['expiresIn']>;
+  if (opts.issuer !== undefined) options.issuer = opts.issuer;
+  if (opts.audience !== undefined) options.audience = opts.audience;
+  if (opts.subject !== undefined) options.subject = opts.subject;
+  return sign(payload, opts.secret, options);
 }
 
 export function verifyRefreshToken<TPayload extends object>(token: string, secret: string): TPayload & RawJwtPayload {

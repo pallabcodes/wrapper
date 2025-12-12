@@ -216,19 +216,21 @@ export class MonitoringObservabilityController {
    * Example 1: Monitored validation with tracing
    */
   @Post('validate-user-monitored')
-  async validateUserMonitored(@Body() userData: any) {
+  async validateUserMonitored(@Body() userData: unknown) {
     const startTime = performance.now();
+    const userSize = JSON.stringify(userData ?? '').length;
+    const userId = (userData as { id?: unknown })?.id;
     
     // Start tracing span
     const span = this.tracingService.startSpan('validate-user', undefined, {
       'operation.name': 'validate-user',
-      'user.id': userData.id,
-      'data.size': JSON.stringify(userData).length.toString(),
+      'user.id': userId ? String(userId) : 'unknown',
+      'data.size': userSize.toString(),
     });
 
     try {
       // Log validation start
-      this.structuredLogging.logValidationStart('user', JSON.stringify(userData).length, span.traceId, span.spanId);
+      this.structuredLogging.logValidationStart('user', userSize, span.traceId, span.spanId);
       
       // Get schema from registry
       const schema = await this.schemaRegistry.get('user');
@@ -239,14 +241,14 @@ export class MonitoringObservabilityController {
       const duration = performance.now() - startTime;
       
       // Log validation success
-      this.structuredLogging.logValidationSuccess('user', duration, JSON.stringify(userData).length, span.traceId, span.spanId);
+      this.structuredLogging.logValidationSuccess('user', duration, userSize, span.traceId, span.spanId);
       
       // Record performance metric
       this.performanceMonitoring.recordValidation({
         schemaName: 'user',
         duration,
         success: true,
-        dataSize: JSON.stringify(userData).length,
+        dataSize: userSize,
         cacheHit: false,
       });
 
@@ -276,7 +278,7 @@ export class MonitoringObservabilityController {
         schemaName: 'user',
         duration,
         success: false,
-        dataSize: JSON.stringify(userData).length,
+        dataSize: userSize,
         errorType: error instanceof z.ZodError ? 'validation_error' : 'unknown_error',
       });
 
@@ -295,7 +297,7 @@ export class MonitoringObservabilityController {
    * Example 2: Batch validation with monitoring
    */
   @Post('validate-batch-monitored')
-  async validateBatchMonitored(@Body() data: { items: any[]; schemaName: string }) {
+  async validateBatchMonitored(@Body() data: { items: unknown[]; schemaName: string }) {
     const startTime = performance.now();
     
     // Start tracing span
@@ -355,13 +357,22 @@ export class MonitoringObservabilityController {
       });
 
       // Record performance metrics
-      this.performanceMonitoring.recordValidation({
+      const metric = {
         schemaName: `${data.schemaName}-batch`,
         duration,
         success: errorCount === 0,
         dataSize: JSON.stringify(data.items).length,
-        errorType: errorCount > 0 ? 'batch_validation_error' : undefined,
-      } as any);
+      } as {
+        schemaName: string;
+        duration: number;
+        success: boolean;
+        dataSize: number;
+        errorType?: string;
+      };
+      if (errorCount > 0) {
+        metric.errorType = 'batch_validation_error';
+      }
+      this.performanceMonitoring.recordValidation(metric);
 
       // Complete tracing span
       this.tracingService.completeSpan(span.spanId, 'completed', undefined, {
@@ -422,7 +433,7 @@ export class MonitoringObservabilityController {
    * Example 3: Cached validation with monitoring
    */
   @Post('validate-cached')
-  async validateCached(@Body() data: { userData: any; useCache: boolean }) {
+  async validateCached(@Body() data: { userData: unknown; useCache: boolean }) {
     const startTime = performance.now();
     
     // Start tracing span
@@ -593,7 +604,7 @@ export class MonitoringObservabilityController {
    * Search traces
    */
   @Get('traces')
-  async searchTraces(@Query() query: any) {
+  async searchTraces(@Query() query: Record<string, unknown>) {
     return this.tracingService.searchSpans(query);
   }
 
@@ -601,7 +612,7 @@ export class MonitoringObservabilityController {
    * Get log entries
    */
   @Get('logs')
-  async getLogs(@Query() query: any) {
+  async getLogs(@Query() query: Record<string, unknown>) {
     return this.structuredLogging.queryLogs(query);
   }
 
@@ -680,7 +691,7 @@ export class MonitoringObservabilityController {
    * Update monitoring configuration
    */
   @Post('config')
-  async updateMonitoringConfig(@Body() config: any) {
+  async updateMonitoringConfig(@Body() config: Record<string, unknown>) {
     // Configuration update methods not available in this example
     // In a real implementation, you would call the appropriate update methods
     console.log('Configuration update requested:', config);

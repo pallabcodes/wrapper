@@ -110,16 +110,16 @@ export class DynamicValidationBuilder<T = unknown> {
     }
 
     if (this.rules.length === 0) {
-      return this.baseSchema || z.any();
+      return this.baseSchema || z.unknown();
     }
 
     // Sort rules by priority (higher priority first)
     const sortedRules = this.rules.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
-    return z.any().refine(
-      (data) => {
+    return z.unknown().refine(
+      (data: unknown) => {
         for (const rule of sortedRules) {
-          if (rule.condition(data, this.options.context)) {
+          if (rule.condition(data as never, this.options.context)) {
             try {
               rule.schema.parse(data);
               return true;
@@ -289,7 +289,7 @@ export const DynamicSchemas = {
    * Role-based schema selection
    */
   roleBased: (schemas: Record<string, z.ZodSchema>, defaultRole = 'user') => 
-    z.any().refine((data) => {
+    z.unknown().refine((data) => {
       // Note: This is a simplified version without context access
       // In a real implementation, you'd need to pass context differently
       const role = defaultRole;
@@ -322,7 +322,7 @@ export const DynamicSchemas = {
    * Multi-step validation with error collection
    */
   pipeline: (steps: ValidationStep[]) => {
-    return z.any().transform(async (data) => {
+    return z.unknown().transform(async (data) => {
       let currentData = data;
       const errors: z.ZodError[] = [];
 
@@ -367,7 +367,7 @@ export const ValidationHelpers = {
    * Create a schema that validates based on request method
    */
   byMethod: (schemas: Record<string, z.ZodSchema>) => 
-    z.any().refine((data) => {
+    z.unknown().refine((data) => {
       // Note: This is a simplified version without context access
       // In a real implementation, you'd need to pass context differently
       const method = 'get';
@@ -385,7 +385,7 @@ export const ValidationHelpers = {
    * Create a schema that validates based on content type
    */
   byContentType: (schemas: Record<string, z.ZodSchema>) => 
-    z.any().refine((data) => {
+    z.unknown().refine((data) => {
       // Note: This is a simplified version without context access
       // In a real implementation, you'd need to pass context differently
       const contentType = 'application/json';

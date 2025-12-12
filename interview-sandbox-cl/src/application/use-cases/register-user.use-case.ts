@@ -7,20 +7,16 @@ import { UserAlreadyExistsException } from '@domain/exceptions/user-already-exis
 import { RegisterUserDto } from '../dto/register-user.dto';
 import { UserDto } from '../dto/user.dto';
 import { UserMapper } from '../mappers/user.mapper';
-import { createAuthConfig } from '../../infrastructure/config/auth.config';
-import { ConfigService } from '@nestjs/config';
+import { AUTH_CONFIG_TOKEN } from '../../infrastructure/config/auth.config';
+import type { AuthConfig } from '../../infrastructure/config/auth.config';
 
 @Injectable()
 export class RegisterUserUseCase {
-  private readonly authConfig;
-
   constructor(
     @Inject(USER_REPOSITORY_PORT)
     private readonly userRepository: UserRepositoryPort,
-    private readonly configService: ConfigService,
-  ) {
-    this.authConfig = createAuthConfig(configService);
-  }
+    @Inject(AUTH_CONFIG_TOKEN) private readonly authConfig: AuthConfig,
+  ) {}
 
   async execute(dto: RegisterUserDto): Promise<UserDto> {
     // 1. Create value objects

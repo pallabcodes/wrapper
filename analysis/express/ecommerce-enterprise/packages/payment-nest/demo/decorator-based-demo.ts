@@ -15,7 +15,7 @@ import {
   isZodObjectSchema,
   getSafeSchemaShape,
   attemptZodErrorRecovery,
-} from '@ecommerce-enterprise/nest-zod';
+} from '../../nest-zod/src';
 
 // ============================================================================
 // Demo Data

@@ -8,7 +8,17 @@ import {
 import { Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
+import type { QueryRunner } from 'typeorm';
 import { TRANSACTION_KEY, TransactionOptions } from '../decorators/transaction.decorator';
+
+interface DatabaseService {
+  beginTransaction(options?: TransactionOptions): Promise<QueryRunner>;
+}
+
+interface TransactionRequest {
+  databaseService?: DatabaseService;
+  transaction?: QueryRunner;
+}
 
 @Injectable()
 export class TransactionInterceptor implements NestInterceptor {
@@ -16,7 +26,7 @@ export class TransactionInterceptor implements NestInterceptor {
 
   constructor(private readonly reflector: Reflector) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept<T = unknown>(context: ExecutionContext, next: CallHandler): Observable<T> {
     const transactionOptions = this.reflector.get<TransactionOptions>(
       TRANSACTION_KEY,
       context.getHandler(),
@@ -26,38 +36,38 @@ export class TransactionInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const request = context.switchToHttp().getRequest();
-    const databaseService = request.databaseService; // Assuming this is injected
+    const request = context.switchToHttp().getRequest<TransactionRequest>();
+    const databaseService = request.databaseService;
 
     if (!databaseService) {
       this.logger.warn('Database service not available for transaction');
       return next.handle();
     }
 
-    return new Observable(subscriber => {
+    return new Observable<T>(subscriber => {
       databaseService.beginTransaction(transactionOptions)
-        .then((transaction: any) => {
+        .then((transaction: QueryRunner) => {
           request.transaction = transaction;
           
           next.handle()
             .pipe(
-              tap(result => {
-                transaction.commit()
+              tap((result: T) => {
+                transaction.commitTransaction()
                   .then(() => {
                     subscriber.next(result);
                     subscriber.complete();
                   })
-                  .catch((error: any) => {
+                  .catch((error: Error) => {
                     this.logger.error('Transaction commit failed', error);
                     subscriber.error(error);
                   });
               }),
-              catchError(error => {
-                transaction.rollback()
+              catchError((error: Error) => {
+                transaction.rollbackTransaction()
                   .then(() => {
                     subscriber.error(error);
                   })
-                  .catch((rollbackError: any) => {
+                  .catch((rollbackError: Error) => {
                     this.logger.error('Transaction rollback failed', rollbackError);
                     subscriber.error(error);
                   });
@@ -66,7 +76,7 @@ export class TransactionInterceptor implements NestInterceptor {
             )
             .subscribe();
         })
-        .catch((error: any) => {
+        .catch((error: Error) => {
           this.logger.error('Failed to begin transaction', error);
           subscriber.error(error);
         });

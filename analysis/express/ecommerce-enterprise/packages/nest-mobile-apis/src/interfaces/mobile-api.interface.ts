@@ -63,13 +63,13 @@ export interface MobileApiOptions {
   };
 }
 
-export interface MobileApiResponse<T = any> {
+export interface MobileApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
   metadata: {
     timestamp: string;
@@ -94,9 +94,9 @@ export interface MobileApiResponse<T = any> {
 
 export interface MobileApiRequest {
   deviceInfo: MobileDeviceInfo;
-  headers: Record<string, any>;
-  query: Record<string, any>;
-  body: Record<string, any>;
+  headers: Record<string, string | string[]>;
+  query: Record<string, string | string[]>;
+  body: Record<string, unknown>;
 }
 
 export interface ImageOptimizationOptions {
@@ -136,7 +136,7 @@ export interface OfflineData {
 export interface PushNotificationPayload {
   title: string;
   body: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   badge?: number;
   sound?: string;
   imageUrl?: string;
@@ -156,7 +156,7 @@ export interface MobileAnalytics {
   events: {
     name: string;
     timestamp: string;
-    properties: Record<string, any>;
+    properties: Record<string, unknown>;
   }[];
   performance: {
     pageLoadTime: number;

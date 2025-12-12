@@ -13,11 +13,50 @@ import {
   // TestingSchedule
 } from '../interfaces/disaster-recovery.interface';
 
+interface Incident {
+  id: string;
+  planId?: string;
+  status: 'open' | 'resolved' | 'closed';
+  createdAt: Date;
+  updatedAt?: Date;
+  escalationLevel?: number;
+  escalatedAt?: Date;
+  escalatedTo?: string[];
+  [key: string]: unknown;
+}
+
+interface CommunicationTestResult {
+  channelId: string;
+  channelName: string;
+  status: 'success' | 'failed';
+  responseTime: number;
+  details: string;
+}
+
+interface EscalationTestResult {
+  level: number;
+  contacts: string[];
+  status: 'success' | 'failed';
+  details: string;
+}
+
+interface BCMetrics {
+  totalPlans: number;
+  activePlans: number;
+  totalIncidents: number;
+  openIncidents: number;
+  resolvedIncidents: number;
+  resolutionRate: number;
+  averageMTTR: number;
+  averageMTBF: number;
+  lastIncident: Date | null;
+}
+
 @Injectable()
 export class BusinessContinuityService {
   private readonly logger = new Logger(BusinessContinuityService.name);
   private bcPlans: Map<string, BusinessContinuityPlan> = new Map();
-  private incidents: Map<string, any> = new Map();
+  private incidents: Map<string, Incident> = new Map();
 
   constructor(/* private readonly configService: ConfigService */) {
     this.initializeDefaultPlans();
@@ -264,16 +303,19 @@ export class BusinessContinuityService {
     return updatedPlan;
   }
 
-  async createIncident(incident: any): Promise<any> {
-    incident.id = incident.id || uuidv4();
-    incident.createdAt = new Date();
-    incident.status = 'open';
-    this.incidents.set(incident.id, incident);
-    this.logger.log(`Incident created: ${incident.id}`);
-    return incident;
+  async createIncident(incident: Partial<Incident>): Promise<Incident> {
+    const newIncident: Incident = {
+      id: incident.id || uuidv4(),
+      createdAt: new Date(),
+      status: 'open',
+      ...incident,
+    };
+    this.incidents.set(newIncident.id, newIncident);
+    this.logger.log(`Incident created: ${newIncident.id}`);
+    return newIncident;
   }
 
-  async getIncidents(status?: string): Promise<any[]> {
+  async getIncidents(status?: string): Promise<Incident[]> {
     let incidents = Array.from(this.incidents.values());
     
     if (status) {
@@ -283,7 +325,7 @@ export class BusinessContinuityService {
     return incidents.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  async updateIncident(id: string, updates: any): Promise<any | null> {
+  async updateIncident(id: string, updates: Partial<Incident>): Promise<Incident | null> {
     const incident = this.incidents.get(id);
     if (!incident) return null;
 
@@ -297,7 +339,10 @@ export class BusinessContinuityService {
     const incident = this.incidents.get(incidentId);
     if (!incident) return false;
 
-    const plan = this.bcPlans.get(incident.planId);
+    const planId = incident.planId;
+    if (!planId) return false;
+
+    const plan = this.bcPlans.get(planId);
     if (!plan) return false;
 
     const escalationLevel = plan.communicationPlan.escalationMatrix.levels.find(l => l.level === level);
@@ -314,10 +359,10 @@ export class BusinessContinuityService {
     return true;
   }
 
-  async sendNotification(templateId: string, _variables: Record<string, any>, recipients: string[]): Promise<boolean> {
+  async sendNotification(templateId: string, _variables: Record<string, unknown>, recipients: string[]): Promise<boolean> {
     const plan = Array.from(this.bcPlans.values())[0]; // Get first plan for demo
     if (!plan) return false;
-    const template = plan.communicationPlan.templates.find(t => t.id === templateId);
+    const template = plan.communicationPlan?.templates?.find(t => t.id === templateId);
     if (!template) return false;
 
     // Simulate notification sending
@@ -327,7 +372,7 @@ export class BusinessContinuityService {
     return true;
   }
 
-  async getBCMetrics(): Promise<any> {
+  async getBCMetrics(): Promise<BCMetrics> {
     const plans = Array.from(this.bcPlans.values());
     const incidents = Array.from(this.incidents.values());
 
@@ -354,13 +399,13 @@ export class BusinessContinuityService {
       resolutionRate: totalIncidents > 0 ? (resolvedIncidents / totalIncidents) * 100 : 0,
       averageMTTR,
       averageMTBF,
-      lastIncident: incidents.length > 0 ? incidents[0].createdAt : null
+      lastIncident: incidents.length > 0 ? incidents[0]?.createdAt ?? null : null
     };
   }
 
   async testCommunicationPlan(planId: string): Promise<{
     success: boolean;
-    results: any[];
+    results: Array<CommunicationTestResult | EscalationTestResult>;
     issues: string[];
   }> {
     const plan = this.bcPlans.get(planId);
@@ -368,12 +413,12 @@ export class BusinessContinuityService {
       throw new Error(`BC Plan not found: ${planId}`);
     }
 
-    const results: any[] = [];
+    const results: Array<CommunicationTestResult | EscalationTestResult> = [];
     const issues: string[] = [];
 
     // Test each communication channel
     for (const channel of plan.communicationPlan.channels) {
-      const result = {
+      const result: CommunicationTestResult = {
         channelId: channel.id,
         channelName: channel.name,
         status: Math.random() < 0.9 ? 'success' : 'failed',
@@ -389,7 +434,7 @@ export class BusinessContinuityService {
 
     // Test escalation matrix
     for (const level of plan.communicationPlan.escalationMatrix.levels) {
-      const result = {
+      const result: EscalationTestResult = {
         level: level.level,
         contacts: level.contacts,
         status: Math.random() < 0.95 ? 'success' : 'failed',

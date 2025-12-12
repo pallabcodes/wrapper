@@ -1,6 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
 import type { RbacPolicy, RbacRequirement } from './types';
-import { mergePolicy } from './types';
 
 export const RBAC_POLICY_KEY = 'enterprise_rbac_policy';
 

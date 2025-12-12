@@ -1,7 +1,9 @@
-import { Controller, Get, HttpStatus } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { FastifyReply } from 'fastify';
 import { HealthService, HealthStatus } from '../../infrastructure/monitoring/health.service';
 import { CacheService } from '../../infrastructure/cache/cache.service';
+import { MetricsService } from '../../infrastructure/monitoring/metrics.service';
 
 @ApiTags('Health & Monitoring')
 @Controller('health')
@@ -9,6 +11,7 @@ export class HealthController {
   constructor(
     private readonly healthService: HealthService,
     private readonly cacheService: CacheService,
+    private readonly metricsService: MetricsService,
   ) {}
 
   @Get()
@@ -53,15 +56,16 @@ export class HealthController {
 
   @Get('metrics')
   @ApiOperation({
-    summary: 'Get application metrics',
-    description: 'Returns key performance metrics for monitoring systems'
+    summary: 'Prometheus style metrics snapshot',
+    description: 'Returns detailed application metrics suitable for Prometheus scraping',
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Metrics retrieved successfully',
+    description: 'Metrics snapshot',
   })
-  async getMetrics(): Promise<any> {
-    return this.healthService.getMetrics();
+  async getMetricsSnapshot(@Res({ passthrough: true }) res: FastifyReply): Promise<string> {
+    res.header('Content-Type', 'text/plain; version=0.0.4');
+    return this.metricsService.asPrometheus();
   }
 
   @Get('ping')

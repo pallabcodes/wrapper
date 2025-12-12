@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { Email } from '../value-objects/email.vo';
 import { Password } from '../value-objects/password.vo';
 import type { AuthConfig } from '../../infrastructure/config/auth.config';
+import type { DomainEvent } from '../events/domain-event';
 
 export type UserRole = 'USER' | 'ADMIN' | 'MODERATOR';
 
@@ -18,6 +19,7 @@ export interface UserProps {
 }
 
 export class User {
+  private readonly domainEvents: DomainEvent[] = [];
   private constructor(private readonly props: UserProps) {}
 
   // Getters for immutability
@@ -30,6 +32,19 @@ export class User {
   get isActive(): boolean { return this.props.isActive; }
   get createdAt(): Date { return this.props.createdAt; }
   get updatedAt(): Date { return this.props.updatedAt; }
+  get domainEventsQueue(): DomainEvent[] { return this.domainEvents; }
+
+  addDomainEvent(event: DomainEvent): void {
+    this.domainEvents.push(event);
+  }
+
+  hasUncommittedEvents(): boolean {
+    return this.domainEvents.length > 0;
+  }
+
+  markAsCommitted(): void {
+    this.domainEvents.length = 0;
+  }
 
   static async create(
     email: Email,

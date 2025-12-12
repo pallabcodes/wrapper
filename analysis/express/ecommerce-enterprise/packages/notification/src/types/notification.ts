@@ -86,10 +86,10 @@ export interface NotificationRequest {
   templateId?: string
   subject?: string
   content?: string
-  variables?: Record<string, any>
+  variables?: Record<string, unknown>
   priority?: NotificationPriority
   scheduledAt?: Date
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   channels?: NotificationType[]
 }
 
@@ -103,9 +103,9 @@ export interface Notification {
   status: NotificationStatus
   priority: NotificationPriority
   templateId?: string
-  variables?: Record<string, any>
-  metadata?: Record<string, any>
-  providerResponse?: any
+  variables?: Record<string, unknown>
+  metadata?: Record<string, unknown>
+  providerResponse?: unknown
   errorMessage?: string
   retryCount: number
   maxRetries: number
@@ -122,13 +122,13 @@ export interface NotificationResult {
   notificationId?: string
   status: NotificationStatus
   error?: NotificationError
-  providerResponse?: any
+  providerResponse?: unknown
 }
 
 export interface NotificationError {
   code: string
   message: string
-  details?: any
+  details?: unknown
   retryable: boolean
 }
 
@@ -207,7 +207,7 @@ export interface PushNotification extends Notification {
   title: string
   badge?: number
   sound?: string
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 }
 
 export interface InAppNotification extends Notification {

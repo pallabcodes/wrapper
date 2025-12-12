@@ -3,12 +3,16 @@
  */
 
 import { Request, Response, NextFunction } from 'express'
-// const { z } = require('zod')
+import type { ZodSchema } from 'zod'
 
-export const validateBody = <T extends any>(schema: T) => {
+interface ZodParseable {
+  parse: (data: unknown) => unknown;
+}
+
+export const validateBody = <T extends ZodSchema | ZodParseable>(schema: T) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = (schema as any).parse(req.body)
+      const result = (schema as ZodParseable).parse(req.body)
       req.body = result
       next()
     } catch (error) {
@@ -45,11 +49,11 @@ export const validateQuery = <T extends any>(schema: T) => {
   }
 }
 
-export const validateParams = <T extends any>(schema: T) => {
+export const validateParams = <T extends ZodSchema | ZodParseable>(schema: T) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = (schema as any).parse(req.params)
-      req.params = result
+      const result = (schema as ZodParseable).parse(req.params)
+      req.params = result as any
       next()
     } catch (error) {
       if (error && typeof error === 'object' && 'errors' in error) {
@@ -66,6 +70,6 @@ export const validateParams = <T extends any>(schema: T) => {
 }
 
 // Utility function for validation
-export const validateSchema = <T extends any>(schema: T, data: unknown): any => {
-  return (schema as any).parse(data)
+export const validateSchema = <T extends ZodSchema | ZodParseable>(schema: T, data: unknown): unknown => {
+  return (schema as ZodParseable).parse(data)
 }

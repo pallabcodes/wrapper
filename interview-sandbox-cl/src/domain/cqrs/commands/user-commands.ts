@@ -16,7 +16,7 @@ export class RegisterUserCommand extends UserCommand {
   constructor(
     public readonly email: Email,
     public readonly name: string,
-    public readonly password: Password,
+    public readonly password: string,
     public readonly role?: string
   ) {
     super();
@@ -35,7 +35,7 @@ export class VerifyUserEmailCommand extends UserCommand {
 export class ChangeUserPasswordCommand extends UserCommand {
   constructor(
     public readonly userId: UserId,
-    public readonly newPassword: Password
+    public readonly newPassword: string
   ) {
     super(userId);
   }
