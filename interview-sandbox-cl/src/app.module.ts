@@ -6,11 +6,17 @@ import { PassportModule } from '@nestjs/passport';
 import { APP_FILTER } from '@nestjs/core';
 import { AuthController } from './presentation/controllers/auth.controller';
 import { HealthController } from './presentation/controllers/health.controller';
+import { ProductController } from './presentation/controllers/product.controller';
 import { RegisterUserUseCase } from './application/use-cases/register-user.use-case';
 import { LoginUserUseCase } from './application/use-cases/login-user.use-case';
+import { CreateProductUseCase } from './application/use-cases/create-product.use-case';
+import { GetProductUseCase } from './application/use-cases/get-product.use-case';
 import { UserRepositoryPort, USER_REPOSITORY_PORT } from './domain/ports/output/user.repository.port';
+import { PRODUCT_REPOSITORY_PORT } from './domain/ports/output/product.repository.port';
 import { SequelizeUserRepositoryAdapter } from './infrastructure/persistence/adapters/user.repository.adapter';
+import { SequelizeProductRepositoryAdapter } from './infrastructure/persistence/adapters/product.repository.adapter';
 import { UserModel } from './infrastructure/persistence/models/user.model';
+import { ProductModel } from './infrastructure/persistence/models/product.model';
 import { DomainExceptionFilter } from './common/filters/domain-exception.filter';
 import { JwtStrategy } from './infrastructure/auth/jwt.strategy';
 import { JwtService } from './infrastructure/auth/jwt.service';
@@ -66,7 +72,7 @@ import { MetricsService } from './infrastructure/monitoring/metrics.service';
         collate: 'utf8mb4_unicode_ci',
       },
     }),
-    SequelizeModule.forFeature([UserModel]),
+    SequelizeModule.forFeature([UserModel, ProductModel]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -80,14 +86,17 @@ import { MetricsService } from './infrastructure/monitoring/metrics.service';
       },
     }),
   ],
-  controllers: [AuthController, HealthController],
+  controllers: [AuthController, HealthController, ProductController],
   providers: [
     // Application Layer: Use Cases
     RegisterUserUseCase,
     LoginUserUseCase,
+    CreateProductUseCase,
+    GetProductUseCase,
 
     // Infrastructure Layer: Adapters
     SequelizeUserRepositoryAdapter,
+    SequelizeProductRepositoryAdapter,
     JwtStrategy,
     JwtService,
     HealthService,
@@ -107,6 +116,10 @@ import { MetricsService } from './infrastructure/monitoring/metrics.service';
       provide: USER_REPOSITORY_PORT,
       useClass: SequelizeUserRepositoryAdapter,
     },
+    {
+      provide: PRODUCT_REPOSITORY_PORT,
+      useClass: SequelizeProductRepositoryAdapter,
+    },
 
     // Exception Filters
     {
@@ -115,5 +128,5 @@ import { MetricsService } from './infrastructure/monitoring/metrics.service';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
 
