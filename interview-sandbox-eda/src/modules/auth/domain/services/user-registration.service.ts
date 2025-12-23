@@ -9,7 +9,7 @@ export class UserRegistrationService {
   constructor(
     @Inject('USER_REPOSITORY')
     private readonly userRepository: UserRepository,
-  ) {}
+  ) { }
 
   async registerUser(
     userId: string,
@@ -29,7 +29,7 @@ export class UserRegistrationService {
     }
 
     // Create aggregate - this will publish domain events
-    const user = UserAggregate.register(userId, emailVO, name, passwordVO, role);
+    const user = await UserAggregate.register(userId, emailVO, name, passwordVO, role);
 
     // Save aggregate to repository
     await this.userRepository.save(user);

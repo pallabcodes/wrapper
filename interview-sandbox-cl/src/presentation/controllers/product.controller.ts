@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CreateProductUseCase } from '../../application/use-cases/create-product.use-case';
 import { GetProductUseCase } from '../../application/use-cases/get-product.use-case';

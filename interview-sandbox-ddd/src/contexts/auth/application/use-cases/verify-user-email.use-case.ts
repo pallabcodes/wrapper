@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 import { UserRegistrationDomainService } from '../../domain/domain-services/user-registration.service';
 
@@ -11,7 +11,7 @@ export class VerifyUserEmailUseCase {
   constructor(
     private readonly userRegistrationDomainService: UserRegistrationDomainService,
     private readonly eventBus: EventBus,
-  ) {}
+  ) { }
 
   async execute(command: VerifyUserEmailCommand): Promise<void> {
     try {

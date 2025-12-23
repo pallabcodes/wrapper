@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { User } from '../entities/user.entity';
 import { Email } from '../value-objects/email.vo';
-import { Password } from '../value-objects/password.vo';
+
 import { UserId } from '../value-objects/user-id.vo';
 import { UserRegisteredEvent, UserEmailVerifiedEvent } from '../events/user-events';
 import type { UserRepositoryPort } from '../ports/output/user.repository.port';
@@ -15,7 +15,7 @@ import type { AuthConfig } from '../../infrastructure/config/auth.config';
 export class UserDomainService {
   constructor(
     private readonly userRepository: UserRepositoryPort,
-  ) {}
+  ) { }
 
   /**
    * Register a new user with business rule validation
@@ -58,7 +58,7 @@ export class UserDomainService {
   /**
    * Verify user email with business rules
    */
-  async verifyUserEmail(userId: UserId, otpCode: string): Promise<User> {
+  async verifyUserEmail(userId: UserId, _otpCode: string): Promise<User> {
     const user = await this.userRepository.findById(userId.value);
     if (!user) {
       throw new Error('User not found');
@@ -131,9 +131,9 @@ export class UserDomainService {
     // Domain-specific password rules
     const passwordValue = password;
     return passwordValue.length >= 8 &&
-           /[A-Z]/.test(passwordValue) &&
-           /[a-z]/.test(passwordValue) &&
-           /\d/.test(passwordValue);
+      /[A-Z]/.test(passwordValue) &&
+      /[a-z]/.test(passwordValue) &&
+      /\d/.test(passwordValue);
   }
 
   /**

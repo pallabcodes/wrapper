@@ -14,7 +14,7 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand>
     @Inject(EVENT_BUS_TOKEN)
     private readonly eventBus: any,
     private readonly publisher: EventPublisher,
-  ) {}
+  ) { }
 
   async execute(command: RegisterUserCommand): Promise<string> {
     // Validate input
@@ -29,7 +29,7 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand>
     }
 
     // Create aggregate
-    const user = UserAggregate.create(command.userId, email, command.name, password, role);
+    const user = await UserAggregate.create(command.userId, email, command.name, password, role);
 
     // Save to write repository (event sourcing)
     await this.writeRepository.save(user);

@@ -11,9 +11,9 @@ describe('UserAggregate', () => {
   });
 
   describe('create', () => {
-    it('should create a user aggregate with valid data', () => {
+    it('should create a user aggregate with valid data', async () => {
       const userId = 'user-123';
-      const user = UserAggregate.create(userId, validEmail, 'John Doe', validPassword, 'USER');
+      const user = await UserAggregate.create(userId, validEmail, 'John Doe', validPassword, 'USER');
 
       expect(user.getId()).toBe(userId);
       expect(user.email.getValue()).toBe('test@example.com');
@@ -22,8 +22,8 @@ describe('UserAggregate', () => {
       expect(user.isEmailVerified).toBe(false);
     });
 
-    it('should generate domain events when created', () => {
-      const user = UserAggregate.create('user-123', validEmail, 'John Doe', validPassword);
+    it('should generate domain events when created', async () => {
+      const user = await UserAggregate.create('user-123', validEmail, 'John Doe', validPassword);
 
       const events = user.getUncommittedChanges();
       expect(events).toHaveLength(1);
@@ -58,8 +58,8 @@ describe('UserAggregate', () => {
   describe('business logic', () => {
     let user: UserAggregate;
 
-    beforeEach(() => {
-      user = UserAggregate.create('user-123', validEmail, 'John Doe', validPassword, 'USER');
+    beforeEach(async () => {
+      user = await UserAggregate.create('user-123', validEmail, 'John Doe', validPassword, 'USER');
       user.markChangesAsCommitted(); // Clear initial events
     });
 
@@ -99,8 +99,8 @@ describe('UserAggregate', () => {
     });
 
     describe('canAccessResource', () => {
-      it('should allow admin to access any resource', () => {
-        const adminUser = UserAggregate.create('admin-123', validEmail, 'Admin', validPassword, 'ADMIN');
+      it('should allow admin to access any resource', async () => {
+        const adminUser = await UserAggregate.create('admin-123', validEmail, 'Admin', validPassword, 'ADMIN');
         expect(adminUser.canAccessResource('some-user-id')).toBe(true);
       });
 

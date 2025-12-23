@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -143,7 +143,8 @@ export class AuthService {
       }
 
       // Remove password from return value for security
-      const { password: _, ...result } = user;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _password, ...result } = user;
       this.logger.log(`User validated successfully: ${user.id}`);
       return result as IUser;
     } catch (error) {
@@ -245,7 +246,7 @@ export class AuthService {
 
     try {
       const payload = this.jwtService.verify<ITokenPayload>(refreshToken);
-      
+
       if (payload.type !== 'refresh') {
         this.logger.warn('Refresh token attempt with invalid token type');
         throw new UnauthorizedException('Invalid token type');

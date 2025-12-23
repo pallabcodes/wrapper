@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { IUserRepository } from '../../domain/repositories/user.repository.interface';
-import { UserAggregate } from '../../domain/aggregates/user.aggregate';
+
 
 export interface GetUserByIdQuery {
   userId: string;
@@ -21,7 +21,7 @@ export class GetUserByIdUseCase {
   constructor(
     @Inject('IUserRepository')
     private readonly userRepository: IUserRepository,
-  ) {}
+  ) { }
 
   async execute(query: GetUserByIdQuery): Promise<UserDto | null> {
     try {

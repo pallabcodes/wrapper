@@ -11,9 +11,9 @@ describe('UserAggregate (CQRS Write Model)', () => {
   });
 
   describe('create', () => {
-    it('should create a user aggregate with valid data', () => {
+    it('should create a user aggregate with valid data', async () => {
       const userId = 'user-123';
-      const user = UserAggregate.create(userId, validEmail, 'John Doe', validPassword, 'USER');
+      const user = await UserAggregate.create(userId, validEmail, 'John Doe', validPassword, 'USER');
 
       expect(user.getId()).toBe(userId);
       expect(user.email.getValue()).toBe('test@example.com');
@@ -22,8 +22,8 @@ describe('UserAggregate (CQRS Write Model)', () => {
       expect(user.isEmailVerified).toBe(false);
     });
 
-    it('should generate UserCreatedEvent', () => {
-      const user = UserAggregate.create('user-123', validEmail, 'John Doe', validPassword);
+    it('should generate UserCreatedEvent', async () => {
+      const user = await UserAggregate.create('user-123', validEmail, 'John Doe', validPassword);
 
       const events = user.getUncommittedChanges();
       expect(events).toHaveLength(1);
@@ -32,8 +32,8 @@ describe('UserAggregate (CQRS Write Model)', () => {
       expect(events[0].email).toBe('test@example.com');
     });
 
-    it('should default to USER role', () => {
-      const user = UserAggregate.create('user-123', validEmail, 'John Doe', validPassword);
+    it('should default to USER role', async () => {
+      const user = await UserAggregate.create('user-123', validEmail, 'John Doe', validPassword);
       expect(user.role).toBe('USER');
     });
   });
@@ -41,8 +41,8 @@ describe('UserAggregate (CQRS Write Model)', () => {
   describe('business logic', () => {
     let user: UserAggregate;
 
-    beforeEach(() => {
-      user = UserAggregate.create('user-123', validEmail, 'John Doe', validPassword, 'USER');
+    beforeEach(async () => {
+      user = await UserAggregate.create('user-123', validEmail, 'John Doe', validPassword, 'USER');
       user.markChangesAsCommitted(); // Clear initial events
     });
 
@@ -82,8 +82,8 @@ describe('UserAggregate (CQRS Write Model)', () => {
     });
 
     describe('canAccessResource', () => {
-      it('should allow admin to access any resource', () => {
-        const adminUser = UserAggregate.create('admin-123', validEmail, 'Admin', validPassword, 'ADMIN');
+      it('should allow admin to access any resource', async () => {
+        const adminUser = await UserAggregate.create('admin-123', validEmail, 'Admin', validPassword, 'ADMIN');
         expect(adminUser.canAccessResource('some-user-id')).toBe(true);
       });
 
@@ -108,16 +108,16 @@ describe('UserAggregate (CQRS Write Model)', () => {
   });
 
   describe('event sourcing', () => {
-    it('should track uncommitted changes', () => {
-      const user = UserAggregate.create('user-123', validEmail, 'John', validPassword);
+    it('should track uncommitted changes', async () => {
+      const user = await UserAggregate.create('user-123', validEmail, 'John', validPassword);
       expect(user.getUncommittedChanges()).toHaveLength(1);
 
       user.markChangesAsCommitted();
       expect(user.getUncommittedChanges()).toHaveLength(0);
     });
 
-    it('should load from event history', () => {
-      const user = UserAggregate.create('user-123', validEmail, 'John', validPassword);
+    it('should load from event history', async () => {
+      const user = await UserAggregate.create('user-123', validEmail, 'John', validPassword);
       user.markChangesAsCommitted();
 
       // Simulate loading from event store

@@ -11,9 +11,9 @@ describe('UserAggregate (EDA Domain)', () => {
   });
 
   describe('register', () => {
-    it('should create a user aggregate and publish UserRegisteredEvent', () => {
+    it('should create a user aggregate and publish UserRegisteredEvent', async () => {
       const userId = 'user-123';
-      const user = UserAggregate.register(userId, validEmail, 'John Doe', validPassword, 'USER');
+      const user = await UserAggregate.register(userId, validEmail, 'John Doe', validPassword, 'USER');
 
       expect(user.getId()).toBe(userId);
       expect(user.email.getValue()).toBe('test@example.com');
@@ -27,8 +27,8 @@ describe('UserAggregate (EDA Domain)', () => {
       expect(domainEvents[0].aggregateId).toBe(userId);
     });
 
-    it('should clear domain events after clearing', () => {
-      const user = UserAggregate.register('user-123', validEmail, 'John Doe', validPassword);
+    it('should clear domain events after clearing', async () => {
+      const user = await UserAggregate.register('user-123', validEmail, 'John Doe', validPassword);
 
       expect(user.getDomainEvents()).toHaveLength(1);
 
@@ -40,8 +40,8 @@ describe('UserAggregate (EDA Domain)', () => {
   describe('business logic', () => {
     let user: UserAggregate;
 
-    beforeEach(() => {
-      user = UserAggregate.register('user-123', validEmail, 'John Doe', validPassword, 'USER');
+    beforeEach(async () => {
+      user = await UserAggregate.register('user-123', validEmail, 'John Doe', validPassword, 'USER');
       user.clearDomainEvents(); // Clear initial events
     });
 
@@ -66,8 +66,8 @@ describe('UserAggregate (EDA Domain)', () => {
     });
 
     describe('canAccessResource', () => {
-      it('should allow admin to access any resource', () => {
-        const adminUser = UserAggregate.register('admin-123', validEmail, 'Admin', validPassword, 'ADMIN');
+      it('should allow admin to access any resource', async () => {
+        const adminUser = await UserAggregate.register('admin-123', validEmail, 'Admin', validPassword, 'ADMIN');
         expect(adminUser.canAccessResource('some-user-id')).toBe(true);
       });
 
@@ -82,8 +82,8 @@ describe('UserAggregate (EDA Domain)', () => {
   });
 
   describe('event-driven behavior', () => {
-    it('should maintain domain event history', () => {
-      const user = UserAggregate.register('user-123', validEmail, 'John', validPassword);
+    it('should maintain domain event history', async () => {
+      const user = await UserAggregate.register('user-123', validEmail, 'John', validPassword);
 
       // Should have registration event
       expect(user.getDomainEvents()).toHaveLength(1);
@@ -97,8 +97,8 @@ describe('UserAggregate (EDA Domain)', () => {
       expect(user.getDomainEvents()).toHaveLength(0);
     });
 
-    it('should publish events with correct metadata', () => {
-      const user = UserAggregate.register('user-123', validEmail, 'John', validPassword);
+    it('should publish events with correct metadata', async () => {
+      const user = await UserAggregate.register('user-123', validEmail, 'John', validPassword);
 
       const events = user.getDomainEvents();
       const registrationEvent = events[0];

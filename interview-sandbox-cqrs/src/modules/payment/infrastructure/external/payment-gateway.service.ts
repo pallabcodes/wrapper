@@ -18,7 +18,7 @@ export class PaymentGatewayService {
   /**
    * Process payment with circuit breaker protection
    */
-  async processPayment(amount: number, cardToken: string): Promise<any> {
+  async processPayment(amount: number, _cardToken: string): Promise<any> {
     return this.circuitBreaker.execute(
       async () => {
         // Simulate external payment API call

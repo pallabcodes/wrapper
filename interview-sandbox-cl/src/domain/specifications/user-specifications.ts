@@ -1,6 +1,6 @@
-import { BaseSpecification, Specification } from './specification';
+import { BaseSpecification } from './specification';
 import { User } from '../entities/user.entity';
-import { Email } from '../value-objects/email.vo';
+
 
 /**
  * User-specific specifications for complex queries

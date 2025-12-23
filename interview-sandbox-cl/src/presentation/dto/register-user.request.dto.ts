@@ -32,7 +32,7 @@ export class RegisterUserRequestDto {
   @MinLength(1, { message: 'Name cannot be empty' })
   @MaxLength(100, { message: 'Name cannot exceed 100 characters' })
   @Transform(({ value }) => value?.trim())
-  @Matches(/^[a-zA-Z\s\-'\.]+$/, {
+  @Matches(/^[a-zA-Z\s\-'.]+$/, {
     message: 'Name can only contain letters, spaces, hyphens, apostrophes, and periods'
   })
   name: string;

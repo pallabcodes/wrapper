@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 import { UserRegistrationDomainService } from '../../domain/domain-services/user-registration.service';
-import { UserAggregate } from '../../domain/aggregates/user.aggregate';
+
 import { IUserRepository } from '../../domain/repositories/user.repository.interface';
 import { UserRole } from '../../domain/entities/user.entity';
 
@@ -28,7 +28,7 @@ export class RegisterUserUseCase {
     @Inject('IUserRepository')
     private readonly userRepository: IUserRepository,
     private readonly eventBus: EventBus,
-  ) {}
+  ) { }
 
   async execute(command: RegisterUserCommand): Promise<RegisterUserResult> {
     try {

@@ -1,1 +1,0 @@
-export declare function from<T>(iterable: AsyncIterable<T> | Iterable<T>): NodeJS.ReadableStream;

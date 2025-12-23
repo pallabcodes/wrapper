@@ -1,5 +1,5 @@
 import { UserAggregate } from '../aggregates/user.aggregate';
-import { Email } from '../value-objects/email.vo';
+
 
 export interface UserRepository {
   save(user: UserAggregate): Promise<void>;

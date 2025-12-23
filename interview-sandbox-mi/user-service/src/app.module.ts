@@ -4,8 +4,8 @@ import { UserController } from './presentation/controllers/user.controller';
 import { UserService } from './application/services/user.service';
 import { UserRepositoryAdapter } from './infrastructure/persistence/user.repository.adapter';
 import { RedisEventSubscriberAdapter } from './infrastructure/messaging/redis.event.subscriber.adapter';
-import { UserRepositoryPort, USER_REPOSITORY_PORT } from './domain/ports/user.repository.port';
-import { EventSubscriberPort, EVENT_SUBSCRIBER_PORT } from './domain/ports/event.subscriber.port';
+import { USER_REPOSITORY_PORT } from './domain/ports/user.repository.port';
+import { EVENT_SUBSCRIBER_PORT } from './domain/ports/event.subscriber.port';
 
 @Module({
   imports: [ConfigModule.forRoot()],
@@ -23,5 +23,5 @@ import { EventSubscriberPort, EVENT_SUBSCRIBER_PORT } from './domain/ports/event
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
 

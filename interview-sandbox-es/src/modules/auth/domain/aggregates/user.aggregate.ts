@@ -1,6 +1,6 @@
-import { AggregateRoot } from '../../../../../shared/domain/aggregate-root';
-import { UserCreatedEvent } from '../../../../../events/auth/user-created.event';
-import { UserEmailChangedEvent } from '../../../../../events/auth/user-email-changed.event';
+import { AggregateRoot } from '../../../../shared/domain/aggregate-root';
+import { UserCreatedEvent } from '../../../../events/auth/user-created.event';
+import { UserEmailChangedEvent } from '../../../../events/auth/user-email-changed.event';
 import { Email } from '../value-objects/email.vo';
 import { Password } from '../value-objects/password.vo';
 
@@ -34,18 +34,19 @@ export class UserAggregate extends AggregateRoot {
   }
 
   // Factory method - static creation
-  static create(
+  static async create(
     id: string,
     email: Email,
     name: string,
     password: Password,
     role: UserRole = 'USER',
-  ): UserAggregate {
-    const user = new UserAggregate(id, email, name, password.hash(), role);
+  ): Promise<UserAggregate> {
+    const passwordHash = await password.hash();
+    const user = new UserAggregate(id, email, name, passwordHash, role);
 
     // Apply domain event
     user.applyChange(
-      new UserCreatedEvent(id, email.getValue(), name, password.hash(), role)
+      new UserCreatedEvent(id, email.getValue(), name, passwordHash, role)
     );
 
     return user;
@@ -89,7 +90,7 @@ export class UserAggregate extends AggregateRoot {
     );
   }
 
-  verifyPassword(password: Password): boolean {
+  async verifyPassword(password: Password): Promise<boolean> {
     return password.compare(this._passwordHash);
   }
 
@@ -102,7 +103,7 @@ export class UserAggregate extends AggregateRoot {
   }
 
   // Event application
-  private applyEvent(event: any): void {
+  protected applyEvent(event: any): void {
     switch (event.eventType) {
       case 'UserEmailChangedEvent':
         this._email = Email.create(event.newEmail);

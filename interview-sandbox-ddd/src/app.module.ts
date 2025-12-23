@@ -27,7 +27,7 @@ import { AuthModule } from './contexts/auth/auth.module';
     {
       provide: 'DOMAIN_SERVICE',
       useClass: class DomainService {
-        validateBusinessRule(data: any): boolean {
+        validateBusinessRule(_data: any): boolean {
           // Domain validation logic
           return true;
         }
@@ -47,12 +47,12 @@ import { AuthModule } from './contexts/auth/auth.module';
     // useFactory: Create aggregate repository based on context
     {
       provide: 'AGGREGATE_REPOSITORY_FACTORY',
-      useFactory: (config: any) => {
+      useFactory: (_config: any) => {
         return {
           create: (context: string, aggregateType: string) => {
             console.log(`Creating repository for ${aggregateType} in ${context} context`);
             return {
-              save: async (aggregate: any) => {
+              save: async (_aggregate: any) => {
                 console.log(`Saving ${aggregateType} aggregate`);
               },
               findById: async (id: string) => {
@@ -79,5 +79,5 @@ import { AuthModule } from './contexts/auth/auth.module';
     'AGGREGATE_REPOSITORY_FACTORY',
   ],
 })
-export class AppModule {}
+export class AppModule { }
 

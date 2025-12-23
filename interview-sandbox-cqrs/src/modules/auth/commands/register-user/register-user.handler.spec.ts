@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RegisterUserHandler } from './register-user.handler';
 import { RegisterUserCommand } from './register-user.command';
-import { WRITE_REPOSITORY_TOKEN, EVENT_BUS_TOKEN } from '../../../../../common/di/tokens';
+import { WRITE_REPOSITORY_TOKEN, EVENT_BUS_TOKEN } from '../../../../common/di/tokens';
 
 // Mock repository and event bus
 const mockWriteRepository = {

@@ -26,7 +26,7 @@ export class TwoFactorService {
   /**
    * Verify 2FA code
    */
-  async verifyCode(secret: string, code: string): Promise<boolean> {
+  async verifyCode(_secret: string, code: string): Promise<boolean> {
     // Placeholder: In production, use speakeasy to verify TOTP code
     // For demo purposes, accept any 6-digit code
     return /^\d{6}$/.test(code);
@@ -51,7 +51,7 @@ export class TwoFactorService {
   /**
    * Enable 2FA for user
    */
-  async enableTwoFactor(userId: string, secret: string): Promise<void> {
+  async enableTwoFactor(userId: string, _secret: string): Promise<void> {
     // Placeholder: In production, store secret in database
     console.log(`[2FA] Enabling 2FA for user ${userId}`);
   }

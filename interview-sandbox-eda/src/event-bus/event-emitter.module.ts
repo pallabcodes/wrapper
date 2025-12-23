@@ -20,9 +20,9 @@ import { Module, Injectable, OnModuleInit } from '@nestjs/common';
  */
 @Injectable()
 export class DomainEventEmitter {
-  private listeners = new Map<string, Function[]>();
+  private listeners = new Map<string, ((...args: any[]) => any)[]>();
 
-  constructor() {}
+  constructor() { }
 
   /**
    * Emit domain event
@@ -100,7 +100,7 @@ export class UserRegisteredEvent {
     public readonly userId: string,
     public readonly email: string,
     public readonly timestamp: Date = new Date(),
-  ) {}
+  ) { }
 }
 
 export class PaymentProcessedEvent {
@@ -109,7 +109,7 @@ export class PaymentProcessedEvent {
     public readonly amount: number,
     public readonly status: string,
     public readonly timestamp: Date = new Date(),
-  ) {}
+  ) { }
 }
 
 /**
@@ -158,11 +158,11 @@ export class PaymentEventHandler {
  */
 @Injectable()
 export class UserService {
-  constructor(private readonly eventEmitter: DomainEventEmitter) {}
+  constructor(private readonly eventEmitter: DomainEventEmitter) { }
 
-  async registerUser(email: string, password: string): Promise<string> {
+  async registerUser(email: string, _password: string): Promise<string> {
     const userId = `user_${Date.now()}`;
-    
+
     // Business logic here
     console.log(`Registering user: ${email}`);
 
@@ -186,7 +186,7 @@ export class UserService {
   exports: [DomainEventEmitter, UserService],
 })
 export class EventEmitterModule implements OnModuleInit {
-  constructor(private readonly eventEmitter: DomainEventEmitter) {}
+  constructor(private readonly eventEmitter: DomainEventEmitter) { }
 
   onModuleInit() {
     // Register global event listeners if needed

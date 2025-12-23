@@ -25,8 +25,8 @@ import { UserRepositoryAdapter } from './infrastructure/persistence/user.reposit
 import { RedisEventPublisherAdapter } from './infrastructure/messaging/redis.event.publisher.adapter';
 
 // Domain Layer Ports
-import { UserRepositoryPort, USER_REPOSITORY_PORT } from './domain/ports/user.repository.port';
-import { EventPublisherPort, EVENT_PUBLISHER_PORT } from './domain/ports/event.publisher.port';
+import { USER_REPOSITORY_PORT } from './domain/ports/user.repository.port';
+import { EVENT_PUBLISHER_PORT } from './domain/ports/event.publisher.port';
 
 @Module({
   imports: [
@@ -66,5 +66,5 @@ import { EventPublisherPort, EVENT_PUBLISHER_PORT } from './domain/ports/event.p
     EVENT_PUBLISHER_PORT,
   ],
 })
-export class AppModule {}
+export class AppModule { }
 

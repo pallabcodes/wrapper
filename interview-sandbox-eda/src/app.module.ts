@@ -41,9 +41,9 @@ import { NotificationLazyModule } from './modules/notification/notification-lazy
     {
       provide: 'EVENT_HANDLER_REGISTRY',
       useClass: class EventHandlerRegistry {
-        private handlers = new Map<string, Function[]>();
+        private handlers = new Map<string, ((...args: any[]) => any)[]>();
 
-        register(eventType: string, handler: Function): void {
+        register(eventType: string, handler: (...args: any[]) => any): void {
           if (!this.handlers.has(eventType)) {
             this.handlers.set(eventType, []);
           }
@@ -51,11 +51,11 @@ import { NotificationLazyModule } from './modules/notification/notification-lazy
           console.log(`📝 Registered handler for event: ${eventType}`);
         }
 
-        getHandlers(eventType: string): Function[] {
+        getHandlers(eventType: string): ((...args: any[]) => any)[] {
           return this.handlers.get(eventType) || [];
         }
 
-        getAllHandlers(): Map<string, Function[]> {
+        getAllHandlers(): Map<string, ((...args: any[]) => any)[]> {
           return new Map(this.handlers);
         }
       },
@@ -77,25 +77,22 @@ import { NotificationLazyModule } from './modules/notification/notification-lazy
     // Domain Event Publisher
     {
       provide: 'DOMAIN_EVENT_PUBLISHER',
-      useFactory: (eventEmitter: any, config: any) => {
+      useFactory: (eventEmitter: any, _config: any) => {
+        const publish = async (event: any) => {
+          console.log(`📡 Publishing domain event: ${event.eventType}`, {
+            aggregateId: event.aggregateId,
+            timestamp: event.timestamp,
+          });
+
+          // Publish to event emitter
+          eventEmitter.emit(event.eventType, event);
+        };
+
         return {
-          publish: async (event: any) => {
-            console.log(`📡 Publishing domain event: ${event.eventType}`, {
-              aggregateId: event.aggregateId,
-              timestamp: event.timestamp,
-            });
-
-            // Publish to event emitter
-            eventEmitter.emit(event.eventType, event);
-
-            // In production, this could also publish to:
-            // - Message queues (RabbitMQ, Kafka)
-            // - Event streams
-            // - External event buses
-          },
+          publish,
           publishAll: async (events: any[]) => {
             for (const event of events) {
-              await this.publish(event);
+              await publish(event);
             }
           },
         };
@@ -113,7 +110,7 @@ import { NotificationLazyModule } from './modules/notification/notification-lazy
               console.log(`[EventBus] Emitting ${event}:`, data);
             }
           },
-          on: (event: string, handler: Function) => {
+          on: (event: string, _handler: (...args: any[]) => any) => {
             if (config.verbose) {
               console.log(`[EventBus] Registered listener for ${event}`);
             }
@@ -156,5 +153,5 @@ import { NotificationLazyModule } from './modules/notification/notification-lazy
     'EVENT_STORE',
   ],
 })
-export class AppModule {}
+export class AppModule { }
 

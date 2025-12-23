@@ -1,25 +1,27 @@
-export abstract class AggregateRoot {
-  protected _changes: any[] = [];
+import { AggregateRoot as NestAggregateRoot } from '@nestjs/cqrs';
 
-  constructor(protected readonly id: string) {}
+export abstract class AggregateRoot extends NestAggregateRoot {
+  constructor(protected readonly id: string) {
+    super();
+  }
 
   getId(): string {
     return this.id;
   }
 
   protected applyChange(event: any): void {
-    this._changes.push(event);
+    this.apply(event);
     this.applyEvent(event);
   }
 
   protected abstract applyEvent(event: any): void;
 
   getUncommittedChanges(): any[] {
-    return [...this._changes];
+    return this.getUncommittedEvents();
   }
 
   markChangesAsCommitted(): void {
-    this._changes = [];
+    this.uncommit();
   }
 
   loadFromHistory(events: any[]): void {

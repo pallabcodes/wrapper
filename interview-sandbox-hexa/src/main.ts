@@ -3,7 +3,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
-import { ConfigService } from '@nestjs/config';
+
 
 /**
  * Bootstrap Application
@@ -16,7 +16,7 @@ import { ConfigService } from '@nestjs/config';
  */
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  
+
   try {
     const app = await NestFactory.create<NestFastifyApplication>(
       AppModule,
@@ -25,7 +25,7 @@ async function bootstrap() {
         trustProxy: true,
       }),
     );
-    const configService = app.get(ConfigService);
+
 
     // Global validation pipe with transform
     app.useGlobalPipes(

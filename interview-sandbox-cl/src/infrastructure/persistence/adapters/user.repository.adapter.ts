@@ -13,7 +13,7 @@ export class SequelizeUserRepositoryAdapter implements UserRepositoryPort {
   constructor(
     @InjectModel(UserModel)
     private readonly userModel: typeof UserModel,
-  ) {}
+  ) { }
 
   async findById(id: string): Promise<User | null> {
     const model = await this.userModel.findByPk(id);
@@ -99,19 +99,19 @@ export class SequelizeUserRepositoryAdapter implements UserRepositoryPort {
     return User.reconstitute(props);
   }
 
-  async findOne(spec: Specification<User>): Promise<User | null> {
+  async findOne(_spec: Specification<User>): Promise<User | null> {
     throw new Error('findOne by specification not implemented');
   }
 
-  async findMany(spec: Specification<User>): Promise<User[]> {
+  async findMany(_spec: Specification<User>): Promise<User[]> {
     throw new Error('findMany by specification not implemented');
   }
 
-  async count(spec: Specification<User>): Promise<number> {
+  async count(_spec: Specification<User>): Promise<number> {
     throw new Error('count by specification not implemented');
   }
 
-  async exists(spec: Specification<User>): Promise<boolean> {
+  async exists(_spec: Specification<User>): Promise<boolean> {
     throw new Error('exists by specification not implemented');
   }
 

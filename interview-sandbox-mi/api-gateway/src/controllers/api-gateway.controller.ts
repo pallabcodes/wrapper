@@ -1,9 +1,9 @@
-import { Controller, Post, Get, Body, Param, Req } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param } from '@nestjs/common';
 import { ApiGatewayService } from '../services/api-gateway.service';
 
 @Controller()
 export class ApiGatewayController {
-  constructor(private readonly gatewayService: ApiGatewayService) {}
+  constructor(private readonly gatewayService: ApiGatewayService) { }
 
   // Auth routes
   @Post('auth/register')

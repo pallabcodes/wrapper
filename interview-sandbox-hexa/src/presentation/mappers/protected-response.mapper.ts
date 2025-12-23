@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BaseResponseMapper, ApiResponse, PaginatedResponse } from './base-response.mapper';
+import { BaseResponseMapper, ApiResponse } from './base-response.mapper';
 
 /**
  * Protected Response DTOs

@@ -19,9 +19,9 @@ import { LoggerService, UserService } from '../../infrastructure/external/logger
     {
       provide: CACHE_TOKEN,
       useValue: {
-        get: async (key: string) => null,
-        set: async (key: string, value: any) => {},
-        delete: async (key: string) => {},
+        get: async (_key: string) => null,
+        set: async (_key: string, _value: any) => { },
+        delete: async (_key: string) => { },
       },
     },
     // Using Symbol token with useFactory (for dynamic creation)
@@ -29,7 +29,7 @@ import { LoggerService, UserService } from '../../infrastructure/external/logger
       provide: EMAIL_TOKEN,
       useFactory: () => {
         return {
-          send: async (to: string, subject: string, body: string) => {
+          send: async (to: string, subject: string, _body: string) => {
             console.log(`Sending email to ${to}: ${subject}`);
           },
         };
@@ -40,5 +40,5 @@ import { LoggerService, UserService } from '../../infrastructure/external/logger
   ],
   exports: [LOGGER_TOKEN, CACHE_TOKEN, EMAIL_TOKEN, UserService],
 })
-export class DIModule {}
+export class DIModule { }
 

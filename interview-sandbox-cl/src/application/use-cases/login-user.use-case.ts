@@ -5,7 +5,6 @@ import type { UserRepositoryPort } from '@domain/ports/output/user.repository.po
 import { USER_REPOSITORY_PORT } from '@domain/ports/output/user.repository.port';
 import { InvalidCredentialsException } from '@domain/exceptions/invalid-credentials.exception';
 import { LoginUserDto } from '../dto/login-user.dto';
-import { UserDto } from '../dto/user.dto';
 import { AuthResponseDto } from '../dto/auth-response.dto';
 import { UserMapper } from '../mappers/user.mapper';
 import { JwtService } from '../../infrastructure/auth/jwt.service';

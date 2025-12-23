@@ -34,7 +34,7 @@ export class UserRegisteredHandler {
     // Implementation would integrate with email service
   }
 
-  private async createWelcomeNotification(userId: string, name: string): Promise<void> {
+  private async createWelcomeNotification(userId: string, _name: string): Promise<void> {
     console.log(`🔔 Creating welcome notification for user ${userId}`);
     // Implementation would create notification record
   }

@@ -58,8 +58,8 @@ export class CacheModule extends ConfigurableModuleClass {
             if (!config.enabled) {
               return {
                 get: async () => null,
-                set: async () => {},
-                delete: async () => {},
+                set: async () => { },
+                delete: async () => { },
               };
             }
             // Implement cache service based on config
@@ -68,7 +68,7 @@ export class CacheModule extends ConfigurableModuleClass {
                 console.log(`Cache get: ${key} (TTL: ${config.ttl}s)`);
                 return null;
               },
-              set: async (key: string, value: any) => {
+              set: async (key: string, _value: any) => {
                 console.log(`Cache set: ${key} (Strategy: ${config.strategy})`);
               },
               delete: async (key: string) => {

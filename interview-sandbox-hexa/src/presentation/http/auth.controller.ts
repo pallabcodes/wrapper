@@ -19,7 +19,6 @@ import { AuthGuard } from '@nestjs/passport';
 import { RegisterDto } from '../../infrastructure/persistence/auth/dto/register.dto';
 import { LoginDto } from '../../infrastructure/persistence/auth/dto/login.dto';
 import { RefreshTokenDto } from '../../infrastructure/persistence/auth/dto/refresh-token.dto';
-import { AuthResponseDto } from '../../infrastructure/persistence/auth/dto/auth-response.dto';
 import { TwoFactorVerifyDto } from '../../infrastructure/persistence/auth/dto/two-factor.dto';
 import { IAuthenticatedRequest } from '../../infrastructure/persistence/auth/interfaces/auth.interface';
 import { AppLoggerService } from '../../common/logger/logger.service';
@@ -37,6 +36,10 @@ import { AuthResponseMapper } from '../mappers/auth-response.mapper';
  *
  * @class AuthController
  */
+import { TwoFactorService } from '../../infrastructure/persistence/auth/two-factor.service';
+import { User } from '../../domain/entities/user.entity';
+import { Email } from '../../domain/value-objects/email.vo';
+
 @Controller('auth')
 export class AuthController {
   private readonly logger: AppLoggerService;
@@ -44,6 +47,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService, // Application service
     private readonly responseMapper: AuthResponseMapper,
+    private readonly twoFactorService: TwoFactorService,
   ) {
     this.logger = new AppLoggerService('AuthController');
   }
@@ -74,7 +78,12 @@ export class AuthController {
 
       this.logger.log(`User registered successfully: ${result.user.id}`);
       const requestId = req.headers['x-request-id'] as string | undefined;
-      return this.responseMapper.toRegisterResponse(result.user, result, requestId);
+      const userDto = {
+        id: result.user.id,
+        email: result.user.email.getValue(),
+        roles: [result.user.role],
+      };
+      return this.responseMapper.toRegisterResponse(userDto, result, requestId);
     } catch (error) {
       this.logger.error(`Registration failed for: ${registerDto.email}`, error instanceof Error ? error.stack : String(error));
       throw error;
@@ -105,8 +114,13 @@ export class AuthController {
 
       this.logger.log(`Login successful for user: ${result.user.id}`);
       const requestId = req.headers['x-request-id'] as string | undefined;
-      return this.responseMapper.toLoginResponse(result.user, result, requestId);
-    } catch (error) {
+      const userDto = {
+        id: result.user.id,
+        email: result.user.email.getValue(),
+        roles: [result.user.role],
+      };
+      return this.responseMapper.toLoginResponse(userDto, result, requestId);
+    } catch {
       this.logger.warn(`Failed login attempt for: ${loginDto.email}`);
       throw new UnauthorizedException('Invalid email or password');
     }
@@ -182,8 +196,7 @@ export class AuthController {
       const userProfile = {
         id: user.id,
         email: user.email.getValue(),
-        name: user.name,
-        role: user.role,
+        roles: [user.role],
         isEmailVerified: user.isEmailVerified,
       };
 
@@ -262,16 +275,28 @@ export class AuthController {
 
     try {
       // In production, create or find user by googleId
-      const user = {
-        id: googleUser.googleId,
-        email: googleUser.email,
-        roles: ['user'] as string[],
-      };
+      // Create a temporary User entity for token generation (simplified)
+      // Note: In a real app, you would use a use case to find/create the user properly
+      const email = Email.create(googleUser.email);
+      const user = new User(
+        googleUser.googleId,
+        email,
+        googleUser.name || 'Google User',
+        'oauth_placeholder_hash',
+        'USER'
+      );
 
       const tokens = await this.authService.generateTokens(user);
       this.logger.log(`Google OAuth successful for user: ${user.id}`);
       const requestId = req.headers['x-request-id'] as string | undefined;
-      const response = this.responseMapper.toGoogleOAuthResponse(user, tokens, requestId);
+
+      const userDto = {
+        id: user.id,
+        email: user.email.getValue(),
+        roles: [user.role],
+      };
+
+      const response = this.responseMapper.toGoogleOAuthResponse(userDto, tokens, requestId);
       res.json(response);
     } catch (error) {
       this.logger.error('Google OAuth callback failed', error instanceof Error ? error.stack : String(error));

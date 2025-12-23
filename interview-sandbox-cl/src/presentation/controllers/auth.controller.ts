@@ -7,16 +7,13 @@ import { LoginUserRequestDto } from '../dto/login-user.request.dto';
 import { UserResponseDto } from '../dto/user.response.dto';
 import { AuthResponseDto } from '../dto/auth.response.dto';
 import { AuthMapper } from '../mappers/auth.mapper';
-import { UserAlreadyExistsException } from '@domain/exceptions/user-already-exists.exception';
-import { InvalidCredentialsException } from '@domain/exceptions/invalid-credentials.exception';
-
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly registerUserUseCase: RegisterUserUseCase,
     private readonly loginUserUseCase: LoginUserUseCase,
-  ) {}
+  ) { }
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)

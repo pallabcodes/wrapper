@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventBus } from '@nestjs/cqrs';
 import { RegisterUserUseCase } from './register-user.use-case';
-import { IUserRepository } from '../../domain/ports/output/user-repository.port';
+
 
 // Mock repository
 const mockUserRepository = {
@@ -20,6 +20,14 @@ const mockEventBus = {
 
 describe('RegisterUserUseCase (Hexagonal Architecture)', () => {
   let useCase: RegisterUserUseCase;
+
+  const validDto = {
+    userId: 'user-123',
+    email: 'john.doe@example.com',
+    name: 'John Doe',
+    password: 'ValidPass123',
+    role: 'USER' as const,
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -43,13 +51,7 @@ describe('RegisterUserUseCase (Hexagonal Architecture)', () => {
   });
 
   describe('execute', () => {
-    const validDto = {
-      userId: 'user-123',
-      email: 'john.doe@example.com',
-      name: 'John Doe',
-      password: 'ValidPass123',
-      role: 'USER' as const,
-    };
+
 
     beforeEach(() => {
       mockUserRepository.findByEmail.mockResolvedValue(null);
@@ -61,10 +63,10 @@ describe('RegisterUserUseCase (Hexagonal Architecture)', () => {
       const result = await useCase.execute(validDto);
 
       expect(result).toBeDefined();
-      expect(result.userId).toBe(validDto.userId);
-      expect(result.email).toBe(validDto.email);
-      expect(result.name).toBe(validDto.name);
-      expect(result.role).toBe(validDto.role);
+      expect(result.user.id).toBe(validDto.userId);
+      expect(result.user.email.getValue()).toBe(validDto.email);
+      expect(result.user.name).toBe(validDto.name);
+      expect(result.user.role).toBe(validDto.role);
 
       expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(validDto.email);
       expect(mockUserRepository.save).toHaveBeenCalled();

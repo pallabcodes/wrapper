@@ -1,6 +1,5 @@
 import { UserId } from '../../value-objects/user-id.vo';
 import { Email } from '../../value-objects/email.vo';
-import { Password } from '../../value-objects/password.vo';
 
 /**
  * Command objects for CQRS write operations
@@ -8,7 +7,7 @@ import { Password } from '../../value-objects/password.vo';
  */
 
 export abstract class UserCommand {
-  constructor(public readonly userId?: UserId) {}
+  constructor(public readonly userId?: UserId) { }
 }
 
 // Write Commands (Commands)

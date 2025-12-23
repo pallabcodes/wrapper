@@ -32,13 +32,14 @@ export class User {
   }
 
   // Factory method
-  static create(
+  // Factory method
+  static async create(
     id: string,
     email: Email,
     name: string,
     password: Password,
     role: UserRole = 'USER',
-  ): User {
+  ): Promise<User> {
     const passwordHash = await password.hash();
     return new User(id, email, name, passwordHash, role);
   }
@@ -54,7 +55,7 @@ export class User {
     this._updatedAt = new Date();
   }
 
-  changePassword(newPassword: Password): void {
+  async changePassword(newPassword: Password): Promise<void> {
     this._passwordHash = await newPassword.hash();
     this._updatedAt = new Date();
   }

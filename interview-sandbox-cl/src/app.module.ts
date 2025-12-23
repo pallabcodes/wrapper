@@ -11,7 +11,7 @@ import { RegisterUserUseCase } from './application/use-cases/register-user.use-c
 import { LoginUserUseCase } from './application/use-cases/login-user.use-case';
 import { CreateProductUseCase } from './application/use-cases/create-product.use-case';
 import { GetProductUseCase } from './application/use-cases/get-product.use-case';
-import { UserRepositoryPort, USER_REPOSITORY_PORT } from './domain/ports/output/user.repository.port';
+import { USER_REPOSITORY_PORT } from './domain/ports/output/user.repository.port';
 import { PRODUCT_REPOSITORY_PORT } from './domain/ports/output/product.repository.port';
 import { SequelizeUserRepositoryAdapter } from './infrastructure/persistence/adapters/user.repository.adapter';
 import { SequelizeProductRepositoryAdapter } from './infrastructure/persistence/adapters/product.repository.adapter';

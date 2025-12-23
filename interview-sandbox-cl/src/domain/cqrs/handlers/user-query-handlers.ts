@@ -23,7 +23,7 @@ import type { UserRepositoryPort } from '../../ports/output/user.repository.port
 
 @Injectable()
 export class GetUserByIdQueryHandler {
-  constructor(private readonly userRepository: UserRepositoryPort) {}
+  constructor(private readonly userRepository: UserRepositoryPort) { }
 
   async execute(query: GetUserByIdQuery): Promise<User | null> {
     return await this.userRepository.findById(query.userId);
@@ -32,7 +32,7 @@ export class GetUserByIdQueryHandler {
 
 @Injectable()
 export class GetUserByEmailQueryHandler {
-  constructor(private readonly userRepository: UserRepositoryPort) {}
+  constructor(private readonly userRepository: UserRepositoryPort) { }
 
   async execute(query: GetUserByEmailQuery): Promise<User | null> {
     return await this.userRepository.findByEmail(query.email);
@@ -41,7 +41,7 @@ export class GetUserByEmailQueryHandler {
 
 @Injectable()
 export class GetUsersByRoleQueryHandler {
-  constructor(private readonly userRepository: UserRepositoryPort) {}
+  constructor(private readonly userRepository: UserRepositoryPort) { }
 
   async execute(query: GetUsersByRoleQuery): Promise<User[]> {
     const specification = new UsersByRoleSpecification(query.role);
@@ -51,16 +51,16 @@ export class GetUsersByRoleQueryHandler {
 
 @Injectable()
 export class GetActiveUsersQueryHandler {
-  constructor(private readonly userRepository: UserRepositoryPort) {}
+  constructor(private readonly userRepository: UserRepositoryPort) { }
 
-  async execute(query: GetActiveUsersQuery): Promise<User[]> {
+  async execute(_query: GetActiveUsersQuery): Promise<User[]> {
     return await this.userRepository.findActiveUsers();
   }
 }
 
 @Injectable()
 export class GetRecentUsersQueryHandler {
-  constructor(private readonly userRepository: UserRepositoryPort) {}
+  constructor(private readonly userRepository: UserRepositoryPort) { }
 
   async execute(query: GetRecentUsersQuery): Promise<User[]> {
     const specification = new UsersCreatedWithinLastDaysSpecification(query.days);
@@ -70,7 +70,7 @@ export class GetRecentUsersQueryHandler {
 
 @Injectable()
 export class SearchUsersQueryHandler {
-  constructor(private readonly userRepository: UserRepositoryPort) {}
+  constructor(private readonly userRepository: UserRepositoryPort) { }
 
   async execute(query: SearchUsersQuery): Promise<User[]> {
     // Build complex specification based on filters

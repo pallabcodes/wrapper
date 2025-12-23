@@ -34,14 +34,15 @@ export class UserAggregate extends AggregateRoot {
   }
 
   // Factory method - static creation
-  static register(
+  static async register(
     id: string,
     email: Email,
     name: string,
     password: Password,
     role: UserRole = 'USER',
-  ): UserAggregate {
-    const user = new UserAggregate(id, email, name, password.hash(), role);
+  ): Promise<UserAggregate> {
+    const passwordHash = await password.hash();
+    const user = new UserAggregate(id, email, name, passwordHash, role);
 
     // Publish domain event
     user.addDomainEvent(

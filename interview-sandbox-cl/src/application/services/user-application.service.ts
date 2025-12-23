@@ -1,8 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { User } from '@domain/entities/user.entity';
 import { Email } from '@domain/value-objects/email.vo';
-import { Password } from '@domain/value-objects/password.vo';
-import { UserId } from '@domain/value-objects/user-id.vo';
 
 // CQRS imports
 import { RegisterUserCommand } from '@domain/cqrs/commands/user-commands';
@@ -34,7 +32,7 @@ export class UserApplicationService {
     private readonly getUserByEmailQueryHandler: GetUserByEmailQueryHandler,
     @Inject(DomainEventDispatcher)
     private readonly eventDispatcher: DomainEventDispatcher,
-  ) {}
+  ) { }
 
   /**
    * Register User Use Case - Full CQRS orchestration

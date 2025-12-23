@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Worker } from 'worker_threads';
 import * as path from 'path';
+import * as os from 'os';
 
 /**
  * Worker Pool Service
@@ -21,7 +22,7 @@ export class WorkerPoolService {
 
   constructor() {
     // Use number of CPU cores, but limit to reasonable number
-    this.maxWorkers = Math.min(require('os').cpus().length, 4);
+    this.maxWorkers = Math.min(os.cpus().length, 4);
   }
 
   /**

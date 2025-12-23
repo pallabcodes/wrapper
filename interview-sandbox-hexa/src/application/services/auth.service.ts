@@ -1,5 +1,7 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { RegisterUserUseCase, LoginUserUseCase, GetUserByIdUseCase } from '../use-cases';
+import { Injectable } from '@nestjs/common';
+import { RegisterUserUseCase } from '../use-cases/register-user.use-case';
+import { LoginUserUseCase } from '../use-cases/login-user.use-case';
+import { GetUserByIdUseCase } from '../use-cases/get-user-by-id.use-case';
 import { RegisterUserDto, LoginUserDto, AuthResult } from '../../domain/ports/input/auth-use-cases.port';
 import { User } from '../../domain/entities/user.entity';
 
@@ -9,7 +11,7 @@ export class AuthService {
     private readonly registerUserUseCase: RegisterUserUseCase,
     private readonly loginUserUseCase: LoginUserUseCase,
     private readonly getUserByIdUseCase: GetUserByIdUseCase,
-  ) {}
+  ) { }
 
   async register(dto: RegisterUserDto): Promise<AuthResult> {
     return this.registerUserUseCase.execute(dto);
@@ -53,7 +55,7 @@ export class AuthService {
   }
 
   // Simplified token invalidation - in real app, use token blacklist
-  async invalidateTokens(accessToken: string, refreshToken: string): Promise<void> {
+  async invalidateTokens(accessToken: string, _refreshToken: string): Promise<void> {
     console.log(`Invalidating tokens for user: ${accessToken.split('_')[1]}`);
     // In real implementation, add tokens to blacklist
   }

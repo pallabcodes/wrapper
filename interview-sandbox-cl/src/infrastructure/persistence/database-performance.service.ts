@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/sequelize';
-import { Sequelize, QueryTypes } from 'sequelize';
+import { Sequelize } from 'sequelize';
 import { CustomLoggerService } from '../logging/logger.service';
 
 @Injectable()
@@ -9,7 +9,7 @@ export class DatabasePerformanceService {
     @InjectConnection()
     private readonly sequelize: Sequelize,
     private readonly logger: CustomLoggerService,
-  ) {}
+  ) { }
 
   async logSlowQueries(): Promise<void> {
     // Enable query logging for performance monitoring
@@ -47,19 +47,19 @@ export class DatabasePerformanceService {
 
     this.logger.debug(
       `Database Connection Pool Stats ${JSON.stringify({
-      ...poolStats,
-      timestamp: new Date().toISOString(),
+        ...poolStats,
+        timestamp: new Date().toISOString(),
       })}`,
       'DatabasePerformance',
     );
 
     if (poolStats.size && poolStats.using !== undefined) {
-    const utilizationRate = poolStats.using / poolStats.size;
-    if (utilizationRate > 0.8) {
+      const utilizationRate = poolStats.using / poolStats.size;
+      if (utilizationRate > 0.8) {
         this.logger.warn(
           `High database connection pool utilization detected ${JSON.stringify({
-        utilizationRate: `${(utilizationRate * 100).toFixed(1)}%`,
-        ...poolStats,
+            utilizationRate: `${(utilizationRate * 100).toFixed(1)}%`,
+            ...poolStats,
           })}`,
           'DatabasePerformance',
         );

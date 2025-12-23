@@ -11,7 +11,7 @@
  * Timestampable Mixin
  * Adds createdAt and updatedAt properties
  */
-export function Timestampable<TBase extends new (...args: any[]) => {}>(
+export function Timestampable<TBase extends new (...args: any[]) => object>(
   Base: TBase,
 ) {
   return class extends Base {
@@ -34,7 +34,7 @@ export function Timestampable<TBase extends new (...args: any[]) => {}>(
  * Soft Deletable Mixin
  * Adds deletedAt property for soft deletes
  */
-export function SoftDeletable<TBase extends new (...args: any[]) => {}>(
+export function SoftDeletable<TBase extends new (...args: any[]) => object>(
   Base: TBase,
 ) {
   return class extends Base {
@@ -58,7 +58,7 @@ export function SoftDeletable<TBase extends new (...args: any[]) => {}>(
  * Auditable Mixin
  * Adds audit trail properties
  */
-export function Auditable<TBase extends new (...args: any[]) => {}>(
+export function Auditable<TBase extends new (...args: any[]) => object>(
   Base: TBase,
 ) {
   return class extends Base {

@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PaymentController } from './presentation/controllers/payment.controller';
 import { PaymentService } from './application/services/payment.service';
 import { PaymentRepositoryAdapter } from './infrastructure/persistence/payment.repository.adapter';
-import { PaymentRepositoryPort, PAYMENT_REPOSITORY_PORT } from './domain/ports/payment.repository.port';
+import { PAYMENT_REPOSITORY_PORT } from './domain/ports/payment.repository.port';
 
 @Module({
   imports: [ConfigModule.forRoot()],
@@ -16,5 +16,5 @@ import { PaymentRepositoryPort, PAYMENT_REPOSITORY_PORT } from './domain/ports/p
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
 
