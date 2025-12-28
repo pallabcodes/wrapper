@@ -1,0 +1,176 @@
+---
+# Database Migration Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration
+  namespace: flashmart
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+spec:
+  template:
+    spec:
+      containers:
+        - name: migration
+          image: postgres:16-alpine
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for PostgreSQL to be ready..."
+              until pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER; do
+                echo "PostgreSQL is unavailable - sleeping"
+                sleep 2
+              done
+
+              echo "Running schema initialization..."
+              psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f /scripts/init-schemas.sql
+
+              echo "Running data migration..."
+              psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f /scripts/migrate-to-schemas.sql
+
+              echo "Migration completed successfully!"
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: flashmart-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: flashmart-config
+                  key: DB_PORT
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: flashmart-config
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: flashmart-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: flashmart-secrets
+                  key: DB_PASSWORD
+          volumeMounts:
+            - name: migration-scripts
+              mountPath: /scripts
+      volumes:
+        - name: migration-scripts
+          configMap:
+            name: migration-scripts
+      restartPolicy: OnFailure
+---
+# ConfigMap containing migration scripts
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: migration-scripts
+  namespace: flashmart
+data:
+  init-schemas.sql: |
+    -- Create schemas for each service
+    CREATE SCHEMA IF NOT EXISTS user_service;
+    CREATE SCHEMA IF NOT EXISTS payment_service;
+    CREATE SCHEMA IF NOT EXISTS catalog_service;
+    CREATE SCHEMA IF NOT EXISTS order_service;
+    CREATE SCHEMA IF NOT EXISTS video_service;
+
+    -- Grant permissions
+    GRANT ALL ON SCHEMA user_service TO flashmart;
+    GRANT ALL ON SCHEMA payment_service TO flashmart;
+    GRANT ALL ON SCHEMA catalog_service TO flashmart;
+    GRANT ALL ON SCHEMA order_service TO flashmart;
+    GRANT ALL ON SCHEMA video_service TO flashmart;
+
+    -- Set search path
+    ALTER USER flashmart SET search_path TO user_service, payment_service, catalog_service, order_service, video_service, public;
+
+  migrate-to-schemas.sql: |
+    -- Migrate existing data to service schemas
+    -- Note: This assumes data exists in public schema from previous deployment
+
+    -- Create tables if they don't exist (TypeORM will handle this, but we ensure structure)
+    CREATE TABLE IF NOT EXISTS user_service.users (
+      id UUID PRIMARY KEY,
+      email VARCHAR UNIQUE NOT NULL,
+      name VARCHAR NOT NULL,
+      password_hash VARCHAR NOT NULL,
+      avatar_url VARCHAR,
+      email_verified BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS payment_service.payments (
+      id UUID PRIMARY KEY,
+      user_id VARCHAR NOT NULL,
+      amount DECIMAL(10,2) NOT NULL,
+      currency VARCHAR(3) NOT NULL,
+      status VARCHAR NOT NULL,
+      stripe_payment_intent_id VARCHAR,
+      order_id VARCHAR,
+      metadata JSONB,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS catalog_service.categories (
+      id UUID PRIMARY KEY,
+      name VARCHAR NOT NULL,
+      description TEXT,
+      image_url VARCHAR,
+      parent_id UUID,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS catalog_service.products (
+      id UUID PRIMARY KEY,
+      name VARCHAR NOT NULL,
+      description TEXT NOT NULL,
+      price DECIMAL(10,2) NOT NULL,
+      stock INTEGER DEFAULT 0,
+      image_url VARCHAR,
+      images TEXT[],
+      category_id UUID,
+      seller_id VARCHAR,
+      is_active BOOLEAN DEFAULT TRUE,
+      attributes JSONB,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS order_service.order_events (
+      id UUID PRIMARY KEY,
+      order_id UUID NOT NULL,
+      event_type VARCHAR NOT NULL,
+      payload JSONB NOT NULL,
+      version INTEGER NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS order_service.orders (
+      id UUID PRIMARY KEY,
+      user_id VARCHAR NOT NULL,
+      items JSONB NOT NULL,
+      total_amount DECIMAL(10,2) NOT NULL,
+      status VARCHAR NOT NULL,
+      payment_id VARCHAR,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      version INTEGER DEFAULT 1
+    );
+
+    -- Migrate data if it exists in public schema
+    INSERT INTO user_service.users SELECT * FROM public.users ON CONFLICT (id) DO NOTHING;
+    INSERT INTO payment_service.payments SELECT * FROM public.payments ON CONFLICT (id) DO NOTHING;
+    INSERT INTO catalog_service.categories SELECT * FROM public.categories ON CONFLICT (id) DO NOTHING;
+    INSERT INTO catalog_service.products SELECT * FROM public.products ON CONFLICT (id) DO NOTHING;
+    INSERT INTO order_service.orders SELECT * FROM public.orders ON CONFLICT (id) DO NOTHING;
+    INSERT INTO order_service.order_events SELECT * FROM public.order_events ON CONFLICT (id) DO NOTHING;

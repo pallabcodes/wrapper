@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edge-gateway
+  namespace: secure-edge
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: edge-gateway
+  template:
+    metadata:
+      labels:
+        app: edge-gateway
+    spec:
+      containers:
+        - name: edge-gateway
+          image: secure-edge/edge-gateway:latest
+          ports:
+            - containerPort: 8443
+          volumeMounts:
+            - name: tls-certs
+              mountPath: /certs
+              readOnly: true
+          env:
+            - name: TLS_CERT_PATH
+              value: /certs/server.crt
+            - name: TLS_KEY_PATH
+              value: /certs/server.key
+            - name: CA_CERT_PATH
+              value: /certs/ca.crt
+      volumes:
+        - name: tls-certs
+          secret:
+            secretName: edge-gateway-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edge-gateway
+  namespace: secure-edge
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 443
+      targetPort: 8443
+      protocol: TCP
+  selector:
+    app: edge-gateway

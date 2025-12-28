@@ -1,0 +1,168 @@
+# Network Policies - Zero Trust Implementation
+# Each policy explicitly defines allowed traffic
+
+---
+# Default deny all ingress/egress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: secure-edge
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# Edge Gateway: Allow external ingress, egress to Ingestor only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: edge-gateway-policy
+  namespace: secure-edge
+spec:
+  podSelector:
+    matchLabels:
+      app: edge-gateway
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from: [] # Allow from anywhere (external)
+      ports:
+        - protocol: TCP
+          port: 8443
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: ingestor
+      ports:
+        - protocol: TCP
+          port: 3000
+    - to: # Allow DNS
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+# Ingestor: Ingress from Gateway, Egress to Kafka only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingestor-policy
+  namespace: secure-edge
+spec:
+  podSelector:
+    matchLabels:
+      app: ingestor
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: edge-gateway
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redpanda
+      ports:
+        - protocol: TCP
+          port: 9092
+    - to: # DNS
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+# Correlator: Ingress from Kafka, Egress to Postgres only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: correlator-policy
+  namespace: secure-edge
+spec:
+  podSelector:
+    matchLabels:
+      app: correlator
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: [] # No direct ingress needed (Kafka consumer)
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redpanda
+      ports:
+        - protocol: TCP
+          port: 9092
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to: # DNS
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+# Query API: Ingress from internal (Ingress Controller), Egress to Postgres only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: query-api-policy
+  namespace: secure-edge
+spec:
+  podSelector:
+    matchLabels:
+      app: query-api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3001
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to: # DNS
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53

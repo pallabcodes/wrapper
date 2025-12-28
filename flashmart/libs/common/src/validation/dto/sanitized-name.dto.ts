@@ -1,0 +1,10 @@
+import { IsNotEmpty, IsString, Length } from 'class-validator';
+import { Transform } from 'class-transformer';
+
+export class SanitizedNameDto {
+  @IsNotEmpty()
+  @IsString()
+  @Length(1, 100)
+  @Transform(({ value }) => value?.trim())
+  name: string;
+}

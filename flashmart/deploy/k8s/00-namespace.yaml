@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flashmart
+  labels:
+    app.kubernetes.io/name: flashmart
+    istio-injection: enabled  # Enable Istio sidecar injection
+---
+# ConfigMap for shared configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flashmart-config
+  namespace: flashmart
+data:
+  DB_HOST: "postgres.flashmart.svc.cluster.local"
+  DB_PORT: "5432"
+  DB_NAME: "flashmart"
+  REDIS_HOST: "redis.flashmart.svc.cluster.local"
+  REDIS_PORT: "6379"
+  KAFKA_BROKER: "redpanda.flashmart.svc.cluster.local:9092"
+  S3_ENDPOINT: "http://minio.flashmart.svc.cluster.local:9000"
+  S3_BUCKET: "flashmart-videos"
+---
+# Secret for sensitive data
+apiVersion: v1
+kind: Secret
+metadata:
+  name: flashmart-secrets
+  namespace: flashmart
+type: Opaque
+stringData:
+  DB_USER: "flashmart"
+  DB_PASSWORD: "flashmart_prod_password"
+  JWT_SECRET: "your-production-jwt-secret-change-me"
+  STRIPE_SECRET_KEY: "sk_live_xxxxx"
+  AWS_ACCESS_KEY_ID: "your-aws-key"
+  AWS_SECRET_ACCESS_KEY: "your-aws-secret"

@@ -1,0 +1,79 @@
+---
+# Istio Service Mesh Configuration
+# This file initializes Istio service mesh in the FlashMart namespace
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-system
+  labels:
+    istio-injection: disabled
+
+---
+# ServiceAccount for Istio components
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: istio-ingressgateway-service-account
+  namespace: istio-system
+
+---
+# Istio Operator for simplified installation
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  namespace: istio-system
+  name: istiocontrolplane
+spec:
+  profile: demo  # Lightweight profile for development/production
+  components:
+    ingressGateways:
+      - name: istio-ingressgateway
+        enabled: true
+        k8s:
+          service:
+            ports:
+              - name: status-port
+                port: 15021
+                targetPort: 15021
+              - name: http2
+                port: 80
+                targetPort: 8080
+              - name: https
+                port: 443
+                targetPort: 8443
+              - name: tcp
+                port: 31400
+                targetPort: 31400
+              - name: tls
+                port: 15443
+                targetPort: 15443
+    pilot:
+      enabled: true
+      k8s:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+    telemetry:
+      enabled: true
+  values:
+    global:
+      proxy:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+    telemetry:
+      v2:
+        enabled: true
+        prometheus:
+          enabled: true
+    pilot:
+      autoscaleEnabled: false  # Disable for demo
+    ingressGateways:
+      - name: istio-ingressgateway
+        autoscaleEnabled: false

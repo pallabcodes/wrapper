@@ -1,0 +1,219 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'FlashMart API Gateway with DDoS protection and edge security'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name
+
+  DomainName:
+    Type: String
+    Default: api.flashmart.com
+    Description: API domain name
+
+Resources:
+  # API Gateway
+  FlashMartApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub 'flashmart-api-${Environment}'
+      Description: 'FlashMart API Gateway with edge security'
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      BinaryMediaTypes:
+        - '*/*'
+
+  # API Gateway Resource (catch-all proxy)
+  ApiGatewayResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref FlashMartApiGateway
+      ParentId: !GetAtt FlashMartApiGateway.RootResourceId
+      PathPart: '{proxy+}'
+
+  # API Gateway Method (catch-all)
+  ApiGatewayMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref FlashMartApiGateway
+      ResourceId: !Ref ApiGatewayResource
+      HttpMethod: ANY
+      AuthorizationType: NONE
+      Integration:
+        Type: HTTP_PROXY
+        IntegrationHttpMethod: ANY
+        Uri: !Sub 'http://flashmart-alb-${Environment}.${AWS::Region}.elb.amazonaws.com/{proxy}'
+        PassthroughBehavior: WHEN_NO_MATCH
+        TimeoutInMillis: 29000
+
+  # Root method
+  RootMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref FlashMartApiGateway
+      ResourceId: !GetAtt FlashMartApiGateway.RootResourceId
+      HttpMethod: ANY
+      AuthorizationType: NONE
+      Integration:
+        Type: HTTP_PROXY
+        IntegrationHttpMethod: ANY
+        Uri: !Sub 'http://flashmart-alb-${Environment}.${AWS::Region}.elb.amazonaws.com/'
+        PassthroughBehavior: WHEN_NO_MATCH
+        TimeoutInMillis: 29000
+
+  # API Gateway Deployment
+  ApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: [ApiGatewayMethod, RootMethod]
+    Properties:
+      RestApiId: !Ref FlashMartApiGateway
+      StageName: !Ref Environment
+      Description: !Sub 'API Gateway deployment for ${Environment}'
+
+  # API Gateway Stage
+  ApiGatewayStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref FlashMartApiGateway
+      DeploymentId: !Ref ApiGatewayDeployment
+      StageName: !Ref Environment
+      Description: !Sub 'API Gateway stage for ${Environment}'
+      MethodSettings:
+        - HttpMethod: '*'
+          ResourcePath: '/*'
+          ThrottlingBurstLimit: 1000
+          ThrottlingRateLimit: 5000
+          MetricsEnabled: true
+          LoggingLevel: INFO
+          DataTraceEnabled: !If [IsProd, true, false]
+      Variables:
+        Environment: !Ref Environment
+
+  # WAF Web ACL for DDoS protection and security rules
+  WafWebAcl:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub 'flashmart-waf-${Environment}'
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      Rules:
+        # AWS Managed Rules - Common Rule Set
+        - Name: AWSManagedRulesCommonRuleSet
+          Priority: 1
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AWSManagedRulesCommonRuleSet
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+              ExcludedRules: []
+
+        # AWS Managed Rules - Known Bad Inputs
+        - Name: AWSManagedRulesKnownBadInputsRuleSet
+          Priority: 2
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AWSManagedRulesKnownBadInputsRuleSet
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+
+        # Rate limiting rule
+        - Name: RateLimitRule
+          Priority: 3
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: RateLimitRule
+          Statement:
+            RateBasedStatement:
+              Limit: 2000  # requests per 5 minutes per IP
+              AggregateKeyType: IP
+
+        # SQL Injection protection
+        - Name: SQLInjectionRule
+          Priority: 4
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: SQLInjectionRule
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesSQLiRuleSet
+
+        # XSS protection
+        - Name: XSSRule
+          Priority: 5
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: XSSRule
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesXSSRuleSet
+
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub 'flashmart-waf-${Environment}'
+
+  # Associate WAF with API Gateway
+  WafAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Sub 'arn:aws:apigateway:${AWS::Region}::/restapis/${FlashMartApiGateway}/stages/${Environment}'
+      WebACLArn: !GetAtt WafWebAcl.Arn
+
+  # Custom Domain (optional - requires certificate)
+  ApiGatewayDomain:
+    Type: AWS::ApiGateway::DomainName
+    Condition: HasDomain
+    Properties:
+      DomainName: !Ref DomainName
+      CertificateArn: !Ref CertificateArn
+
+  # API Gateway Base Path Mapping
+  BasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Condition: HasDomain
+    Properties:
+      DomainName: !Ref DomainName
+      RestApiId: !Ref FlashMartApiGateway
+      Stage: !Ref Environment
+
+Conditions:
+  IsProd: !Equals [!Ref Environment, 'prod']
+  HasDomain: !Not [!Equals [!Ref DomainName, '']]
+
+Outputs:
+  ApiGatewayUrl:
+    Description: 'API Gateway URL'
+    Value: !Sub 'https://${FlashMartApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}'
+    Export:
+      Name: !Sub 'FlashMart-ApiGatewayUrl-${Environment}'
+
+  WafWebAclArn:
+    Description: 'WAF Web ACL ARN'
+    Value: !GetAtt WafWebAcl.Arn
+    Export:
+      Name: !Sub 'FlashMart-WafWebAclArn-${Environment}'

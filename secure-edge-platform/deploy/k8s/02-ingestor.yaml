@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingestor
+  namespace: secure-edge
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ingestor
+  template:
+    metadata:
+      labels:
+        app: ingestor
+    spec:
+      containers:
+        - name: ingestor
+          image: secure-edge/ingestor:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: KAFKA_BROKERS
+              value: redpanda.secure-edge.svc.cluster.local:9092
+            - name: NODE_ENV
+              value: production
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingestor
+  namespace: secure-edge
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+  selector:
+    app: ingestor

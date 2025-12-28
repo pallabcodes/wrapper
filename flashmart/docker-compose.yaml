@@ -1,0 +1,505 @@
+services:
+  # PostgreSQL - Primary database with multi-schema support
+  postgres:
+    image: postgres:16-alpine
+    container_name: flashmart-postgres
+    environment:
+      POSTGRES_USER: flashmart
+      POSTGRES_PASSWORD: flashmart_dev
+      POSTGRES_DB: flashmart
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-schemas.sql:/docker-entrypoint-initdb.d/01-init-schemas.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flashmart"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: >
+      postgres -c log_statement=all -c log_destination=stderr
+
+  # Redis - Caching, Sessions, Inventory Locking
+  redis:
+    image: redis:7-alpine
+    container_name: flashmart-redis
+    ports:
+      - 6379:6379
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redpanda (Kafka) - Event streaming
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.3.3
+    container_name: flashmart-redpanda
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 512M
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --node-id 0
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+      - --pandaproxy-addr 0.0.0.0:8082
+      - --advertise-pandaproxy-addr localhost:8082
+    ports:
+      - 8082:8082
+      - 9092:9092
+      - 29092:29092
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+
+  # Redpanda Console - Kafka UI
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:v2.3.8
+    container_name: flashmart-console
+    environment:
+      KAFKA_BROKERS: redpanda:29092
+    ports:
+      - 8080:8080
+    depends_on:
+      - redpanda
+
+  # Kafka Topics Initialization
+  kafka-init:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: flashmart-kafka-init
+    depends_on:
+      redpanda:
+        condition: service_started
+    command: |
+      bash -c '
+        echo "Waiting for Kafka to be ready..."
+        cub kafka-ready -b redpanda:29092 1 60
+
+        echo "Creating Kafka topics..."
+        kafka-topics --create --if-not-exists --bootstrap-server redpanda:29092 --topic flashmart.user.created --partitions 3 --replication-factor 1
+        kafka-topics --create --if-not-exists --bootstrap-server redpanda:29092 --topic flashmart.user.updated --partitions 3 --replication-factor 1
+        kafka-topics --create --if-not-exists --bootstrap-server redpanda:29092 --topic flashmart.payment.created --partitions 3 --replication-factor 1
+        kafka-topics --create --if-not-exists --bootstrap-server redpanda:29092 --topic flashmart.payment.succeeded --partitions 3 --replication-factor 1
+        kafka-topics --create --if-not-exists --bootstrap-server redpanda:29092 --topic flashmart.order.created --partitions 3 --replication-factor 1
+        kafka-topics --create --if-not-exists --bootstrap-server redpanda:29092 --topic flashmart.order.confirmed --partitions 3 --replication-factor 1
+        kafka-topics --create --if-not-exists --bootstrap-server redpanda:29092 --topic flashmart.inventory.reserved --partitions 3 --replication-factor 1
+        kafka-topics --create --if-not-exists --bootstrap-server redpanda:29092 --topic flashmart.product.created --partitions 3 --replication-factor 1
+        kafka-topics --create --if-not-exists --bootstrap-server redpanda:29092 --topic flashmart.saga.completed --partitions 1 --replication-factor 1
+        kafka-topics --create --if-not-exists --bootstrap-server redpanda:29092 --topic flashmart.saga.failed --partitions 1 --replication-factor 1
+
+        echo "Topics created successfully!"
+      '
+
+  # MinIO - S3-compatible object storage (for videos)
+  minio:
+    image: minio/minio:latest
+    container_name: flashmart-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - minio_data:/data
+
+  # Prometheus - Metrics
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: flashmart-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+
+  # Jaeger - Distributed Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:1.52
+    container_name: flashmart-jaeger
+    ports:
+      - 16686:16686 # UI
+      - 14268:14268 # Accept jaeger.thrift over HTTP
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  # Grafana - Dashboards
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: flashmart-grafana
+    ports:
+      - 3030:3000
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: flashmart-nginx
+    ports:
+      - "80:80" # HTTP
+      - "443:443" # HTTPS (if certificates available)
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - gateway
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # FlashMart Services
+  gateway:
+    build:
+      context: .
+      dockerfile: ./apps/gateway/Dockerfile
+    container_name: flashmart-gateway
+    expose:
+      - "3000" # Only expose to nginx, not host
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - USER_SERVICE_URL=http://user-service:3001/graphql
+      - PAYMENT_SERVICE_URL=http://payment-service:3002/graphql
+      - CATALOG_SERVICE_URL=http://catalog-service:3003/graphql
+      - ORDER_SERVICE_URL=http://order-service:3004/graphql
+      - INVENTORY_SERVICE_URL=http://inventory-service:3005/graphql
+      - VIDEO_SERVICE_URL=http://video-service:3006/graphql
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=flashmart
+      - DB_USER=flashmart
+      - DB_PASSWORD=flashmart_dev
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_BROKER=redpanda:9092
+      - SERVICE_NAME=gateway
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - TRACING_ENABLED=true
+      - JWT_SECRET=development-jwt-secret-change-in-production
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  user-service:
+    build:
+      context: .
+      dockerfile: ./apps/user-service/Dockerfile
+    container_name: flashmart-user-service
+    ports:
+      - 3001:3001
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=flashmart
+      - DB_USER=flashmart
+      - DB_PASSWORD=flashmart_dev
+      - JWT_SECRET=development-jwt-secret-change-in-production
+      - SERVICE_NAME=user-service
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - TRACING_ENABLED=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3001/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: ./apps/payment-service/Dockerfile
+    container_name: flashmart-payment-service
+    ports:
+      - 3002:3002
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=flashmart
+      - DB_USER=flashmart
+      - DB_PASSWORD=flashmart_dev
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_BROKER=redpanda:9092
+      - SERVICE_NAME=payment-service
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - TRACING_ENABLED=true
+      - STRIPE_SECRET_KEY=sk_test_your_stripe_test_key_here
+      - JWT_SECRET=development-jwt-secret-change-in-production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3002/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  catalog-service:
+    build:
+      context: .
+      dockerfile: ./apps/catalog-service/Dockerfile
+    container_name: flashmart-catalog-service
+    ports:
+      - 3003:3003
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=flashmart
+      - DB_USER=flashmart
+      - DB_PASSWORD=flashmart_dev
+      - SERVICE_NAME=catalog-service
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - TRACING_ENABLED=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3003/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  order-service:
+    build:
+      context: .
+      dockerfile: ./apps/order-service/Dockerfile
+    container_name: flashmart-order-service
+    ports:
+      - 3004:3004
+    environment:
+      - NODE_ENV=development
+      - PORT=3004
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=flashmart
+      - DB_USER=flashmart
+      - DB_PASSWORD=flashmart_dev
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_BROKER=redpanda:9092
+      - SERVICE_NAME=order-service
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - TRACING_ENABLED=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3004/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: ./apps/inventory-service/Dockerfile
+    container_name: flashmart-inventory-service
+    ports:
+      - 3005:3005
+    environment:
+      - NODE_ENV=development
+      - PORT=3005
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_BROKER=redpanda:9092
+      - SERVICE_NAME=inventory-service
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - TRACING_ENABLED=true
+    depends_on:
+      redis:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3005/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  video-service:
+    build:
+      context: .
+      dockerfile: ./apps/video-service/Dockerfile
+    container_name: flashmart-video-service
+    ports:
+      - 3006:3006
+    environment:
+      - NODE_ENV=development
+      - PORT=3006
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=flashmart
+      - DB_USER=flashmart
+      - DB_PASSWORD=flashmart_dev
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY_ID=minioadmin
+      - S3_SECRET_ACCESS_KEY=minioadmin
+      - AWS_REGION=us-east-1
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SERVICE_NAME=video-service
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - TRACING_ENABLED=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3006/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./apps/notification-service/Dockerfile
+    container_name: flashmart-notification-service
+    ports:
+      - 3007:3007
+    environment:
+      - NODE_ENV=development
+      - PORT=3007
+      - KAFKA_BROKER=redpanda:9092
+      - SERVICE_NAME=notification-service
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - TRACING_ENABLED=true
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=your-aws-key
+      - AWS_SECRET_ACCESS_KEY=your-aws-secret
+    depends_on:
+      redpanda:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3007/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+  redis_data:
+  redpanda_data:
+  minio_data:
+  nginx_logs:

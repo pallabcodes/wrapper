@@ -1,0 +1,15 @@
+# Development override for Docker Compose
+# Use: docker-compose -f docker-compose.yaml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  # Expose gateway directly for development debugging
+  gateway:
+    ports:
+      - "3000:3000"  # Expose gateway port for direct access
+
+  # Disable nginx in development (or run separately)
+  nginx:
+    profiles:
+      - production  # Only run nginx in production profile

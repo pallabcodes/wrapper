@@ -1,0 +1,127 @@
+name: Deploy to Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      tag:
+        description: 'Docker image tag to deploy'
+        required: false
+        default: 'latest'
+        type: string
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.28.0'
+
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Verify cluster connection
+        run: kubectl cluster-info
+
+      - name: Update Kubernetes manifests
+        run: |
+          # Update image tags in deployment manifests
+          sed -i "s|flashmart/.*:latest|flashmart/gateway:${{ inputs.tag }}|g" deploy/k8s/01-gateway.yaml
+          sed -i "s|flashmart/.*:latest|flashmart/user-service:${{ inputs.tag }}|g" deploy/k8s/02-services.yaml
+          sed -i "s|flashmart/.*:latest|flashmart/payment-service:${{ inputs.tag }}|g" deploy/k8s/02-services.yaml
+          sed -i "s|flashmart/.*:latest|flashmart/catalog-service:${{ inputs.tag }}|g" deploy/k8s/02-services.yaml
+          sed -i "s|flashmart/.*:latest|flashmart/order-service:${{ inputs.tag }}|g" deploy/k8s/02-services.yaml
+          sed -i "s|flashmart/.*:latest|flashmart/inventory-service:${{ inputs.tag }}|g" deploy/k8s/02-services.yaml
+          sed -i "s|flashmart/.*:latest|flashmart/video-service:${{ inputs.tag }}|g" deploy/k8s/02-services.yaml
+          sed -i "s|flashmart/.*:latest|flashmart/notification-service:${{ inputs.tag }}|g" deploy/k8s/02-services.yaml
+
+      - name: Deploy to Kubernetes
+        run: |
+          # Apply namespace and config
+          kubectl apply -f deploy/k8s/00-namespace.yaml
+
+          # Deploy gateway
+          kubectl apply -f deploy/k8s/01-gateway.yaml
+
+          # Deploy services
+          kubectl apply -f deploy/k8s/02-services.yaml
+
+          # Apply autoscaling
+          kubectl apply -f deploy/k8s/03-autoscaling.yaml
+
+      - name: Wait for rollout to complete
+        run: |
+          kubectl rollout status deployment/gateway -n flashmart --timeout=600s
+          kubectl rollout status deployment/user-service -n flashmart --timeout=600s
+          kubectl rollout status deployment/payment-service -n flashmart --timeout=600s
+          kubectl rollout status deployment/catalog-service -n flashmart --timeout=600s
+          kubectl rollout status deployment/order-service -n flashmart --timeout=600s
+          kubectl rollout status deployment/inventory-service -n flashmart --timeout=600s
+          kubectl rollout status deployment/video-service -n flashmart --timeout=600s
+          kubectl rollout status deployment/notification-service -n flashmart --timeout=600s
+
+      - name: Run post-deployment tests
+        run: |
+          # Test gateway health endpoint
+          kubectl run test-pod --image=curlimages/curl --rm -i --restart=Never -- curl -f http://gateway.flashmart.svc.cluster.local/health
+
+          # Test GraphQL endpoint
+          kubectl run test-pod --image=curlimages/curl --rm -i --restart=Never -- curl -f http://gateway.flashmart.svc.cluster.local/graphql
+
+      - name: Notify deployment completion
+        uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: failure() && needs.deploy.result == 'failure'
+    needs: deploy
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.28.0'
+
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Rollback to previous version
+        run: |
+          kubectl rollout undo deployment/gateway -n flashmart
+          kubectl rollout undo deployment/user-service -n flashmart
+          kubectl rollout undo deployment/payment-service -n flashmart
+          kubectl rollout undo deployment/catalog-service -n flashmart
+          kubectl rollout undo deployment/order-service -n flashmart
+          kubectl rollout undo deployment/inventory-service -n flashmart
+          kubectl rollout undo deployment/video-service -n flashmart
+          kubectl rollout undo deployment/notification-service -n flashmart

@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: flashmart
+  annotations:
+    # Istio annotations for traffic management
+    traffic.istio.io/includeOutboundIPRanges: "*"  # Allow external calls
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+        security.istio.io/tlsMode: istio  # Enable Istio mTLS
+        service.istio.io/canonical-name: gateway
+      annotations:
+        # Istio sidecar injection annotations
+        kubectl.kubernetes.io/default-container: gateway
+        kubectl.kubernetes.io/default-logs-container: gateway
+        # Prometheus metrics scraping
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: flashmart-service-account
+      containers:
+        - name: gateway
+          image: flashmart/gateway:latest
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: flashmart-config
+            - secretRef:
+                name: flashmart-secrets
+          env:
+            # Use Kubernetes DNS for service discovery (Istio will handle routing)
+            - name: USER_SERVICE_URL
+              value: "http://user-service.flashmart.svc.cluster.local:3001/graphql"
+            - name: PAYMENT_SERVICE_URL
+              value: "http://payment-service.flashmart.svc.cluster.local:3002/graphql"
+            - name: CATALOG_SERVICE_URL
+              value: "http://catalog-service.flashmart.svc.cluster.local:3003/graphql"
+            - name: ORDER_SERVICE_URL
+              value: "http://order-service.flashmart.svc.cluster.local:3004/graphql"
+            - name: INVENTORY_SERVICE_URL
+              value: "http://inventory-service.flashmart.svc.cluster.local:3005/graphql"
+            - name: VIDEO_SERVICE_URL
+              value: "http://video-service.flashmart.svc.cluster.local:3006/graphql"
+            - name: KAFKA_BROKER
+              value: "redpanda.flashmart.svc.cluster.local:9092"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /.well-known/apollo/server-health
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /.well-known/apollo/server-health
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: flashmart
+spec:
+  type: LoadBalancer
+  selector:
+    app: gateway
+  ports:
+    - port: 80
+      targetPort: 3000
