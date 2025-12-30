@@ -1,0 +1,35 @@
+syntax = "proto3"; // Protocol version
+
+package ratelimiter; // Namespace
+
+service RateLimiterService { // API endpoints
+  // Check if a request is allowed
+  rpc Check (RateLimitRequest) returns (RateLimitResponse);
+  
+  // Get current usage stats for a client
+  rpc GetQuota (QuotaRequest) returns (QuotaResponse);
+}
+
+message RateLimitRequest { // Request structure
+  string client_id = 1;
+  string resource = 2;
+  int32 cost = 3;
+}
+
+message RateLimitResponse {
+  bool allowed = 1;
+  int32 remaining = 2;
+  int32 limit = 3;
+  int64 reset_at = 4; // Unix timestamp
+  int32 retry_after = 5; // Seconds
+}
+
+message QuotaRequest {
+  string client_id = 1;
+  string resource = 2;
+}
+
+message QuotaResponse {
+  int32 current_usage = 1;
+  int32 limit = 2;
+}

@@ -1,0 +1,15 @@
+{
+    "name": "rate-limiter-monorepo",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "dev:limiter": "pnpm -F rate-limiter dev",
+        "test": "pnpm -r test",
+        "infra:up": "docker compose -f infrastructure/docker-compose.yaml up -d",
+        "infra:down": "docker compose -f infrastructure/docker-compose.yaml down"
+    },
+    "devDependencies": {
+        "typescript": "^5.3.3",
+        "ts-node": "^10.9.2"
+    }
+}
