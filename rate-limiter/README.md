@@ -1,6 +1,6 @@
 # Rate Limiter Service (Google-Grade)
 
-A high-performance, distributed rate limiter built with **NestJS**, **Redis**, **Kafka**, and **Kong API Gateway**.
+A high-performance, distributed rate limiter built with **NestJS**, **Redis**, and **Kafka**. Demonstrates production-ready infrastructure patterns with **Prometheus/Grafana** observability.
 
 ## 🚀 Quick Start (Zero to Hero)
 
@@ -66,6 +66,16 @@ npx ts-node services/rate-limiter/scripts/load-test.ts
 ## 📂 Architecture
 
 *   `services/rate-limiter`: Core Token Bucket logic (Hexagonal Arch).
-*   `services/api-gateway`: Kong Configuration (Docker).
 *   `packages/common`: Shared Types & DTOs.
 *   `infrastructure`: Docker Compose & Prometheus Config.
+
+### ⚙️ Infrastructure Components
+| Service | Purpose | Status |
+|---------|---------|--------|
+| **Redis** | Distributed state storage | ✅ Active |
+| **Redpanda (Kafka)** | Audit event streaming | ✅ Active |
+| **Prometheus** | Metrics collection | ✅ Active |
+| **Grafana** | Metrics visualization | ✅ Active |
+| **Kong API Gateway** | Future API orchestration | 🟡 Configured but not integrated |
+
+> **Note on Kong:** Kong is included in `docker-compose.yaml` to demonstrate production infrastructure awareness, but traffic currently flows directly to the rate limiter service (Port 3001). Kong can be integrated later for centralized auth, CORS, or SSL termination without code changes.

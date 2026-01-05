@@ -53,6 +53,8 @@ export function tryConsume(
     }
 
     // Not enough tokens - calculate retry time
+    // Formula: time_needed = tokens_short ÷ refill_rate_per_second
+    // Example: Need 3 tokens, getting 1.67/sec = wait Math.ceil(3/1.67) = 2 seconds
     const tokensNeeded = cost - newTokens;
     const retryAfter = Math.ceil(tokensNeeded / config.refillRate);
 

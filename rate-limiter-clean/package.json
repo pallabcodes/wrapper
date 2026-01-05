@@ -1,0 +1,14 @@
+{
+    "name": "rate-limiter-clean",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "dev:limiter": "pnpm --filter @rate-limiter-clean/service dev",
+        "build:limiter": "pnpm --filter @rate-limiter-clean/service build",
+        "infra:up": "docker-compose -f infrastructure/docker-compose.yaml up -d",
+        "infra:down": "docker-compose -f infrastructure/docker-compose.yaml down"
+    },
+    "devDependencies": {
+        "typescript": "^5.3.3"
+    }
+}
