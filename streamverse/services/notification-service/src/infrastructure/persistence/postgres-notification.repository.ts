@@ -18,7 +18,7 @@ export class PostgresNotificationRepository implements INotificationRepository {
   constructor(
     @InjectRepository(NotificationEntity)
     private readonly notificationRepository: Repository<NotificationEntity>,
-  ) {}
+  ) { }
 
   async save(notification: Notification): Promise<void> {
     const entity = this.toEntity(notification);
@@ -28,6 +28,14 @@ export class PostgresNotificationRepository implements INotificationRepository {
   async findById(id: string): Promise<Notification | null> {
     const entity = await this.notificationRepository.findOne({
       where: { id }
+    });
+
+    return entity ? this.toDomain(entity) : null;
+  }
+
+  async findByIdempotencyKey(key: string): Promise<Notification | null> {
+    const entity = await this.notificationRepository.findOne({
+      where: { idempotencyKey: key }
     });
 
     return entity ? this.toDomain(entity) : null;
@@ -119,6 +127,7 @@ export class PostgresNotificationRepository implements INotificationRepository {
     entity.priority = notification.getPriority();
     entity.status = notification.getStatus();
     entity.metadata = notification.getMetadata();
+    entity.idempotencyKey = notification.getIdempotencyKey();
     entity.createdAt = notification.getCreatedAt();
     entity.updatedAt = notification.getUpdatedAt();
     entity.sentAt = notification.getSentAt();
@@ -141,6 +150,7 @@ export class PostgresNotificationRepository implements INotificationRepository {
       priority: entity.priority,
       status: entity.status,
       metadata: entity.metadata,
+      idempotencyKey: entity.idempotencyKey,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       sentAt: entity.sentAt,

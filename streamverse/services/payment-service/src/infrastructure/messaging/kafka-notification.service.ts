@@ -14,12 +14,13 @@ import {
 export class KafkaNotificationService implements INotificationService {
   constructor(
     @Inject('PAYMENT_SERVICE_KAFKA') private readonly kafkaClient: ClientKafka,
-  ) {}
+  ) { }
 
-  async sendPaymentCreated(paymentId: string, userId: string, amount: number, currency: string): Promise<void> {
+  async sendPaymentCreated(paymentId: string, userId: string, email: string, amount: number, currency: string): Promise<void> {
     await this.kafkaClient.emit('payment.created', {
       paymentId,
       userId,
+      email,
       amount,
       currency,
       timestamp: new Date(),
@@ -27,10 +28,11 @@ export class KafkaNotificationService implements INotificationService {
     }).toPromise();
   }
 
-  async sendPaymentCompleted(paymentId: string, userId: string, amount: number, currency: string): Promise<void> {
+  async sendPaymentCompleted(paymentId: string, userId: string, email: string, amount: number, currency: string): Promise<void> {
     await this.kafkaClient.emit('payment.completed', {
       paymentId,
       userId,
+      email,
       amount,
       currency,
       timestamp: new Date(),
@@ -38,10 +40,11 @@ export class KafkaNotificationService implements INotificationService {
     }).toPromise();
   }
 
-  async sendPaymentFailed(paymentId: string, userId: string, amount: number, currency: string, reason?: string): Promise<void> {
+  async sendPaymentFailed(paymentId: string, userId: string, email: string, amount: number, currency: string, reason?: string): Promise<void> {
     await this.kafkaClient.emit('payment.failed', {
       paymentId,
       userId,
+      email,
       amount,
       currency,
       reason: reason || 'Unknown failure reason',
@@ -50,10 +53,11 @@ export class KafkaNotificationService implements INotificationService {
     }).toPromise();
   }
 
-  async sendRefundProcessed(paymentId: string, userId: string, refundAmount: number, currency: string): Promise<void> {
+  async sendRefundProcessed(paymentId: string, userId: string, email: string, refundAmount: number, currency: string): Promise<void> {
     await this.kafkaClient.emit('payment.refund.processed', {
       paymentId,
       userId,
+      email,
       refundAmount,
       currency,
       timestamp: new Date(),

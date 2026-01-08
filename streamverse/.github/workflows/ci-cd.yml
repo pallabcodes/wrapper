@@ -1,0 +1,268 @@
+name: StreamVerse CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
+jobs:
+  # ============================================
+  # Lint and Type Check
+  # ============================================
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint --workspaces --if-present
+
+      - name: Run TypeScript check
+        run: npm run typecheck --workspaces --if-present
+
+  # ============================================
+  # Unit Tests
+  # ============================================
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    strategy:
+      matrix:
+        service: [user-service, payment-service, notification-service]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test --workspace=services/${{ matrix.service }}
+        env:
+          NODE_ENV: test
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./services/${{ matrix.service }}/coverage/lcov.info
+          flags: ${{ matrix.service }}
+
+  # ============================================
+  # Integration Tests
+  # ============================================
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: streamverse_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+      kafka:
+        image: confluentinc/cp-kafka:7.4.0
+        env:
+          KAFKA_BROKER_ID: 1
+          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        ports:
+          - 9092:9092
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration tests
+        run: npm run test:integration --workspaces --if-present
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: test
+          DB_PASSWORD: test
+          DB_NAME: streamverse_test
+          REDIS_HOST: localhost
+          KAFKA_BROKERS: localhost:9092
+
+  # ============================================
+  # Build Docker Images
+  # ============================================
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [test-unit, test-integration]
+    if: github.event_name == 'push'
+    strategy:
+      matrix:
+        service: [user-service, payment-service, notification-service]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: services/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================
+  # Deploy to Staging
+  # ============================================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: "v3.13.0"
+
+      - name: Configure kubectl
+        uses: azure/k8s-set-context@v3
+        with:
+          kubeconfig: ${{ secrets.KUBE_CONFIG_STAGING }}
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install streamverse ./k8s/helm/streamverse \
+            --namespace streamverse-staging \
+            --create-namespace \
+            --set global.image.tag=${{ github.sha }} \
+            --set global.environment=staging \
+            -f ./k8s/helm/streamverse/values-staging.yaml
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/streamverse-user-service -n streamverse-staging
+          kubectl rollout status deployment/streamverse-payment-service -n streamverse-staging
+          kubectl rollout status deployment/streamverse-notification-service -n streamverse-staging
+
+  # ============================================
+  # Deploy to Production
+  # ============================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: "v3.13.0"
+
+      - name: Configure kubectl
+        uses: azure/k8s-set-context@v3
+        with:
+          kubeconfig: ${{ secrets.KUBE_CONFIG_PRODUCTION }}
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install streamverse ./k8s/helm/streamverse \
+            --namespace streamverse-production \
+            --create-namespace \
+            --set global.image.tag=${{ github.sha }} \
+            --set global.environment=production \
+            -f ./k8s/helm/streamverse/values-production.yaml
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/streamverse-user-service -n streamverse-production
+          kubectl rollout status deployment/streamverse-payment-service -n streamverse-production
+          kubectl rollout status deployment/streamverse-notification-service -n streamverse-production
+
+      - name: Send deployment notification
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "🚀 StreamVerse deployed to production",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*StreamVerse v${{ github.sha }}* deployed to production\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

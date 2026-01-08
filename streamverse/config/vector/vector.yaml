@@ -1,0 +1,97 @@
+# Vector configuration for log shipping
+# Supports BOTH ClickHouse (default) and Loki backends
+# Switch via environment variable: LOG_BACKEND=clickhouse|loki
+
+data_dir: /var/lib/vector
+
+# Sources: Collect logs from Docker containers
+sources:
+  docker_logs:
+    type: docker_logs
+    docker_host: unix:///var/run/docker.sock
+    include_containers:
+      - "streamverse-user-service"
+      - "streamverse-payment-service"
+      - "streamverse-notification-service"
+    include_labels:
+      - "com.docker.compose.service"
+
+# Transforms: Parse Pino JSON logs
+transforms:
+  parse_logs:
+    type: remap
+    inputs:
+      - docker_logs
+    source: |
+      # Parse the JSON log message from Pino
+      parsed, err = parse_json(.message)
+      if err == null {
+        .level = parsed.level ?? "info"
+        .msg = parsed.msg ?? .message
+        .correlationId = parsed.correlationId ?? ""
+        .traceId = parsed.traceId ?? ""
+        .spanId = parsed.spanId ?? ""
+        .context = parsed.context ?? ""
+        .service = parsed.name ?? .container_name
+      } else {
+        .level = "info"
+        .msg = .message
+        .correlationId = ""
+        .traceId = ""
+        .spanId = ""
+        .context = ""
+        .service = .container_name
+      }
+
+      # Extract service name from container name
+      .service = replace(.container_name, r'^streamverse-', "")
+
+  # Add metadata
+  enrich_logs:
+    type: remap
+    inputs:
+      - parse_logs
+    source: |
+      .host = get_hostname!()
+      .container = .container_name
+
+# Sinks: Output destinations
+
+# ClickHouse sink (DEFAULT)
+sinks:
+  clickhouse:
+    type: clickhouse
+    inputs:
+      - enrich_logs
+    endpoint: "http://clickhouse:8123"
+    database: "logs"
+    table: "streamverse"
+    skip_unknown_fields: true
+    healthcheck:
+      enabled: true
+    encoding:
+      timestamp_format: rfc3339
+    batch:
+      max_bytes: 10485760
+      timeout_secs: 1
+
+  # Loki sink (ALTERNATIVE - enable via profiles)
+  loki:
+    type: loki
+    inputs:
+      - enrich_logs
+    endpoint: "http://loki:3100"
+    labels:
+      service: "{{ service }}"
+      level: "{{ level }}"
+      correlationId: "{{ correlationId }}"
+    encoding:
+      codec: json
+
+  # Console sink for debugging
+  console:
+    type: console
+    inputs:
+      - enrich_logs
+    encoding:
+      codec: json

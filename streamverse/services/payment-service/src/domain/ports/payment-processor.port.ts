@@ -66,6 +66,16 @@ export interface IPaymentProcessor {
   createCustomer(email: string, name?: string, metadata?: Stripe.MetadataParam): Promise<{ id: string; email: string }>;
 
   /**
+   * Attach a payment method to a customer
+   */
+  attachPaymentMethod(paymentMethodId: string, customerId: string): Promise<void>;
+
+  /**
+   * Set default payment method for a customer
+   */
+  setDefaultPaymentMethod(customerId: string, paymentMethodId: string): Promise<void>;
+
+  /**
    * Create a subscription
    */
   createSubscription(

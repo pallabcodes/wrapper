@@ -1,0 +1,231 @@
+# StreamVerse Helm Chart Values
+# Override these values for different environments
+
+# Global settings
+global:
+  image:
+    registry: ghcr.io
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  # Environment
+  environment: production
+
+  # Database
+  database:
+    host: streamverse-postgresql
+    port: 5432
+    name: streamverse
+    username: streamverse
+    existingSecret: streamverse-db-secret
+    secretKey: password
+
+  # Redis
+  redis:
+    host: streamverse-redis-master
+    port: 6379
+
+  # Kafka
+  kafka:
+    brokers: streamverse-kafka:9092
+
+# ============================================
+# User Service
+# ============================================
+userService:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: streamverse/user-service
+    tag: "" # Uses global.image.tag if empty
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilization: 70
+    targetMemoryUtilization: 80
+
+  env:
+    JWT_SECRET:
+      secretName: streamverse-secrets
+      secretKey: jwt-secret
+    GOOGLE_CLIENT_ID:
+      secretName: streamverse-oauth
+      secretKey: google-client-id
+    GOOGLE_CLIENT_SECRET:
+      secretName: streamverse-oauth
+      secretKey: google-client-secret
+
+# ============================================
+# Payment Service
+# ============================================
+paymentService:
+  enabled: true
+  replicaCount: 3 # Higher for payment reliability
+
+  image:
+    repository: streamverse/payment-service
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPUUtilization: 60
+
+  env:
+    STRIPE_SECRET_KEY:
+      secretName: streamverse-payments
+      secretKey: stripe-secret-key
+    STRIPE_WEBHOOK_SECRET:
+      secretName: streamverse-payments
+      secretKey: stripe-webhook-secret
+    RAZORPAY_KEY_ID:
+      secretName: streamverse-payments
+      secretKey: razorpay-key-id
+    RAZORPAY_KEY_SECRET:
+      secretName: streamverse-payments
+      secretKey: razorpay-key-secret
+
+# ============================================
+# Notification Service
+# ============================================
+notificationService:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: streamverse/notification-service
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 15
+    targetCPUUtilization: 70
+
+  env:
+    SENDGRID_API_KEY:
+      secretName: streamverse-notifications
+      secretKey: sendgrid-api-key
+    TWILIO_ACCOUNT_SID:
+      secretName: streamverse-notifications
+      secretKey: twilio-account-sid
+    TWILIO_AUTH_TOKEN:
+      secretName: streamverse-notifications
+      secretKey: twilio-auth-token
+
+# ============================================
+# Ingress
+# ============================================
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+  hosts:
+    - host: api.streamverse.io
+      paths:
+        - path: /api/users
+          pathType: Prefix
+          service: user-service
+        - path: /api/payments
+          pathType: Prefix
+          service: payment-service
+        - path: /api/notifications
+          pathType: Prefix
+          service: notification-service
+  tls:
+    - secretName: streamverse-tls
+      hosts:
+        - api.streamverse.io
+
+# ============================================
+# Observability
+# ============================================
+observability:
+  jaeger:
+    enabled: true
+    endpoint: http://jaeger-collector:14268/api/traces
+
+  prometheus:
+    enabled: true
+    scrapeInterval: 15s
+
+  loki:
+    enabled: false # Use ClickHouse by default
+
+  clickhouse:
+    enabled: true
+    host: clickhouse
+    port: 8123
+
+# ============================================
+# Dependencies
+# ============================================
+postgresql:
+  enabled: true
+  auth:
+    database: streamverse
+    username: streamverse
+    existingSecret: streamverse-db-secret
+  primary:
+    persistence:
+      size: 20Gi
+
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  master:
+    persistence:
+      size: 5Gi
+
+kafka:
+  enabled: true
+  kraft:
+    enabled: true
+  controller:
+    replicaCount: 3
+  persistence:
+    size: 10Gi

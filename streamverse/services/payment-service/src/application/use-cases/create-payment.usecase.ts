@@ -18,6 +18,7 @@ import {
 
 export interface CreatePaymentRequest {
   userId: string;
+  userEmail: string;
   amount: number;
   currency: string;
   paymentMethod: PaymentMethod;
@@ -45,70 +46,79 @@ export class CreatePaymentUseCase {
     private readonly paymentProcessor: IPaymentProcessor,
     @Inject(NOTIFICATION_SERVICE)
     private readonly notificationService: INotificationService,
-  ) {}
+  ) { }
 
   async execute(request: CreatePaymentRequest): Promise<CreatePaymentResponse> {
-    // 1. Validate input
-    if (request.amount <= 0) {
-      throw DomainException.invalidPaymentAmount();
-    }
+    try {
+      // 1. Validate input
+      if (request.amount <= 0) {
+        throw DomainException.invalidPaymentAmount();
+      }
 
-    // 2. Validate currency (Stripe-supported currencies)
-    this.validateCurrency(request.currency);
+      // 2. Validate currency (Stripe-supported currencies)
+      this.validateCurrency(request.currency);
 
-    // 3. Create Money value object
-    const amount = Money.fromDollars(request.amount, request.currency);
+      // 3. Create Money value object
+      const amount = Money.fromDollars(request.amount, request.currency);
 
-    // 3. Validate payment method
-    if (!Object.values(PaymentMethod).includes(request.paymentMethod)) {
-      throw DomainException.paymentMethodNotSupported();
-    }
+      // 3. Validate payment method
+      if (!Object.values(PaymentMethod).includes(request.paymentMethod)) {
+        throw DomainException.paymentMethodNotSupported();
+      }
 
-    // 4. Generate payment ID
-    const paymentId = uuidv4();
+      // 4. Generate payment ID
+      const paymentId = uuidv4();
 
-    // 5. Create payment entity
-    const payment = Payment.create(
-      paymentId,
-      request.userId,
-      amount,
-      request.paymentMethod,
-      request.description
-    );
-
-    // 6. Create Stripe payment intent with idempotency
-    const idempotencyKey = `create_payment_${paymentId}_${Date.now()}`;
-    const paymentIntent = await this.paymentProcessor.createPaymentIntent(
-      amount,
-      request.currency,
-      request.paymentMethod,
-      {
+      // 5. Create payment entity
+      const payment = Payment.create(
         paymentId,
-        userId: request.userId,
-        description: request.description
-      },
-      idempotencyKey
-    );
+        request.userId,
+        request.userEmail,
+        amount,
+        request.paymentMethod,
+        request.description
+      );
 
-    // 7. Set Stripe payment intent ID on payment entity
-    payment.setStripePaymentIntentId(paymentIntent.id);
+      // 6. Create Stripe payment intent with idempotency
+      const idempotencyKey = `create_payment_${paymentId}_${Date.now()}`;
+      console.log('Creating Stripe Payment Intent...');
+      const paymentIntent = await this.paymentProcessor.createPaymentIntent(
+        amount,
+        request.currency,
+        request.paymentMethod,
+        {
+          paymentId,
+          userId: request.userId,
+          description: request.description
+        },
+        idempotencyKey
+      );
+      console.log('Stripe Payment Intent created:', paymentIntent.id);
 
-    // 8. Save payment to repository
-    await this.paymentRepository.save(payment);
+      // 7. Set Stripe payment intent ID on payment entity
+      payment.setStripePaymentIntentId(paymentIntent.id);
 
-    // 9. Send notification
-    await this.notificationService.sendPaymentCreated(
-      paymentId,
-      request.userId,
-      amount.getAmount(),
-      amount.getCurrency()
-    );
+      // 8. Save payment to repository
+      await this.paymentRepository.save(payment);
 
-    return {
-      paymentId,
-      clientSecret: paymentIntent.clientSecret,
-      status: payment.getStatus()
-    };
+      // 9. Send notification
+      await this.notificationService.sendPaymentCreated(
+        paymentId,
+        request.userId,
+        request.userEmail,
+        amount.getAmount(),
+        amount.getCurrency()
+      );
+
+      return {
+        paymentId,
+        clientSecret: paymentIntent.clientSecret,
+        status: payment.getStatus()
+      };
+    } catch (error) {
+      console.error('Error in CreatePaymentUseCase:', error);
+      throw error;
+    }
   }
 
   /**

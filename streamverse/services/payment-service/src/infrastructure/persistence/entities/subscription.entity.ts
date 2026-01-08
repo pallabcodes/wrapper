@@ -15,6 +15,9 @@ export class SubscriptionEntity {
   @Column('uuid', { name: 'user_id' })
   userId!: string;
 
+  @Column('varchar', { name: 'user_email', length: 255 })
+  userEmail!: string;
+
   @Column({
     type: 'enum',
     enum: SubscriptionStatus,

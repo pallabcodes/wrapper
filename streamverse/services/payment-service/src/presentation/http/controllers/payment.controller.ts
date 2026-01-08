@@ -1,6 +1,11 @@
-import { Controller, Post, Get, Body, Param, HttpCode, HttpStatus, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, HttpCode, HttpStatus, UseGuards, Request, UseInterceptors } from '@nestjs/common';
+import { IdempotencyInterceptor } from '../../../infrastructure/interceptors/idempotency.interceptor';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { CreatePaymentUseCase } from '../../../application/use-cases/create-payment.usecase';
 import { ProcessPaymentUseCase } from '../../../application/use-cases/process-payment.usecase';
+import { GetPaymentUseCase } from '../../../application/use-cases/get-payment.usecase';
+import { GetUserPaymentsUseCase } from '../../../application/use-cases/get-user-payments.usecase';
+import { GetUserSubscriptionUseCase } from '../../../application/use-cases/get-user-subscription.usecase';
 import { ProcessStripeWebhookUseCase } from '../../../application/use-cases/process-stripe-webhook.usecase';
 import { RefundPaymentUseCase } from '../../../application/use-cases/refund-payment.usecase';
 import { CreateSubscriptionUseCase } from '../../../application/use-cases/create-subscription.usecase';
@@ -18,13 +23,13 @@ import { CancelSubscriptionRequestDto } from '../dto/cancel-subscription-request
 import { SubscriptionResponse, CreateSubscriptionResponse, CancelSubscriptionResponse } from '../dto/subscription-response.dto';
 import { ProcessStripeWebhookRequest } from '../../../application/use-cases/process-stripe-webhook.usecase';
 import { IPaymentProcessor, PAYMENT_PROCESSOR } from '../../../domain/ports/payment-processor.port';
+import { ISubscriptionService, SUBSCRIPTION_SERVICE } from '../../../domain/ports/subscription-service.port';
 import { Inject } from '@nestjs/common';
 import Stripe from 'stripe';
 import { PaymentStatus, PaymentMethod, SubscriptionStatus } from '../../../domain/entities/payment.entity';
 
-// TODO: Implement JWT authentication guard
-// import { JwtAuthGuard } from '../../../infrastructure/auth/jwt-auth.guard';
-// import { User } from '../../../infrastructure/auth/user.decorator';
+import { JwtAuthGuard } from '../../../infrastructure/auth/jwt-auth.guard';
+import { User } from '../../../infrastructure/auth/user.decorator';
 
 /**
  * Presentation Layer: Payment Controller
@@ -37,39 +42,40 @@ export class PaymentController {
   constructor(
     private readonly createPaymentUseCase: CreatePaymentUseCase,
     private readonly processPaymentUseCase: ProcessPaymentUseCase,
+    private readonly getPaymentUseCase: GetPaymentUseCase,
     private readonly processStripeWebhookUseCase: ProcessStripeWebhookUseCase,
     private readonly refundPaymentUseCase: RefundPaymentUseCase,
     private readonly createSubscriptionUseCase: CreateSubscriptionUseCase,
     private readonly cancelSubscriptionUseCase: CancelSubscriptionUseCase,
+    private readonly getUserPaymentsUseCase: GetUserPaymentsUseCase,
+    private readonly getUserSubscriptionUseCase: GetUserSubscriptionUseCase,
     @Inject(PAYMENT_PROCESSOR)
     private readonly paymentProcessor: IPaymentProcessor,
+    @Inject(SUBSCRIPTION_SERVICE)
+    private readonly subscriptionService: ISubscriptionService,
   ) { }
 
   /**
    * Create a new payment
    * POST /payments
+   * Rate limited: 20 requests per minute (short tier)
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  // TODO: Add JWT guard when authentication is implemented
-  // @UseGuards(JwtAuthGuard)
+  @Throttle({ short: { limit: 20, ttl: 60000 } })
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(IdempotencyInterceptor)
   async createPayment(
     @Body() dto: CreatePaymentHttpDto,
-    // TODO: Add user decorator when authentication is implemented
-    // @User() user: { id: string }
+    @User() user: { id: string; email: string }
   ): Promise<CreatePaymentHttpResponse> {
-    // TODO: Extract user ID from JWT token instead of request body
-    // const userId = user.id;
-    const userId = dto.userId || 'user-123'; // TEMPORARY: Remove when JWT is implemented
-
-    // Validate input
-    if (!userId) {
-      throw new Error('User ID is required');
-    }
+    const userId = user.id;
+    const userEmail = user.email;
 
     // Transform HTTP DTO to Application DTO
     const request = new CreatePaymentRequest(
       userId,
+      userEmail,
       dto.amount,
       dto.currency,
       dto.paymentMethod,
@@ -89,26 +95,25 @@ export class PaymentController {
    */
   @Post(':id/process')
   @HttpCode(HttpStatus.OK)
-  // TODO: Add JWT guard when authentication is implemented
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(IdempotencyInterceptor)
   async processPayment(@Param('id') paymentId: string): Promise<PaymentResponse> {
     // Execute use case
     const result = await this.processPaymentUseCase.execute({
       paymentId
     });
 
-    // TODO: Implement GetPaymentUseCase to fetch complete payment details
-    // For now, return basic response - this should be improved
+    // Return response using actual result data
     return new PaymentResponse(
       result.paymentId,
-      'user-123', // TODO: Get from payment entity
-      0, // TODO: Get from payment entity
-      'USD', // TODO: Get from payment entity
+      result.userId,
+      result.amount,
+      result.currency,
       result.status as PaymentStatus,
-      PaymentMethod.CARD, // TODO: Get from payment entity
-      'Payment processed', // TODO: Get from payment entity
-      new Date(), // TODO: Get from payment entity
-      new Date(), // TODO: Get from payment entity
+      result.method as PaymentMethod,
+      result.description,
+      result.createdAt,
+      result.updatedAt,
       result.completedAt
     );
   }
@@ -116,9 +121,12 @@ export class PaymentController {
   /**
    * Refund a payment
    * POST /payments/:id/refund
+   * Rate limited: 5 requests per minute (strict tier - high-risk operation)
    */
   @Post(':id/refund')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ strict: { limit: 5, ttl: 60000 } })
+  @UseInterceptors(IdempotencyInterceptor)
   async refundPayment(
     @Param('id') paymentId: string,
     @Body() body: RefundPaymentRequestDto
@@ -146,19 +154,19 @@ export class PaymentController {
    */
   @Get(':id')
   async getPayment(@Param('id') paymentId: string): Promise<PaymentResponse> {
-    // Mock response for now
-    // In production, implement GetPaymentUseCase
+    const result = await this.getPaymentUseCase.execute({ paymentId });
+
     return new PaymentResponse(
-      paymentId,
-      'user-123',
-      10.00,
-      'USD',
-      PaymentStatus.COMPLETED,
-      PaymentMethod.CARD,
-      'Test payment',
-      new Date(),
-      new Date(),
-      new Date()
+      result.paymentId,
+      result.userId,
+      result.amount,
+      result.currency,
+      result.status as PaymentStatus,
+      result.method as PaymentMethod,
+      result.description,
+      result.createdAt,
+      result.updatedAt,
+      result.completedAt
     );
   }
 
@@ -167,28 +175,24 @@ export class PaymentController {
    * GET /payments
    */
   @Get()
-  // TODO: Add JWT guard when authentication is implemented
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   async getUserPayments(
-    // TODO: Add user decorator when authentication is implemented
-    // @User() user: { id: string }
+    @User() user: { id: string }
   ): Promise<PaymentResponse[]> {
-    // TODO: Implement GetUserPaymentsUseCase with proper user filtering
-    // For now, return mock data - this should be implemented properly
-    return [
-      new PaymentResponse(
-        'payment-123',
-        'user-123', // TODO: Use actual user ID
-        10.00,
-        'USD',
-        PaymentStatus.COMPLETED,
-        PaymentMethod.CARD,
-        'Test payment',
-        new Date(),
-        new Date(),
-        new Date()
-      )
-    ];
+    const result = await this.getUserPaymentsUseCase.execute(user.id);
+
+    return result.map(p => new PaymentResponse(
+      p.getId(),
+      p.getUserId(),
+      p.getAmount().getAmount(),
+      p.getAmount().getCurrency(),
+      p.getStatus() as PaymentStatus,
+      p.getMethod() as PaymentMethod,
+      p.getDescription(),
+      p.getCreatedAt(),
+      p.getUpdatedAt(),
+      p.getCompletedAt()
+    ));
   }
 
   /**
@@ -197,15 +201,17 @@ export class PaymentController {
    *
    * CRITICAL: This endpoint must be publicly accessible for Stripe webhooks
    * and should validate webhook signatures for security
+   * Rate limiting skipped - Stripe controls webhook frequency
    */
   @Post('webhooks/stripe')
+  @SkipThrottle() // Stripe controls webhook frequency, don't rate limit
   async handleStripeWebhook(
-    @Body() rawBody: Buffer, // Raw body buffer for signature validation (NestJS rawBody: true)
-    @Request() req: { headers: Record<string, string | string[]> }
+    @Request() req: any
   ): Promise<{ received: true }> {
     try {
       // Get raw body and signature from request
-      const payload = rawBody.toString('utf8');
+      // CRITICAL: Use req.rawBody provided by NestJS rawBody: true option
+      const payload = req.rawBody;
       const signature = req.headers['stripe-signature'] as string;
 
       if (!signature) {
@@ -243,7 +249,8 @@ export class PaymentController {
           currency: paymentIntent.currency,
           status: paymentIntent.status,
           metadata: paymentIntent.metadata,
-          eventData: event.data
+          eventData: event.data,
+          stripeEventId: event.id
         };
 
         const result = await this.processStripeWebhookUseCase.execute(webhookRequest);
@@ -265,7 +272,8 @@ export class PaymentController {
           customerId: subscription.customer as string,
           status: subscription.status,
           metadata: subscription.metadata,
-          eventData: event.data
+          eventData: event.data,
+          stripeEventId: event.id
         };
 
         const result = await this.processStripeWebhookUseCase.execute(webhookRequest);
@@ -288,7 +296,8 @@ export class PaymentController {
           amount: invoice.amount_due,
           currency: invoice.currency,
           metadata: invoice.metadata,
-          eventData: event.data
+          eventData: event.data,
+          stripeEventId: event.id
         };
 
         const result = await this.processStripeWebhookUseCase.execute(webhookRequest);
@@ -328,56 +337,37 @@ export class PaymentController {
    */
   @Get('subscriptions/plans')
   async getSubscriptionPlans(): Promise<SubscriptionPlansResponse> {
-    // TODO: Implement GetSubscriptionPlansUseCase
-    // For now, return mock data
-    return [
-      {
-        id: 'basic-monthly',
-        name: 'Basic Monthly',
-        description: 'Basic streaming access with monthly billing',
-        amount: 9.99,
-        currency: 'USD',
-        interval: 'month',
-        features: ['HD streaming', '1 device', 'Basic support']
-      },
-      {
-        id: 'premium-monthly',
-        name: 'Premium Monthly',
-        description: 'Premium streaming access with monthly billing',
-        amount: 14.99,
-        currency: 'USD',
-        interval: 'month',
-        features: ['4K streaming', '3 devices', 'Priority support', 'Offline downloads']
-      },
-      {
-        id: 'basic-yearly',
-        name: 'Basic Yearly',
-        description: 'Basic streaming access with yearly billing',
-        amount: 99.99,
-        currency: 'USD',
-        interval: 'year',
-        features: ['HD streaming', '1 device', 'Basic support', 'Save 17%']
-      }
-    ];
+    // Fetch real plans from subscription service
+    const plans = await this.subscriptionService.getAvailablePlans();
+    return plans.map(plan => ({
+      id: plan.id,
+      name: plan.name,
+      description: plan.description,
+      amount: plan.amount.getAmount(),
+      currency: plan.amount.getCurrency(),
+      interval: plan.interval,
+      features: plan.features,
+    }));
   }
 
   /**
    * Create a new subscription
    * POST /payments/subscriptions
+   * Rate limited: 20 requests per minute (short tier)
    */
   @Post('subscriptions')
   @HttpCode(HttpStatus.CREATED)
-  // TODO: Add JWT guard when authentication is implemented
-  // @UseGuards(JwtAuthGuard)
+  @Throttle({ short: { limit: 20, ttl: 60000 } })
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(IdempotencyInterceptor)
   async createSubscription(
     @Body() dto: { planId: string; paymentMethodId?: string; trialDays?: number; metadata?: Record<string, string> },
-    // TODO: Add user decorator when authentication is implemented
-    // @User() user: { id: string }
+    @User() user: { id: string; email: string }
   ): Promise<CreateSubscriptionResponse> {
-    // TODO: Extract user ID from JWT token
-    const userId = 'user-123'; // TEMPORARY
+    const userId = user.id;
+    const userEmail = user.email;
 
-    const result = await this.createSubscriptionUseCase.execute(userId, dto);
+    const result = await this.createSubscriptionUseCase.execute(userId, userEmail, dto);
 
     return result;
   }
@@ -388,16 +378,14 @@ export class PaymentController {
    */
   @Post('subscriptions/:id/cancel')
   @HttpCode(HttpStatus.OK)
-  // TODO: Add JWT guard when authentication is implemented
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(IdempotencyInterceptor)
   async cancelSubscription(
     @Param('id') subscriptionId: string,
     @Body() dto: CancelSubscriptionRequestDto,
-    // TODO: Add user decorator when authentication is implemented
-    // @User() user: { id: string }
+    @User() user: { id: string }
   ): Promise<CancelSubscriptionResponse> {
-    // TODO: Extract user ID from JWT token
-    const userId = 'user-123'; // TEMPORARY
+    const userId = user.id;
 
     const result = await this.cancelSubscriptionUseCase.execute(userId, {
       subscriptionId,
@@ -413,27 +401,26 @@ export class PaymentController {
    * GET /payments/subscriptions/my
    */
   @Get('subscriptions/my')
-  // TODO: Add JWT guard when authentication is implemented
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   async getMySubscription(
-    // TODO: Add user decorator when authentication is implemented
-    // @User() user: { id: string }
-  ): Promise<SubscriptionResponse> {
-    // TODO: Implement GetUserSubscriptionUseCase
-    // TODO: Extract user ID from JWT token
-    const userId = 'user-123'; // TEMPORARY
+    @User() user: { id: string }
+  ): Promise<SubscriptionResponse | null> {
+    const result = await this.getUserSubscriptionUseCase.execute(user.id);
 
-    // Mock response for now
+    if (!result) {
+      return null;
+    }
+
     return new SubscriptionResponse(
-      'sub_123',
-      SubscriptionStatus.ACTIVE,
-      'premium-monthly',
-      new Date(),
-      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      false,
-      14.99,
-      'USD',
-      'month'
+      result.getId(),
+      result.getStatus(),
+      result.getPriceId() || 'unknown',
+      result.getCurrentPeriodStart(),
+      result.getCurrentPeriodEnd(),
+      result.getCancelAtPeriodEnd(),
+      result.getAmount().getAmount(),
+      result.getAmount().getCurrency(),
+      result.getInterval()
     );
   }
 }

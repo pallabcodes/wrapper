@@ -43,11 +43,21 @@ export class RefundPaymentUseCase {
     private readonly paymentProcessor: IPaymentProcessor,
     @Inject(NOTIFICATION_SERVICE)
     private readonly notificationService: INotificationService,
-  ) {}
+  ) { }
 
   async execute(request: RefundPaymentRequest): Promise<RefundPaymentResponse> {
-    // 1. Find payment
-    const payment = await this.paymentRepository.findById(request.paymentId);
+    // 1. Find payment - support both internal ID (UUID) and Stripe Payment Intent ID (pi_xxx)
+    let payment: Payment | null = null;
+
+    // Check format first to avoid database UUID parse errors
+    if (request.paymentId.startsWith('pi_')) {
+      // It's a Stripe Payment Intent ID
+      payment = await this.paymentRepository.findByStripePaymentIntentId(request.paymentId);
+    } else {
+      // Assume it's our internal UUID
+      payment = await this.paymentRepository.findById(request.paymentId);
+    }
+
     if (!payment) {
       throw DomainException.paymentNotFound(request.paymentId);
     }
@@ -92,6 +102,7 @@ export class RefundPaymentUseCase {
     await this.notificationService.sendRefundProcessed(
       payment.getId(),
       payment.getUserId(),
+      payment.getUserEmail(),
       refundAmount.getAmount(),
       refundAmount.getCurrency()
     );

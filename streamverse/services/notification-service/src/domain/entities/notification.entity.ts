@@ -40,6 +40,7 @@ export class Notification {
     private readonly priority: NotificationPriority,
     private status: NotificationStatus,
     private readonly metadata: Record<string, any>,
+    private readonly idempotencyKey: string | undefined,
     private readonly createdAt: Date,
     private updatedAt: Date,
     private sentAt?: Date,
@@ -47,7 +48,7 @@ export class Notification {
     private failedAt?: Date,
     private failureReason?: string,
     private readonly version: number = 1
-  ) {}
+  ) { }
 
   static create(
     id: string,
@@ -57,7 +58,8 @@ export class Notification {
     subject: string,
     content: string,
     priority: NotificationPriority = NotificationPriority.NORMAL,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, any> = {},
+    idempotencyKey?: string,
   ): Notification {
     const now = new Date();
     return new Notification(
@@ -70,6 +72,7 @@ export class Notification {
       priority,
       NotificationStatus.PENDING,
       metadata,
+      idempotencyKey,
       now,
       now,
       undefined,
@@ -90,6 +93,7 @@ export class Notification {
     priority: NotificationPriority;
     status: NotificationStatus;
     metadata: Record<string, any>;
+    idempotencyKey?: string;
     createdAt: Date;
     updatedAt: Date;
     sentAt?: Date;
@@ -118,6 +122,7 @@ export class Notification {
       data.priority,
       data.status,
       data.metadata,
+      data.idempotencyKey,
       data.createdAt,
       data.updatedAt,
       data.sentAt,
@@ -172,6 +177,10 @@ export class Notification {
     return { ...this.metadata };
   }
 
+  getIdempotencyKey(): string | undefined {
+    return this.idempotencyKey;
+  }
+
   getCreatedAt(): Date {
     return this.createdAt;
   }
@@ -211,7 +220,7 @@ export class Notification {
 
   isSent(): boolean {
     return this.status === NotificationStatus.SENT ||
-           this.status === NotificationStatus.DELIVERED;
+      this.status === NotificationStatus.DELIVERED;
   }
 
   isFailed(): boolean {
@@ -220,7 +229,7 @@ export class Notification {
 
   isHighPriority(): boolean {
     return this.priority === NotificationPriority.HIGH ||
-           this.priority === NotificationPriority.URGENT;
+      this.priority === NotificationPriority.URGENT;
   }
 
   // Business Methods

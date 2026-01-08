@@ -47,7 +47,11 @@ export class StripePaymentProcessor implements IPaymentProcessor {
       const amountInCents = amount.getAmountInCents();
 
       // Map payment method to Stripe payment method types
+      // Map payment method to Stripe payment method types
       const paymentMethodTypes = this.mapPaymentMethod(paymentMethod);
+
+      // Extract description if present in metadata to satisfy India Export regulations
+      const description = metadata?.description ? String(metadata.description) : undefined;
 
       // Generate idempotency key if not provided (critical for production)
       const key = idempotencyKey || `pi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -56,6 +60,7 @@ export class StripePaymentProcessor implements IPaymentProcessor {
         amount: amountInCents,
         currency: currency.toLowerCase(),
         payment_method_types: paymentMethodTypes,
+        description: description,
         metadata: {
           ...metadata,
           source: 'streamverse_payment_service',
@@ -252,6 +257,28 @@ export class StripePaymentProcessor implements IPaymentProcessor {
         id: customer.id,
         email: customer.email!,
       };
+    } catch (error: unknown) {
+      throw this.handleStripeError(error);
+    }
+  }
+
+  async attachPaymentMethod(paymentMethodId: string, customerId: string): Promise<void> {
+    try {
+      await this.stripe.paymentMethods.attach(paymentMethodId, {
+        customer: customerId,
+      });
+    } catch (error: unknown) {
+      throw this.handleStripeError(error);
+    }
+  }
+
+  async setDefaultPaymentMethod(customerId: string, paymentMethodId: string): Promise<void> {
+    try {
+      await this.stripe.customers.update(customerId, {
+        invoice_settings: {
+          default_payment_method: paymentMethodId,
+        },
+      });
     } catch (error: unknown) {
       throw this.handleStripeError(error);
     }

@@ -9,19 +9,25 @@ import { NOTIFICATION_REPOSITORY } from './domain/ports/notification-repository.
 import { EMAIL_PROVIDER } from './domain/ports/notification-providers.port';
 import { SMS_PROVIDER } from './domain/ports/notification-providers.port';
 import { PUSH_PROVIDER } from './domain/ports/notification-providers.port';
+
 import { TEMPLATE_SERVICE } from './domain/ports/notification-template.port';
+import { DEAD_LETTER_QUEUE } from './domain/ports/dead-letter-queue.port';
 
 // Infrastructure Implementations
 import { PostgresNotificationRepository } from './infrastructure/persistence/postgres-notification.repository';
 import { NotificationEntity } from './infrastructure/persistence/entities/notification.entity';
+import { DeadLetterEntity } from './infrastructure/dead-letter/entities/dead-letter.entity';
 import { SendGridEmailProvider } from './infrastructure/email/sendgrid-email.provider';
+import { ResilientEmailProvider } from './infrastructure/email/resilient-email.provider';
 import { TwilioSMSProvider } from './infrastructure/sms/twilio-sms.provider';
+import { ResilientSMSProvider } from './infrastructure/sms/resilient-sms.provider';
 import { FirebasePushProvider } from './infrastructure/push/firebase-push.provider';
 import { NotificationTemplateService } from './infrastructure/templates/notification-template.service';
 import { RedisTokenService } from './infrastructure/cache/redis-token.service';
 import { EventStoreService } from './infrastructure/event-sourcing/event-store.service';
 import { OutboxService } from './infrastructure/outbox/outbox.service';
-import { DeadLetterQueueService } from './infrastructure/dead-letter/dead-letter-queue.service';
+
+import { PostgresDeadLetterQueue } from './infrastructure/dead-letter/dead-letter-queue.service';
 
 // Application Layer
 import { SendNotificationUseCase } from './application/use-cases/send-notification.usecase';
@@ -29,6 +35,8 @@ import { SendNotificationUseCase } from './application/use-cases/send-notificati
 // Presentation Layer
 import { NotificationController } from './presentation/http/controllers/notification.controller';
 import { HealthController } from './presentation/http/controllers/health.controller';
+import { PaymentEventsController } from './presentation/controllers/payment-events.controller';
+import { UserEventsController } from './presentation/controllers/user-events.controller';
 
 /**
  * App Module: Dependency Injection Container
@@ -54,7 +62,7 @@ import { HealthController } from './presentation/http/controllers/health.control
         username: configService.get('DB_USERNAME', 'postgres'),
         password: configService.get('DB_PASSWORD', 'password'),
         database: configService.get('DB_NAME', 'streamverse'),
-        entities: [NotificationEntity],
+        entities: [NotificationEntity, DeadLetterEntity],
         synchronize: configService.get('NODE_ENV') !== 'production', // Auto-sync in development
         logging: configService.get('NODE_ENV') === 'development',
       }),
@@ -62,7 +70,7 @@ import { HealthController } from './presentation/http/controllers/health.control
     }),
 
     // TypeORM Entities
-    TypeOrmModule.forFeature([NotificationEntity]),
+    TypeOrmModule.forFeature([NotificationEntity, DeadLetterEntity]),
 
     // Kafka Client for messaging
     ClientsModule.registerAsync([
@@ -101,7 +109,6 @@ import { HealthController } from './presentation/http/controllers/health.control
     },
 
     // Redis Token Service (for distributed locks)
-    // Redis Token Service (for distributed locks)
     RedisTokenService,
 
     // Application Layer
@@ -114,12 +121,16 @@ import { HealthController } from './presentation/http/controllers/health.control
     },
     {
       provide: EMAIL_PROVIDER,
-      useClass: SendGridEmailProvider,
+      useClass: ResilientEmailProvider,
     },
+    // Base SendGrid provider (injected into ResilientEmailProvider)
+    SendGridEmailProvider,
     {
       provide: SMS_PROVIDER,
-      useClass: TwilioSMSProvider,
+      useClass: ResilientSMSProvider,
     },
+    // Base Twilio provider (injected into ResilientSMSProvider)
+    TwilioSMSProvider,
     {
       provide: PUSH_PROVIDER,
       useClass: FirebasePushProvider,
@@ -129,18 +140,23 @@ import { HealthController } from './presentation/http/controllers/health.control
       useClass: NotificationTemplateService,
     },
 
-    // Event Sourcing for audit trail
+    // Event Sourcing
     EventStoreService,
 
     // Outbox Pattern for transactional messaging
     OutboxService,
 
-    // Dead Letter Queue for failed processing
-    DeadLetterQueueService,
+    // Dead Letter Queue Strategy (currently Postgres, can be switched to SQS)
+    {
+      provide: DEAD_LETTER_QUEUE,
+      useClass: PostgresDeadLetterQueue,
+    },
   ],
   controllers: [
     NotificationController,
     HealthController,
+    PaymentEventsController,
+    UserEventsController,
   ],
 })
 export class AppModule { }

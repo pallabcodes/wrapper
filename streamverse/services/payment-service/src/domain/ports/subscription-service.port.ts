@@ -15,6 +15,7 @@ export interface SubscriptionPlan {
 
 export interface CreateSubscriptionRequest {
   userId: string;
+  email: string;
   planId: string;
   paymentMethodId?: string; // Stripe PaymentMethod ID
   trialDays?: number;

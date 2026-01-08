@@ -36,7 +36,7 @@ export class Money {
   private constructor(
     private readonly amount: number, // Amount in cents (for precision)
     private readonly currency: string
-  ) {}
+  ) { }
 
   /**
    * Validate if currency is supported by Stripe
@@ -50,8 +50,11 @@ export class Money {
 
   /**
    * Validate if amount meets Stripe's minimum requirements
+   * Only applies when amount is greater than 0 (allows zero for calculations)
    */
   private static validateMinimumAmount(cents: number, currency: string): void {
+    if (cents === 0) return; // Skip validation for zero amounts (used in calculations)
+
     const upperCurrency = currency.toUpperCase();
     const minimum = STRIPE_MINIMUM_AMOUNTS[upperCurrency];
     if (minimum && cents < minimum) {

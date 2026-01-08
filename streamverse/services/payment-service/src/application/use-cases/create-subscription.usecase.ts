@@ -39,6 +39,7 @@ export class CreateSubscriptionUseCase {
 
   async execute(
     userId: string,
+    userEmail: string,
     request: {
       planId: string;
       paymentMethodId?: string;
@@ -61,6 +62,7 @@ export class CreateSubscriptionUseCase {
     // Create subscription request
     const subscriptionRequest: CreateSubscriptionRequest = {
       userId,
+      email: userEmail,
       planId: request.planId,
       paymentMethodId: request.paymentMethodId,
       trialDays: request.trialDays,

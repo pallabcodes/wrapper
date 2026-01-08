@@ -8,7 +8,10 @@ export enum PaymentStatus {
   FAILED = 'failed',
   CANCELLED = 'cancelled',
   REFUNDED = 'refunded',
-  PARTIALLY_REFUNDED = 'partially_refunded'
+  PARTIALLY_REFUNDED = 'partially_refunded',
+  DISPUTE_OPEN = 'dispute_open',
+  DISPUTE_WON = 'dispute_won',
+  DISPUTE_LOST = 'dispute_lost'
 }
 
 /**
@@ -20,6 +23,7 @@ export class Subscription {
   private constructor(
     private readonly id: string,
     private readonly userId: string,
+    private readonly userEmail: string,
     private status: SubscriptionStatus,
     private interval: SubscriptionInterval,
     private readonly amount: Money,
@@ -39,6 +43,7 @@ export class Subscription {
   static create(
     id: string,
     userId: string,
+    userEmail: string,
     interval: SubscriptionInterval,
     amount: Money,
     description: string
@@ -49,6 +54,7 @@ export class Subscription {
     return new Subscription(
       id,
       userId,
+      userEmail,
       SubscriptionStatus.INCOMPLETE,
       interval,
       amount,
@@ -69,6 +75,7 @@ export class Subscription {
   static fromPersistence(data: {
     id: string;
     userId: string;
+    userEmail: string;
     status: SubscriptionStatus;
     interval: SubscriptionInterval;
     amount: number;
@@ -90,6 +97,7 @@ export class Subscription {
     return new Subscription(
       data.id,
       data.userId,
+      data.userEmail,
       data.status,
       data.interval,
       amount,
@@ -110,6 +118,7 @@ export class Subscription {
   // Getters
   getId(): string { return this.id; }
   getUserId(): string { return this.userId; }
+  getUserEmail(): string { return this.userEmail; }
   getStatus(): SubscriptionStatus { return this.status; }
   getInterval(): SubscriptionInterval { return this.interval; }
   getAmount(): Money { return this.amount; }
@@ -121,6 +130,7 @@ export class Subscription {
   getStripeSubscriptionId(): string | undefined { return this.stripeSubscriptionId; }
   getStripeCustomerId(): string | undefined { return this.stripeCustomerId; }
   getStripePriceId(): string | undefined { return this.stripePriceId; }
+  getPriceId(): string | undefined { return this.stripePriceId; }
   getCreatedAt(): Date { return this.createdAt; }
   getUpdatedAt(): Date { return this.updatedAt; }
   getVersion(): number { return this.version; }
@@ -288,6 +298,7 @@ export class Payment {
   private constructor(
     private readonly id: string,
     private readonly userId: string,
+    private readonly userEmail: string,
     private amount: Money,
     private status: PaymentStatus,
     private method: PaymentMethod,
@@ -305,6 +316,7 @@ export class Payment {
   static create(
     id: string,
     userId: string,
+    userEmail: string,
     amount: Money,
     method: PaymentMethod,
     description: string
@@ -313,6 +325,7 @@ export class Payment {
     return new Payment(
       id,
       userId,
+      userEmail,
       amount,
       PaymentStatus.PENDING,
       method,
@@ -331,6 +344,7 @@ export class Payment {
   static fromPersistence(data: {
     id: string;
     userId: string;
+    userEmail: string;
     amount: number;
     currency: string;
     status: PaymentStatus;
@@ -354,6 +368,7 @@ export class Payment {
     return new Payment(
       data.id,
       data.userId,
+      data.userEmail,
       amount,
       data.status,
       data.method,
@@ -376,6 +391,10 @@ export class Payment {
 
   getUserId(): string {
     return this.userId;
+  }
+
+  getUserEmail(): string {
+    return this.userEmail;
   }
 
   getAmount(): Money {
@@ -433,6 +452,11 @@ export class Payment {
       return;
     }
     this.stripePaymentIntentId = paymentIntentId;
+    this.updatedAt = new Date();
+  }
+
+  markAsDisputed(): void {
+    this.status = PaymentStatus.DISPUTE_OPEN;
     this.updatedAt = new Date();
   }
 
@@ -529,10 +553,13 @@ export class Payment {
       throw DomainException.refundAmountTooLarge();
     }
 
-    this.refundedAmount = refundAmount;
+    // CRITICAL: Accumulate refunded amount, don't replace
+    const currentRefunded = this.refundedAmount || Money.fromCents(0, this.amount.getCurrency());
+    this.refundedAmount = currentRefunded.add(refundAmount);
     this.stripeRefundId = stripeRefundId;
 
-    if (refundAmount.equals(this.amount)) {
+    // Check if TOTAL refunded equals original amount
+    if (this.refundedAmount.equals(this.amount)) {
       this.status = PaymentStatus.REFUNDED;
     } else {
       this.status = PaymentStatus.PARTIALLY_REFUNDED;

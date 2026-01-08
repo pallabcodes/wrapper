@@ -16,7 +16,7 @@ export class PostgresSubscriptionRepository implements ISubscriptionRepository {
   constructor(
     @InjectRepository(SubscriptionEntity)
     private readonly subscriptionRepository: Repository<SubscriptionEntity>,
-  ) {}
+  ) { }
 
   async save(subscription: Subscription): Promise<void> {
     const subscriptionEntity = this.toEntity(subscription);
@@ -107,6 +107,7 @@ export class PostgresSubscriptionRepository implements ISubscriptionRepository {
     const entity = new SubscriptionEntity();
     entity.id = subscription.getId();
     entity.userId = subscription.getUserId();
+    entity.userEmail = subscription.getUserEmail();
     entity.status = subscription.getStatus();
     entity.interval = subscription.getInterval();
     entity.amount = subscription.getAmount().getAmountInCents();
@@ -130,6 +131,7 @@ export class PostgresSubscriptionRepository implements ISubscriptionRepository {
     return Subscription.fromPersistence({
       id: entity.id,
       userId: entity.userId,
+      userEmail: entity.userEmail,
       status: entity.status,
       interval: entity.interval,
       amount: entity.amount,

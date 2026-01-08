@@ -1,18 +1,30 @@
+// CRITICAL: Initialize tracing BEFORE any other imports
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { initTracing } = require('@streamverse/common');
+initTracing('notification-service');
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app.module';
 import { validateEnvironment, getEnvironmentSummary } from './infrastructure/config/env-validation';
+import { PinoLoggerService, CorrelationMiddleware } from '@streamverse/common';
 
 /**
  * Application Bootstrap
  *
- * Initializes and starts the Notification Service
+ * Initializes and starts the Notification Service with full observability
  */
 async function bootstrap() {
+  // Create Pino logger for structured logging
+  const logger = new PinoLoggerService('notification-service');
+
   // Create HTTP application for REST API
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    // Use Pino for structured logging with correlation IDs
+    logger,
+  });
 
   // Get configuration service
   const configService = app.get(ConfigService);
@@ -22,7 +34,10 @@ async function bootstrap() {
 
   // Log environment summary
   const envSummary = getEnvironmentSummary(configService);
-  console.log('🔧 Notification Service Configuration:', JSON.stringify(envSummary, null, 2));
+  logger.log(`Service Configuration: ${JSON.stringify(envSummary)}`);
+
+  // Apply correlation middleware for request tracing
+  app.use(new CorrelationMiddleware().use.bind(new CorrelationMiddleware()));
 
   // Enable global validation pipes
   app.useGlobalPipes(new ValidationPipe({
@@ -33,7 +48,7 @@ async function bootstrap() {
 
   // Enable CORS for web clients
   app.enableCors({
-    origin: configService.get('CORS_ORIGIN', '*'), // Allow all origins for development
+    origin: configService.get('CORS_ORIGIN', '*'),
     credentials: true,
   });
 
@@ -53,7 +68,7 @@ async function bootstrap() {
           brokers: [configService.get('KAFKA_BROKERS', 'localhost:9092')],
         },
         consumer: {
-          groupId: 'notification-service', // Consumer group for load balancing
+          groupId: 'notification-service',
         },
       },
     }
@@ -62,13 +77,11 @@ async function bootstrap() {
   // Start microservice (Kafka consumer)
   await microservice.listen();
 
-  console.log(`🔔 StreamVerse Notification Service running:`);
-  console.log(`  🌐 HTTP API: http://localhost:${port}`);
-  console.log(`  📊 Health check: http://localhost:${port}/health`);
-  console.log(`  📧 REST API: http://localhost:${port}/notifications`);
-  console.log(`  📚 API docs: http://localhost:${port}/api`);
-  console.log(`  📨 Kafka Consumer: Active (group: notification-service)`);
-  console.log(`  🔔 Consuming events: user.email.verification, user.password.reset, user.welcome, etc.`);
+  logger.log(`🔔 StreamVerse Notification Service running:`);
+  logger.log(`  🌐 HTTP API: http://localhost:${port}`);
+  logger.log(`  📊 Health check: http://localhost:${port}/health`);
+  logger.log(`  📈 Metrics: http://localhost:${port}/metrics`);
+  logger.log(`  📨 Kafka Consumer: Active (group: notification-service)`);
 }
 
 bootstrap();

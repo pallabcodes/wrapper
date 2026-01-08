@@ -20,6 +20,7 @@ import { RedisTokenService } from './infrastructure/cache/redis-token.service';
 import { RateLimitGuard } from './infrastructure/security/rate-limit.guard';
 import { MessageQueueNotificationService } from './infrastructure/messaging/notification.service';
 import { AWSService } from './infrastructure/aws/aws.service';
+import { KafkaEventBusAdapter } from './infrastructure/adapters/kafka-event-bus.adapter';
 
 // Application Layer
 import { RegisterUserUseCase } from './application/use-cases/register-user.usecase';
@@ -135,16 +136,6 @@ import { HealthController } from './presentation/http/controllers/health.control
             // TODO: Install @aws-sdk/client-sqs and implement SQS transport
             console.log('🚀 Using AWS SQS for messaging (production AWS deployment)');
             throw new Error('AWS SQS transport not yet implemented - install @aws-sdk/client-sqs');
-            // return {
-            //   transport: Transport.SQS,
-            //   options: {
-            //     client: new SqsClient({
-            //       region: configService.get('AWS_REGION'),
-            //       credentials: { /* AWS credentials */ }
-            //     }),
-            //     queueUrl: configService.get('NOTIFICATION_QUEUE_URL'),
-            //   },
-            // };
           } else {
             // Development or non-AWS production: Use Kafka
             console.log('📨 Using Kafka for messaging');
@@ -161,6 +152,24 @@ import { HealthController } from './presentation/http/controllers/health.control
             };
           }
         },
+        inject: [ConfigService],
+      },
+      // KAFKA_CLIENT for general Event Bus publishing
+      {
+        name: 'KAFKA_CLIENT',
+        imports: [ConfigModule],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.KAFKA,
+          options: {
+            client: {
+              clientId: 'user-service-producer',
+              brokers: [configService.get('KAFKA_BROKERS', 'localhost:9092')],
+            },
+            consumer: {
+              groupId: 'user-service-producer-group',
+            },
+          },
+        }),
         inject: [ConfigService],
       },
     ]),
@@ -196,6 +205,11 @@ import { HealthController } from './presentation/http/controllers/health.control
       provide: NOTIFICATION_SERVICE,
       useClass: MessageQueueNotificationService,
     },
+    {
+      provide: 'EVENT_BUS',
+      useClass: KafkaEventBusAdapter,
+    },
+    KafkaEventBusAdapter,
 
     RedisTokenService,
     RateLimitGuard,

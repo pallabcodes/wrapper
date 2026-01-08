@@ -15,6 +15,9 @@ export class PaymentEntity {
   @Column('uuid', { name: 'user_id' })
   userId!: string;
 
+  @Column('varchar', { name: 'user_email', length: 255 })
+  userEmail!: string;
+
   @Column('integer')
   amount!: number; // Amount in cents
 

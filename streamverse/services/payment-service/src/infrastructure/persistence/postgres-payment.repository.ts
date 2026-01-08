@@ -18,7 +18,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
   constructor(
     @InjectRepository(PaymentEntity)
     private readonly paymentRepository: Repository<PaymentEntity>,
-  ) {}
+  ) { }
 
   async save(payment: Payment): Promise<void> {
     const entity = this.toEntity(payment);
@@ -63,6 +63,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     const entity = new PaymentEntity();
     entity.id = payment.getId();
     entity.userId = payment.getUserId();
+    entity.userEmail = payment.getUserEmail();
     entity.amount = payment.getAmount().getAmountInCents();
     entity.currency = payment.getAmount().getCurrency();
     entity.status = payment.getStatus();
@@ -90,6 +91,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     return Payment.fromPersistence({
       id: entity.id,
       userId: entity.userId,
+      userEmail: entity.userEmail,
       amount: entity.amount,
       currency: entity.currency,
       status: entity.status,

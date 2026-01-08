@@ -47,6 +47,11 @@ export interface INotificationRepository {
   ): Promise<Notification[]>;
 
   /**
+   * Find notification by unique idempotency key
+   */
+  findByIdempotencyKey(key: string): Promise<Notification | null>;
+
+  /**
    * Get notification statistics
    */
   getStats(): Promise<{

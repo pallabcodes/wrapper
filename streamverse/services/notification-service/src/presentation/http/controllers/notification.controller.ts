@@ -8,7 +8,7 @@ import { Email } from '../../../domain/value-objects/email.vo';
 import { RedisTokenService } from '../../../infrastructure/cache/redis-token.service';
 import { EventStoreService } from '../../../infrastructure/event-sourcing/event-store.service';
 import { OutboxService } from '../../../infrastructure/outbox/outbox.service';
-import { DeadLetterQueueService } from '../../../infrastructure/dead-letter/dead-letter-queue.service';
+import { IDeadLetterQueue, DEAD_LETTER_QUEUE } from '../../../domain/ports/dead-letter-queue.port';
 import { NOTIFICATION_REPOSITORY } from '../../../domain/ports/notification-repository.port';
 import { INotificationRepository } from '../../../domain/ports/notification-repository.port';
 
@@ -55,7 +55,8 @@ export class NotificationController {
     private readonly redisTokenService: RedisTokenService,
     private readonly eventStore: EventStoreService,
     private readonly outboxService: OutboxService,
-    private readonly deadLetterQueue: DeadLetterQueueService,
+    @Inject(DEAD_LETTER_QUEUE)
+    private readonly deadLetterQueue: IDeadLetterQueue,
     @Inject(NOTIFICATION_REPOSITORY)
     private readonly notificationRepository: INotificationRepository,
   ) { }
@@ -639,6 +640,145 @@ export class NotificationController {
       console.log('✅ OTP SMS sent to:', data.identifier);
     } catch (error) {
       console.error('❌ Failed to send OTP SMS:', error);
+    }
+  }
+
+  /**
+   * Kafka Event Consumer: Payment Completed
+   * Subscribes to topic: 'payment.completed'
+   */
+  @EventPattern('payment.completed')
+  async handlePaymentCompleted(
+    @Payload() data: { paymentId: string; userId: string; email: string; amount: number; currency: string; timestamp: Date },
+    @Ctx() context: KafkaContext,
+  ) {
+    console.log('💰 Processing Payment Receipt:', data.paymentId);
+
+    try {
+      await this.sendNotificationUseCase.execute(
+        new SendNotificationRequest(
+          data.userId,
+          NotificationType.EMAIL,
+          data.email,
+          `Payment Receipt: ${data.currency} ${data.amount}`,
+          undefined,
+          'payment-receipt',
+          {
+            amount: data.amount,
+            currency: data.currency,
+            paymentId: data.paymentId,
+            date: new Date().toLocaleDateString()
+          },
+          undefined,
+          undefined,
+          `payment_completed_${data.paymentId}` // Idempotency Key
+        )
+      );
+      console.log('✅ Payment receipt sent to:', data.email);
+    } catch (error) {
+      console.error('❌ Payment Completed Notification Failed:', error);
+      await this.deadLetterQueue.publish({
+        originalEventId: `payment-${data.paymentId}`,
+        eventType: 'payment.completed',
+        aggregateId: data.paymentId,
+        eventData: data as any,
+        failureReason: error instanceof Error ? error.message : 'Unknown error',
+        retryCount: 0,
+        lastError: JSON.stringify(error)
+      });
+    }
+  }
+
+  /**
+   * Kafka Event Consumer: Payment Failed
+   * Subscribes to topic: 'payment.failed'
+   */
+  @EventPattern('payment.failed')
+  async handlePaymentFailed(
+    @Payload() data: { paymentId: string; userId: string; email: string; amount: number; currency: string; reason: string; timestamp: Date },
+    @Ctx() context: KafkaContext,
+  ) {
+    console.log('❌ Processing Payment Failure:', data.paymentId);
+
+    try {
+      await this.sendNotificationUseCase.execute(
+        new SendNotificationRequest(
+          data.userId,
+          NotificationType.EMAIL,
+          data.email,
+          `Urgent: Payment Failed`,
+          undefined,
+          'payment-failed',
+          {
+            amount: data.amount,
+            currency: data.currency,
+            paymentId: data.paymentId,
+            reason: data.reason
+          },
+          'high', // High priority for failures
+          undefined,
+          `payment_failed_${data.paymentId}` // Idempotency Key
+        )
+      );
+
+      console.log('✅ Payment failure alert sent to:', data.email);
+    } catch (error) {
+      console.error('❌ Payment Failed Notification Failed:', error);
+      await this.deadLetterQueue.publish({
+        originalEventId: `payment-${data.paymentId}`,
+        eventType: 'payment.failed',
+        aggregateId: data.paymentId,
+        eventData: data as any,
+        failureReason: error instanceof Error ? error.message : 'Unknown error',
+        retryCount: 0,
+        lastError: JSON.stringify(error)
+      });
+    }
+  }
+
+  /**
+   * Kafka Event Consumer: Refund Processed
+   * Subscribes to topic: 'payment.refund.processed'
+   */
+  @EventPattern('payment.refund.processed')
+  async handleRefundProcessed(
+    @Payload() data: { paymentId: string; userId: string; email: string; refundAmount: number; currency: string; timestamp: Date },
+    @Ctx() context: KafkaContext,
+  ) {
+    console.log('↩️ Processing Refund Notification:', data.paymentId);
+
+    try {
+      await this.sendNotificationUseCase.execute(
+        new SendNotificationRequest(
+          data.userId,
+          NotificationType.EMAIL,
+          data.email,
+          `Refund Processed: ${data.currency} ${data.refundAmount}`,
+          undefined,
+          'refund-confirmed',
+          {
+            amount: data.refundAmount,
+            currency: data.currency,
+            paymentId: data.paymentId
+          },
+          undefined,
+          undefined,
+          `payment_refund_${data.paymentId}` // Idempotency Key
+        )
+      );
+
+      console.log('✅ Refund notification sent to:', data.email);
+    } catch (error) {
+      console.error('❌ Refund Processed Notification Failed:', error);
+      await this.deadLetterQueue.publish({
+        originalEventId: `payment-${data.paymentId}`,
+        eventType: 'payment.refund.processed',
+        aggregateId: data.paymentId,
+        eventData: data as any,
+        failureReason: error instanceof Error ? error.message : 'Unknown error',
+        retryCount: 0,
+        lastError: JSON.stringify(error)
+      });
     }
   }
 

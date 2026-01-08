@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamVerse Payment Test</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 0;
+            border-bottom: 2px solid #5469d4;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            background: #dfe3e8;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            transition: all 0.2s;
+        }
+
+        .tab:hover:not(.active) {
+            background: #c9cfd6;
+        }
+
+        .tab.active {
+            background: #5469d4;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 25px;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-row {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        #card-element,
+        #sub-card-element {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            min-height: 44px;
+        }
+
+        button {
+            background: #5469d4;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 6px;
+            width: 100%;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #4458c7;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .info {
+            background: #e7f3ff;
+            color: #0056b3;
+        }
+
+        .hint {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+            font-size: 13px;
+        }
+
+        .hint code {
+            background: #eee;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .plan-card {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .plan-card:hover {
+            border-color: #5469d4;
+        }
+
+        .plan-card.selected {
+            border-color: #5469d4;
+            background: #f0f4ff;
+        }
+
+        .plan-card h3 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+        }
+
+        .plan-card .price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #5469d4;
+        }
+
+        .plan-card .interval {
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>💳 StreamVerse Payments</h1>
+
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('one-time')">One-Time</button>
+        <button class="tab" onclick="showTab('subscription')">Subscription</button>
+        <button class="tab" onclick="showTab('refund')">Refund</button>
+    </div>
+
+    <!-- ONE-TIME PAYMENT TAB -->
+    <div id="one-time" class="tab-content active">
+        <div class="hint">
+            <strong>🧪 Test Card:</strong> <code>4242 4242 4242 4242</code> | Exp: <code>12/30</code> | CVC:
+            <code>123</code> | ZIP: <code>12345</code>
+        </div>
+        <div class="form-row">
+            <label>Amount (USD)</label>
+            <input type="number" id="amount" value="20" min="1">
+        </div>
+        <div class="form-row">
+            <label>Card Details</label>
+            <div id="card-element"></div>
+        </div>
+        <button id="pay-button">Pay Now</button>
+        <div id="pay-result" class="result" style="display:none;"></div>
+    </div>
+
+    <!-- SUBSCRIPTION TAB -->
+    <div id="subscription" class="tab-content">
+        <div class="hint">
+            <strong>📦 Real Stripe Plans</strong> - Select a plan and subscribe with your test card.
+        </div>
+        <div id="plans-container">Loading plans...</div>
+        <div class="form-row" style="margin-top: 20px;">
+            <label>Card Details</label>
+            <div id="sub-card-element"></div>
+        </div>
+        <button id="subscribe-button" disabled>Subscribe</button>
+        <div id="sub-result" class="result" style="display:none;"></div>
+    </div>
+
+    <!-- REFUND TAB -->
+    <div id="refund" class="tab-content">
+        <div class="hint">
+            <strong>💸 Trigger Refund</strong> - Enter a Payment ID to refund (get from One-Time tab response or Stripe
+            Dashboard).
+        </div>
+        <div class="form-row">
+            <label>Payment ID</label>
+            <input type="text" id="refund-payment-id" placeholder="e.g., abc123-def456-...">
+        </div>
+        <div class="form-row">
+            <label>Refund Amount (USD) - Leave blank for full refund</label>
+            <input type="number" id="refund-amount" placeholder="Optional">
+        </div>
+        <div class="form-row">
+            <label>Reason</label>
+            <select id="refund-reason">
+                <option value="requested_by_customer">Requested by Customer</option>
+                <option value="duplicate">Duplicate</option>
+                <option value="fraudulent">Fraudulent</option>
+            </select>
+        </div>
+        <button id="refund-button">Process Refund</button>
+        <div id="refund-result" class="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        // === STRIPE INIT ===
+        let stripe, card, subCard;
+        try {
+            if (typeof Stripe === 'undefined') {
+                throw new Error('Stripe.js not loaded. Check network tab.');
+            }
+            stripe = Stripe('pk_test_51JP7D8SGfKS6wLPgJgZy8B1G27quyQtoSKZtewvoxmxFsht8bIbyxQRjllZJ9hDf3pyPPR3Fz2R9rPPnhJa3ZJKU00QTG10Uny');
+
+            // Create separate elements instances to avoid "can only create one Element" error
+            const elements1 = stripe.elements();
+            const elements2 = stripe.elements();
+
+            card = elements1.create('card');
+            subCard = elements2.create('card');
+
+            card.mount('#card-element');
+            subCard.mount('#sub-card-element');
+            console.log('Stripe Elements mounted successfully');
+        } catch (err) {
+            console.error('Stripe initialization error:', err);
+            const errMsg = err.message || 'Unknown error';
+            document.getElementById('card-element').innerHTML = '<span style="color:red;font-size:12px;">Stripe Error: ' + errMsg + '</span>';
+            document.getElementById('sub-card-element').innerHTML = '<span style="color:red;font-size:12px;">Stripe Error: ' + errMsg + '</span>';
+        }
+
+        const CUSTOMER_ID = 'cus_TjjsuVXhs7M90u'; // Pre-created customer
+        let selectedPlanId = null;
+
+        // === TAB NAVIGATION ===
+        function showTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // === ONE-TIME PAYMENT ===
+        document.getElementById('pay-button').addEventListener('click', async () => {
+            const btn = document.getElementById('pay-button');
+            const result = document.getElementById('pay-result');
+            btn.disabled = true; btn.textContent = 'Processing...';
+            result.style.display = 'none';
+
+            try {
+                const amount = parseFloat(document.getElementById('amount').value);
+                const res = await fetch('http://localhost:3002/payments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: '550e8400-e29b-41d4-a716-446655440000',
+                        amount, currency: 'usd', paymentMethod: 'card',
+                        description: 'Test One-Time Payment'
+                    })
+                });
+                if (!res.ok) throw new Error('Failed to create payment intent');
+                const data = await res.json();
+
+                const { error, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret, {
+                    payment_method: {
+                        card: card,
+                        billing_details: { name: 'Test User', address: { line1: '510 Townsend St', city: 'San Francisco', state: 'CA', postal_code: '94103', country: 'US' } }
+                    }
+                });
+
+                if (error) throw new Error(error.message);
+                result.className = 'result success'; result.style.display = 'block';
+                result.innerHTML = `✅ Payment Succeeded!<br><small>Payment ID: ${data.paymentId}</small>`;
+            } catch (err) {
+                result.className = 'result error'; result.style.display = 'block';
+                result.textContent = '❌ ' + err.message;
+            } finally { btn.disabled = false; btn.textContent = 'Pay Now'; }
+        });
+
+        // === LOAD SUBSCRIPTION PLANS ===
+        async function loadPlans() {
+            try {
+                const res = await fetch('http://localhost:3002/payments/subscriptions/plans');
+                const plans = await res.json();
+                const container = document.getElementById('plans-container');
+                container.innerHTML = plans.map(p => `
+                    <div class="plan-card" onclick="selectPlan('${p.id}', this)">
+                        <h3>${p.name}</h3>
+                        <span class="price">$${p.amount.toFixed(2)}</span>
+                        <span class="interval">/ ${p.interval}</span>
+                        <div style="font-size:12px;color:#666;margin-top:5px;">${p.features.join(' • ')}</div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                document.getElementById('plans-container').innerHTML = '<p class="error">Failed to load plans</p>';
+            }
+        }
+        loadPlans();
+
+        function selectPlan(planId, el) {
+            document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedPlanId = planId;
+            document.getElementById('subscribe-button').disabled = false;
+        }
+
+        // === CREATE SUBSCRIPTION ===
+        document.getElementById('subscribe-button').addEventListener('click', async () => {
+            if (!selectedPlanId) return;
+            const btn = document.getElementById('subscribe-button');
+            const result = document.getElementById('sub-result');
+            btn.disabled = true; btn.textContent = 'Creating...';
+            result.style.display = 'none';
+
+            try {
+                // Create payment method first
+                const { paymentMethod, error: pmError } = await stripe.createPaymentMethod({
+                    type: 'card', card: subCard,
+                    billing_details: { name: 'Test User', address: { line1: '510 Townsend St', city: 'San Francisco', state: 'CA', postal_code: '94103', country: 'US' } }
+                });
+                if (pmError) throw new Error(pmError.message);
+
+                const res = await fetch('http://localhost:3002/payments/subscriptions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ planId: selectedPlanId, paymentMethodId: paymentMethod.id })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Subscription failed');
+
+                // If requires confirmation
+                if (data.clientSecret) {
+                    const { error } = await stripe.confirmCardPayment(data.clientSecret);
+                    if (error) throw new Error(error.message);
+                }
+
+                result.className = 'result success'; result.style.display = 'block';
+                result.innerHTML = `✅ Subscribed!<br><small>Sub ID: ${data.subscriptionId}</small>`;
+            } catch (err) {
+                result.className = 'result error'; result.style.display = 'block';
+                result.textContent = '❌ ' + err.message;
+            } finally { btn.disabled = false; btn.textContent = 'Subscribe'; }
+        });
+
+        // === REFUND ===
+        document.getElementById('refund-button').addEventListener('click', async () => {
+            const btn = document.getElementById('refund-button');
+            const result = document.getElementById('refund-result');
+            const paymentId = document.getElementById('refund-payment-id').value.trim();
+            const amount = document.getElementById('refund-amount').value;
+            const reason = document.getElementById('refund-reason').value;
+
+            if (!paymentId) { alert('Please enter a Payment ID'); return; }
+            btn.disabled = true; btn.textContent = 'Processing...';
+            result.style.display = 'none';
+
+            try {
+                const body = {};
+                if (amount) body.refundAmount = parseFloat(amount);
+
+                const res = await fetch(`http://localhost:3002/payments/${paymentId}/refund`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Refund failed');
+
+                result.className = 'result success'; result.style.display = 'block';
+                result.innerHTML = `✅ Refund Processed!<br><small>Refund ID: ${data.refundId || 'N/A'}</small>`;
+            } catch (err) {
+                result.className = 'result error'; result.style.display = 'block';
+                result.textContent = '❌ ' + err.message;
+            } finally { btn.disabled = false; btn.textContent = 'Process Refund'; }
+        });
+    </script>
+</body>
+
+</html>

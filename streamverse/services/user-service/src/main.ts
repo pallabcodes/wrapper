@@ -1,3 +1,8 @@
+// CRITICAL: Initialize tracing BEFORE any other imports
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { initTracing } = require('@streamverse/common');
+initTracing('user-service');
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -5,9 +10,21 @@ import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { validateEnvironment, getEnvironmentSummary } from './infrastructure/config/env-validation';
 import { GlobalExceptionFilter } from './presentation/filters/http-exception.filter';
+import { PinoLoggerService, CorrelationMiddleware } from '@streamverse/common';
 
+/**
+ * Application Bootstrap
+ *
+ * Initializes and starts the User Service with full observability
+ */
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Create Pino logger for structured logging
+  const logger = new PinoLoggerService('user-service');
+
+  const app = await NestFactory.create(AppModule, {
+    // Use Pino for structured logging with correlation IDs
+    logger,
+  });
 
   // Get configuration service
   const configService = app.get(ConfigService);
@@ -17,7 +34,10 @@ async function bootstrap() {
 
   // Log environment summary
   const envSummary = getEnvironmentSummary(configService);
-  console.log('🔧 Service Configuration:', JSON.stringify(envSummary, null, 2));
+  logger.log(`Service Configuration: ${JSON.stringify(envSummary)}`);
+
+  // Apply correlation middleware for request tracing
+  app.use(new CorrelationMiddleware().use.bind(new CorrelationMiddleware()));
 
   // Enable cookie parsing middleware (required for HttpOnly refresh tokens)
   app.use(cookieParser());
@@ -27,14 +47,14 @@ async function bootstrap() {
 
   // Enable global validation pipe
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,        // Strip unknown properties
-    forbidNonWhitelisted: true, // Error on unknown properties
-    transform: true,        // Transform to DTO instances
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
   }));
 
-  // Enable CORS for web clients (allow all origins for development)
+  // Enable CORS for web clients
   app.enableCors({
-    origin: true, // Allow all origins (development only)
+    origin: true,
     credentials: true,
   });
 
@@ -43,10 +63,10 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  console.log(`🚀 StreamVerse User Service running on: http://localhost:${port}`);
-  console.log(`📊 Health check: http://localhost:${port}/health`);
-  console.log(`📚 API docs: http://localhost:${port}/api`);
+  logger.log(`🚀 StreamVerse User Service running on: http://localhost:${port}`);
+  logger.log(`📊 Health check: http://localhost:${port}/health`);
+  logger.log(`📈 Metrics: http://localhost:${port}/metrics`);
+  logger.log(`📚 API docs: http://localhost:${port}/api`);
 }
 
 bootstrap();
-

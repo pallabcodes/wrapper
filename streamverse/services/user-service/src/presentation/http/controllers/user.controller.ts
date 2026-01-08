@@ -74,6 +74,7 @@ export class UserController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RateLimitGuard)
   async register(@Body() dto: RegisterUserHttpDto): Promise<UserHttpResponse> {
     // 🏭 FACTORY: Create Application DTO from HTTP DTO
     const request = RegisterUserRequest.fromHttpDto({
@@ -215,7 +216,7 @@ export class UserController {
    */
   @Post('auth/magic-link')
   @HttpCode(HttpStatus.OK)
-  // @UseGuards(RateLimitGuard) // Recommended for production
+  @UseGuards(RateLimitGuard)
   async requestMagicLink(@Body('email') email: string) {
     if (!email) {
       return { message: 'Email is required' };
@@ -261,6 +262,7 @@ export class UserController {
    */
   @Post('auth/otp/request')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RateLimitGuard)
   async requestOtp(@Body() body: { identifier: string; type: 'email' | 'sms' }) {
     if (!body.identifier || !body.type) {
       return { message: 'Identifier and type are required' };

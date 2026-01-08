@@ -31,6 +31,7 @@ export interface SendNotificationRequest {
   templateVariables?: Record<string, string | number | boolean>; // Variables for template
   priority?: 'low' | 'normal' | 'high' | 'urgent';
   metadata?: Record<string, unknown>;
+  idempotencyKey?: string;
 }
 
 export interface SendNotificationResponse {
@@ -66,7 +67,19 @@ export class SendNotificationUseCase {
       throw DomainException.invalidNotificationType();
     }
 
-    // 2. Process template if specified
+    // 2. Check for idempotency
+    if (request.idempotencyKey) {
+      const existingNotification = await this.notificationRepository.findByIdempotencyKey(request.idempotencyKey);
+      if (existingNotification) {
+        return {
+          notificationId: existingNotification.getId(),
+          status: existingNotification.getStatus(),
+          estimatedDeliveryTime: undefined // Already processed
+        };
+      }
+    }
+
+    // 3. Process template if specified
     let finalSubject = request.subject;
     let finalContent = request.content;
 
@@ -115,7 +128,8 @@ export class SendNotificationUseCase {
       finalSubject || '',
       finalContent,
       priority,
-      request.metadata as Record<string, unknown> || {}
+      request.metadata as Record<string, unknown> || {},
+      request.idempotencyKey
     );
 
     // 7. Save notification to repository

@@ -34,12 +34,13 @@ import {
  */
 @Injectable()
 export class StripeSubscriptionService implements ISubscriptionService {
-  // Predefined subscription plans
+  // Predefined subscription plans with REAL Stripe Price IDs
+  // Product: prod_TjxdlsWoxFmoms (StreamVerse Basic)
   private readonly availablePlans: SubscriptionPlan[] = [
     {
       id: 'basic-monthly',
       name: 'Basic Monthly',
-      description: 'Basic streaming access with monthly billing',
+      description: 'HD streaming, 1 device, Basic support',
       interval: SubscriptionInterval.MONTH,
       amount: Money.fromDollars(9.99, 'USD'),
       features: [
@@ -47,84 +48,38 @@ export class StripeSubscriptionService implements ISubscriptionService {
         '1 device',
         'Basic support'
       ],
-      stripePriceId: 'price_basic_monthly', // TODO: Replace with actual Stripe price ID
-      active: true,
-    },
-    {
-      id: 'premium-monthly',
-      name: 'Premium Monthly',
-      description: 'Premium streaming access with monthly billing',
-      interval: SubscriptionInterval.MONTH,
-      amount: Money.fromDollars(14.99, 'USD'),
-      features: [
-        '4K streaming',
-        '3 devices',
-        'Priority support',
-        'Offline downloads'
-      ],
-      stripePriceId: 'price_premium_monthly', // TODO: Replace with actual Stripe price ID
+      stripePriceId: 'price_1SmTkHSGfKS6wLPgkVLOZOET', // Real Stripe Price ID
       active: true,
     },
     {
       id: 'basic-quarterly',
       name: 'Basic Quarterly',
-      description: 'Basic streaming access with quarterly billing',
+      description: 'HD streaming, 1 device, Basic support - Save 17%',
       interval: SubscriptionInterval.QUARTER,
-      amount: Money.fromDollars(27.99, 'USD'), // ~$9.33/month
+      amount: Money.fromDollars(24.99, 'USD'), // ~$8.33/month
       features: [
         'HD streaming',
         '1 device',
         'Basic support',
-        'Save 10%'
+        'Save 17%'
       ],
-      stripePriceId: 'price_basic_quarterly', // TODO: Replace with actual Stripe price ID
-      active: true,
-    },
-    {
-      id: 'premium-quarterly',
-      name: 'Premium Quarterly',
-      description: 'Premium streaming access with quarterly billing',
-      interval: SubscriptionInterval.QUARTER,
-      amount: Money.fromDollars(39.99, 'USD'), // ~$13.33/month
-      features: [
-        '4K streaming',
-        '3 devices',
-        'Priority support',
-        'Offline downloads',
-        'Save 11%'
-      ],
-      stripePriceId: 'price_premium_quarterly', // TODO: Replace with actual Stripe price ID
+      stripePriceId: 'price_1SmTkKSGfKS6wLPgpYZBp9Av', // Real Stripe Price ID
       active: true,
     },
     {
       id: 'basic-yearly',
       name: 'Basic Yearly',
-      description: 'Basic streaming access with yearly billing',
+      description: 'HD streaming, 1 device, Basic support - Best Value',
       interval: SubscriptionInterval.YEAR,
       amount: Money.fromDollars(99.99, 'USD'), // ~$8.33/month
       features: [
         'HD streaming',
         '1 device',
         'Basic support',
-        'Save 17%'
+        'Save 17%',
+        'Priority support'
       ],
-      stripePriceId: 'price_basic_yearly', // TODO: Replace with actual Stripe price ID
-      active: true,
-    },
-    {
-      id: 'premium-yearly',
-      name: 'Premium Yearly',
-      description: 'Premium streaming access with yearly billing',
-      interval: SubscriptionInterval.YEAR,
-      amount: Money.fromDollars(149.99, 'USD'), // ~$12.50/month
-      features: [
-        '4K streaming',
-        '3 devices',
-        'Priority support',
-        'Offline downloads',
-        'Save 17%'
-      ],
-      stripePriceId: 'price_premium_yearly', // TODO: Replace with actual Stripe price ID
+      stripePriceId: 'price_1SmTlMSGfKS6wLPgqqc83hhu', // Real Stripe Price ID
       active: true,
     },
   ];
@@ -159,13 +114,14 @@ export class StripeSubscriptionService implements ISubscriptionService {
       throw DomainException.invalidSubscriptionInterval(); // Could create specific exception
     }
 
-    // Generate subscription ID
-    const subscriptionId = `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Generate subscription ID as proper UUID
+    const subscriptionId = crypto.randomUUID();
 
     // Create domain subscription
     const subscription = Subscription.create(
       subscriptionId,
       request.userId,
+      request.email,
       plan.interval,
       plan.amount,
       plan.description
@@ -174,10 +130,16 @@ export class StripeSubscriptionService implements ISubscriptionService {
     // Create Stripe customer if not exists (simplified - would need user email)
     // In production, you'd get user email from user service
     const customer = await this.paymentProcessor.createCustomer(
-      `user_${request.userId}@temp.com`, // TODO: Get real email from user service
+      request.email,
       undefined,
       { userId: request.userId, subscriptionId }
     );
+
+    // Attach payment method to customer if provided
+    if (request.paymentMethodId) {
+      await this.paymentProcessor.attachPaymentMethod(request.paymentMethodId, customer.id);
+      await this.paymentProcessor.setDefaultPaymentMethod(customer.id, request.paymentMethodId);
+    }
 
     // Create Stripe subscription
     const stripeSubscription = await this.paymentProcessor.createSubscription(
@@ -207,6 +169,7 @@ export class StripeSubscriptionService implements ISubscriptionService {
     await this.notificationService.sendPaymentCreated(
       subscriptionId,
       request.userId,
+      request.email,
       plan.amount.getAmount(),
       plan.amount.getCurrency()
     );
@@ -244,6 +207,7 @@ export class StripeSubscriptionService implements ISubscriptionService {
     await this.notificationService.sendRefundProcessed(
       request.subscriptionId,
       subscription.getUserId(),
+      subscription.getUserEmail(),
       0, // No refund for cancellation
       subscription.getAmount().getCurrency()
     );
